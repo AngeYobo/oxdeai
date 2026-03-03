@@ -7,13 +7,26 @@ This project follows Semantic Versioning.
 
 ---
 
+## [0.8.0] - 2026-03-03
+
+**Host Integration Adapters**
+
+v0.8.0 introduces first-class host integration primitives to @oxdeai/core without weakening its deterministic guarantees. The engine now supports pluggable StateStore and AuditSink interfaces, along with minimal in-memory and file-based reference adapters. PolicyEngine wiring ensures ordered audit delivery (sync and async) while preserving fully synchronous, deterministic evaluation semantics. State persistence is explicit (commitState, flushState) and does not affect decision outcomes. Deterministic identifiers (policyId, stateHash, auditHeadHash) remain stable across processes, and integration hooks introduce no entropy or behavioral drift. This release makes the engine production-integrable while keeping containment logic strictly deterministic.
+
+### Added
+- Adapter interfaces: `StateStore` and `AuditSink`.
+- Reference adapters: `InMemoryStateStore`, `InMemoryAuditSink`, `FileStateStore`, `FileAuditSink`.
+- Optional PolicyEngine integration hooks: `auditSink`, `stateStore`, `autoPersist`, plus `flushAudit()` / `commitState()` / `flushState()`.
+
+### Tests
+- Adapter integration tests validating sink event ordering for sync and async sinks.
+
+---
+
 ## [0.7.1] - 2026-03-03
 
 ### Added
 - Cross-process determinism test (spawn child process) to validate reproducible fingerprints.
-
-### Fixed / Hardened
-- (If applicable) any small fixes you made while adding tests.
 
 ---
 

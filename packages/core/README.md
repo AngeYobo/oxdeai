@@ -1,6 +1,6 @@
 # @oxdeai/core
 
-**Deterministic Economic Containment Engine for Autonomous Systems**
+Deterministic Economic Containment Engine for Autonomous Systems
 > Deterministic · Canonical Snapshots · Property-Tested
 
 [![npm version](https://img.shields.io/npm/v/@oxdeai/core.svg)](https://www.npmjs.com/package/@oxdeai/core)
@@ -324,6 +324,32 @@ Snapshots are:
 
 ---
 
+## Adapters (v0.8)
+
+```ts
+import { PolicyEngine, FileStateStore, FileAuditSink } from "@oxdeai/core";
+
+const stateStore = new FileStateStore("./policy-state.bin");
+const auditSink = new FileAuditSink("./audit.ndjson");
+
+const engine = new PolicyEngine({
+  policy_version: "v0.6",
+  engine_secret: "secret",
+  authorization_ttl_seconds: 60,
+  stateStore,
+  auditSink
+});
+
+const out = engine.evaluate(intent, state);
+engine.commitState(state);
+await engine.flushAudit();
+await engine.flushState();
+```
+
+Core ships only minimal in-memory and file adapters; no redis/postgres adapters in core. Build those in separate packages.
+
+---
+
 ## Replay Verification (v0.7)
 
 `ReplayEngine.verify` recomputes `auditHeadHash` offline from the provided events, and validates policy binding (`policyId`) plus non-decreasing timestamps.
@@ -357,7 +383,7 @@ console.log(verified.ok, verified.status); // true, "ok" when checkpoints exist
 * Optional deterministic state checkpoints (`STATE_CHECKPOINT`)
 * Misuse hardening (`strict` => `inconclusive` without state anchors)
 
-### v0.8 -  Host Integration Adapters
+### v0.8 - Host Integration Adapters (shipped)
 
 * StateStore interface
 * AuditSink interface

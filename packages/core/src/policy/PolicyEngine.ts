@@ -19,6 +19,7 @@ import { ReplayModule } from "./modules/ReplayModule.js";
 import { ConcurrencyModule } from "./modules/ConcurrencyModule.js";
 import { RecursionDepthModule } from "./modules/RecursionDepthModule.js";
 import { ToolAmplificationModule } from "./modules/ToolAmplificationModule.js";
+import type { StateStore, AuditSink } from "../adapters/types.js";
 import { stableStringify } from "../utils/stableStringify.js";
 import { createCanonicalState, withModuleState } from "../snapshot/CanonicalState.js";
 import { MODULE_CODECS } from "./modules/registry.js";
@@ -48,6 +49,9 @@ export type EngineOptions = {
   policyId?: string;
   strictDeterminism?: boolean;
   checkpoint_every_n_events?: number;
+  stateStore?: StateStore;
+  auditSink?: AuditSink;
+  autoPersist?: boolean;
 };
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -101,6 +105,11 @@ export class PolicyEngine {
   private readonly opts: EngineOptions;
   private currentState?: State;
   private auditEventCount = 0;
+  // Adapter writes are sequenced here so evaluate/evaluatePure remain synchronous.
+  private auditSinkChain: Promise<void> = Promise.resolve();
+  private stateStoreChain: Promise<void> = Promise.resolve();
+  private auditSinkError: unknown | null = null;
+  private stateStoreError: unknown | null = null;
   public readonly audit: HashChainedLog = new HashChainedLog();
 
   constructor(opts: EngineOptions) {
@@ -198,9 +207,18 @@ export class PolicyEngine {
     return { ok: true };
   }
 
-  private appendAudit(event: AuditEvent): void {
+  private emitAudit(event: AuditEvent): void {
     this.audit.append(event);
     this.auditEventCount += 1;
+    if (!this.opts.auditSink) return;
+
+    const sink = this.opts.auditSink;
+    const queuedEvent = structuredClone(event);
+    this.auditSinkChain = this.auditSinkChain
+      .then(() => Promise.resolve(sink.append(queuedEvent)))
+      .catch((error) => {
+        this.auditSinkError ??= error;
+      });
   }
 
   private maybeEmitCheckpoint(policyId: string, timestamp: number, state: State): void {
@@ -209,7 +227,7 @@ export class PolicyEngine {
     if (!Number.isInteger(every) || every <= 0) return;
     if (this.auditEventCount % every !== 0) return;
 
-    this.appendAudit({
+    this.emitAudit({
       type: "STATE_CHECKPOINT",
       stateHash: this.computeStateHashFor(state),
       timestamp,
@@ -217,16 +235,54 @@ export class PolicyEngine {
     });
   }
 
+  async flushAudit(): Promise<void> {
+    await this.auditSinkChain;
+    if (this.opts.auditSink?.flush) {
+      await this.opts.auditSink.flush();
+    }
+    if (this.auditSinkError !== null) {
+      const err = this.auditSinkError;
+      this.auditSinkError = null;
+      throw err;
+    }
+  }
+
+  commitState(state: State): void {
+    if (!this.opts.stateStore) return;
+    const snapshot = this.exportState(state);
+    const store = this.opts.stateStore;
+    this.stateStoreChain = this.stateStoreChain
+      .then(() => Promise.resolve(store.set(snapshot)))
+      .catch((error) => {
+        this.stateStoreError ??= error;
+      });
+  }
+
+  async flushState(): Promise<void> {
+    await this.stateStoreChain;
+    if (this.stateStoreError !== null) {
+      const err = this.stateStoreError;
+      this.stateStoreError = null;
+      throw err;
+    }
+  }
+
   evaluate(intent: Intent, state: State): EvaluateOutput {
     const out = this.evaluatePure(intent, state, { mode: "fail-fast" });
 
     if (out.decision === "DENY") {
       this.currentState = structuredClone(state);
+      if (this.opts.autoPersist === true) {
+        this.commitState(state);
+      }
       return out;
     }
 
     Object.assign(state, out.nextState);
     this.currentState = structuredClone(state);
+    if (this.opts.autoPersist === true) {
+      this.commitState(state);
+    }
 
     return { decision: "ALLOW", reasons: [], authorization: out.authorization };
   }
@@ -287,7 +343,7 @@ export class PolicyEngine {
     try {
       const intent_hash = intentHash(intent);
       const policyId = this.computePolicyId();
-      this.appendAudit({
+      this.emitAudit({
         type: "INTENT_RECEIVED",
         intent_hash,
         agent_id: intent.agent_id,
@@ -315,7 +371,7 @@ export class PolicyEngine {
 
       if (denyReasons.length) {
         const out = { decision: "DENY" as const, reasons: denyReasons };
-        this.appendAudit({
+        this.emitAudit({
           type: "DECISION",
           intent_hash,
           decision: "DENY",
@@ -372,7 +428,7 @@ export class PolicyEngine {
         });
       }
 
-      this.appendAudit({
+      this.emitAudit({
         type: "DECISION",
         intent_hash,
         decision: "ALLOW",
@@ -382,7 +438,7 @@ export class PolicyEngine {
         policyId
       });
 
-      this.appendAudit({
+      this.emitAudit({
         type: "AUTH_EMITTED",
         authorization_id,
         intent_hash,
