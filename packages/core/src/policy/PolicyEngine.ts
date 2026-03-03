@@ -18,14 +18,6 @@ import { ReplayModule } from "./modules/ReplayModule.js";
 import { ConcurrencyModule } from "./modules/ConcurrencyModule.js";
 import { RecursionDepthModule } from "./modules/RecursionDepthModule.js";
 import { ToolAmplificationModule } from "./modules/ToolAmplificationModule.js";
-import { KillSwitchModuleCodec } from "./modules/KillSwitchModule.js";
-import { AllowlistModuleCodec } from "./modules/AllowlistModule.js";
-import { ReplayModuleCodec } from "./modules/ReplayModule.js";
-import { RecursionDepthModuleCodec } from "./modules/RecursionDepthModule.js";
-import { ConcurrencyModuleCodec } from "./modules/ConcurrencyModule.js";
-import { ToolAmplificationModuleCodec } from "./modules/ToolAmplificationModule.js";
-import { BudgetModuleCodec } from "./modules/BudgetModule.js";
-import { VelocityModuleCodec } from "./modules/VelocityModule.js";
 import { stableStringify } from "../utils/stableStringify.js";
 import { createCanonicalState, withModuleState } from "../snapshot/CanonicalState.js";
 import { MODULE_CODECS } from "./modules/registry.js";
@@ -87,20 +79,20 @@ function deepMerge<T>(base: T, patch: Partial<T>): T {
 const ENGINE_VERSION = process.env.npm_package_version ?? "unknown";
 
 const RELEASE_MODULES: readonly PolicyModule[] = [
-  { id: "KillSwitchModule", evaluate: KillSwitchModule, codec: KillSwitchModuleCodec },
-  { id: "ReplayModule", evaluate: ReplayModule, codec: ReplayModuleCodec },
-  { id: "ConcurrencyModule", evaluate: ConcurrencyModule, codec: ConcurrencyModuleCodec }
+  { id: "KillSwitchModule", evaluate: KillSwitchModule, codec: MODULE_CODECS.KillSwitchModule },
+  { id: "ReplayModule", evaluate: ReplayModule, codec: MODULE_CODECS.ReplayModule },
+  { id: "ConcurrencyModule", evaluate: ConcurrencyModule, codec: MODULE_CODECS.ConcurrencyModule }
 ];
 
 const EXECUTE_MODULES: readonly PolicyModule[] = [
-  { id: "KillSwitchModule", evaluate: KillSwitchModule, codec: KillSwitchModuleCodec },
-  { id: "AllowlistModule", evaluate: AllowlistModule, codec: AllowlistModuleCodec },
-  { id: "ReplayModule", evaluate: ReplayModule, codec: ReplayModuleCodec },
-  { id: "RecursionDepthModule", evaluate: RecursionDepthModule, codec: RecursionDepthModuleCodec },
-  { id: "ConcurrencyModule", evaluate: ConcurrencyModule, codec: ConcurrencyModuleCodec },
-  { id: "ToolAmplificationModule", evaluate: ToolAmplificationModule, codec: ToolAmplificationModuleCodec },
-  { id: "BudgetModule", evaluate: BudgetModule, codec: BudgetModuleCodec },
-  { id: "VelocityModule", evaluate: VelocityModule, codec: VelocityModuleCodec }
+  { id: "KillSwitchModule", evaluate: KillSwitchModule, codec: MODULE_CODECS.KillSwitchModule },
+  { id: "AllowlistModule", evaluate: AllowlistModule, codec: MODULE_CODECS.AllowlistModule },
+  { id: "ReplayModule", evaluate: ReplayModule, codec: MODULE_CODECS.ReplayModule },
+  { id: "RecursionDepthModule", evaluate: RecursionDepthModule, codec: MODULE_CODECS.RecursionDepthModule },
+  { id: "ConcurrencyModule", evaluate: ConcurrencyModule, codec: MODULE_CODECS.ConcurrencyModule },
+  { id: "ToolAmplificationModule", evaluate: ToolAmplificationModule, codec: MODULE_CODECS.ToolAmplificationModule },
+  { id: "BudgetModule", evaluate: BudgetModule, codec: MODULE_CODECS.BudgetModule },
+  { id: "VelocityModule", evaluate: VelocityModule, codec: MODULE_CODECS.VelocityModule }
 ];
 
 export class PolicyEngine {
@@ -314,7 +306,7 @@ export class PolicyEngine {
       }
 
       // Authorization is now bound to nextState snapshot
-      const state_snapshot_hash = sha256HexFromJson(working);
+      const state_snapshot_hash = this.computeStateHashFor(working);
       const now = intent.timestamp;
       const expires_at = now + this.opts.authorization_ttl_seconds;
 
@@ -414,10 +406,10 @@ export class PolicyEngine {
     if (!current) throw new Error("exportState: engine has no current state");
 
     let snapshot = createCanonicalState({
+      formatVersion: 1,
       engineVersion: ENGINE_VERSION,
       policyId: this.computePolicyId(),
-      moduleStates: {},
-      globalStateHash: ""
+      modules: {}
     });
 
     const ids = Object.keys(MODULE_CODECS).sort();
@@ -425,34 +417,28 @@ export class PolicyEngine {
       snapshot = withModuleState(snapshot, id, MODULE_CODECS[id].serializeState(current));
     }
 
-    return {
-      ...snapshot,
-      globalStateHash: this.computeStateHashFor(current)
-    };
+    return snapshot;
   }
 
   importState(state: CanonicalState): void;
   importState(target: State, state: CanonicalState): void;
   importState(arg1: State | CanonicalState, arg2?: CanonicalState): void {
     const state = (arg2 ?? arg1) as CanonicalState;
+    if (state.formatVersion !== 1) {
+      throw new Error(`importState: unsupported formatVersion=${String((state as any).formatVersion)}`);
+    }
     const expected = this.computePolicyId();
-    if (state.policyId && state.policyId !== expected) {
+    if (state.policyId !== expected) {
       throw new Error(`importState: policyId mismatch (state=${state.policyId}, engine=${expected})`);
     }
 
     const target = arg2 ? (arg1 as State) : structuredClone(this.currentState);
     if (!target) throw new Error("importState: engine has no mutable state target");
 
-    const ids = Object.keys(state.moduleStates).sort();
+    const ids = Object.keys(MODULE_CODECS).sort();
     for (const id of ids) {
       const codec = MODULE_CODECS[id];
-      if (!codec) throw new Error(`importState: unknown module codec: ${id}`);
-      codec.deserializeState(target, state.moduleStates[id]);
-    }
-
-    const actual = this.computeStateHashFor(target);
-    if (state.globalStateHash && state.globalStateHash !== actual) {
-      throw new Error(`importState: state hash mismatch (state=${state.globalStateHash}, engine=${actual})`);
+      codec.deserializeState(target, state.modules[id]);
     }
 
     this.currentState = structuredClone(target);
@@ -490,7 +476,14 @@ export class PolicyEngine {
       moduleHashes[id] = MODULE_CODECS[id].stateHash(state);
     }
 
-    const bytes = new TextEncoder().encode(canonicalJson({ moduleHashes }));
+    const bytes = new TextEncoder().encode(
+      canonicalJson({
+        formatVersion: 1,
+        engineVersion: ENGINE_VERSION,
+        policyId: this.computePolicyId(),
+        modules: moduleHashes
+      })
+    );
     return createHash("sha256").update(bytes).digest("hex");
   }
   

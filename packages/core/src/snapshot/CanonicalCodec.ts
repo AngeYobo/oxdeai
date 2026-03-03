@@ -1,49 +1,46 @@
-import { stableSortedKeys } from "../utils/stableSort.js";
-import { stableStringify } from "../utils/stableStringify.js";
+import { canonicalJson } from "../crypto/hashes.js";
 import type { CanonicalState } from "./CanonicalState.js";
 
-type CanonicalStateWire = {
-  engineVersion: string;
-  policyId: string | null;
-  moduleStates: Record<string, string>;
-  globalStateHash: string;
-};
-
-function bytesToBase64(bytes: Uint8Array): string {
-  return Buffer.from(bytes).toString("base64");
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
-function base64ToBytes(value: string): Uint8Array {
-  return Uint8Array.from(Buffer.from(value, "base64"));
+function assertCanonicalState(value: unknown): CanonicalState {
+  if (!isObject(value) || Array.isArray(value)) {
+    throw new Error("invalid canonical state");
+  }
+
+  if (!("formatVersion" in value)) {
+    throw new Error("invalid canonical state: missing formatVersion");
+  }
+  if (value.formatVersion !== 1) {
+    throw new Error("invalid canonical state: unsupported formatVersion");
+  }
+  if (typeof value.engineVersion !== "string") {
+    throw new Error("invalid canonical state: engineVersion");
+  }
+  if (typeof value.policyId !== "string") {
+    throw new Error("invalid canonical state: policyId");
+  }
+  if (!isObject(value.modules) || Array.isArray(value.modules)) {
+    throw new Error("invalid canonical state: modules");
+  }
+
+  return {
+    formatVersion: 1,
+    engineVersion: value.engineVersion,
+    policyId: value.policyId,
+    modules: value.modules
+  };
 }
 
 export function encodeCanonicalState(state: CanonicalState): Uint8Array {
-  const moduleStates: Record<string, string> = {};
-  for (const id of stableSortedKeys(state.moduleStates)) {
-    moduleStates[id] = bytesToBase64(state.moduleStates[id]);
-  }
-
-  const wire: CanonicalStateWire = {
-    engineVersion: state.engineVersion,
-    policyId: state.policyId ?? null,
-    moduleStates,
-    globalStateHash: state.globalStateHash
-  };
-
-  return new TextEncoder().encode(stableStringify(wire));
+  const normalized = assertCanonicalState(state);
+  return new TextEncoder().encode(canonicalJson(normalized));
 }
 
 export function decodeCanonicalState(bytes: Uint8Array): CanonicalState {
   const json = new TextDecoder().decode(bytes);
-  const parsed = JSON.parse(json) as CanonicalStateWire;
-  const moduleStates: Record<string, Uint8Array> = {};
-  for (const id of stableSortedKeys(parsed.moduleStates)) {
-    moduleStates[id] = base64ToBytes(parsed.moduleStates[id]);
-  }
-  return {
-    engineVersion: parsed.engineVersion,
-    policyId: parsed.policyId ?? undefined,
-    moduleStates,
-    globalStateHash: parsed.globalStateHash
-  };
+  const parsed = JSON.parse(json) as unknown;
+  return assertCanonicalState(parsed);
 }

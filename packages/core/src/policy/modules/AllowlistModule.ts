@@ -7,13 +7,13 @@ export function AllowlistModule(intent: Intent, state: State): PolicyResult {
   const reasons: ReasonCode[] = [];
   const al = state.allowlists;
 
-  if (al.action_types && !al.action_types.includes(intent.action_type)) {
+  if (al.action_types && al.action_types.length > 0 && !al.action_types.includes(intent.action_type)) {
     reasons.push("ALLOWLIST_ACTION");
   }
-  if (al.assets && intent.asset && !al.assets.includes(intent.asset)) {
+  if (al.assets && al.assets.length > 0 && intent.asset && !al.assets.includes(intent.asset)) {
     reasons.push("ALLOWLIST_ASSET");
   }
-  if (al.targets && !al.targets.includes(intent.target)) {
+  if (al.targets && al.targets.length > 0 && !al.targets.includes(intent.target)) {
     reasons.push("ALLOWLIST_TARGET");
   }
 

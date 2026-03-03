@@ -1,28 +1,27 @@
-import type { CanonicalState as CanonicalStateType, StateHash } from "../types/state.js";
+import type { CanonicalState as CanonicalStateType } from "../types/state.js";
 
 export type CanonicalState = CanonicalStateType;
-export type { StateHash };
 
 export function createCanonicalState(args: {
+  formatVersion?: 1;
   engineVersion: string;
-  moduleStates: Record<string, Uint8Array>;
-  globalStateHash: StateHash;
-  policyId?: string;
+  modules: Record<string, unknown>;
+  policyId: string;
 }): CanonicalState {
   return {
+    formatVersion: args.formatVersion ?? 1,
     engineVersion: args.engineVersion,
     policyId: args.policyId,
-    moduleStates: { ...args.moduleStates },
-    globalStateHash: args.globalStateHash
+    modules: { ...args.modules }
   };
 }
 
-export function withModuleState(state: CanonicalState, moduleId: string, bytes: Uint8Array): CanonicalState {
+export function withModuleState(state: CanonicalState, moduleId: string, payload: unknown): CanonicalState {
   return {
     ...state,
-    moduleStates: {
-      ...state.moduleStates,
-      [moduleId]: bytes
+    modules: {
+      ...state.modules,
+      [moduleId]: payload
     }
   };
 }

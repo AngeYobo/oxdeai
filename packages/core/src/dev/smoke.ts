@@ -1,7 +1,9 @@
 // packages/core/src/dev/smoke.ts
+import { createHash } from "node:crypto";
 import { PolicyEngine } from "../policy/PolicyEngine.js"; // adjust path if needed
 import { intentHash } from "../crypto/hashes.js";
 import { ReplayEngine } from "../replay/ReplayEngine.js";
+import { decodeCanonicalState, encodeCanonicalState } from "../snapshot/CanonicalCodec.js";
 import type { State } from "../types/state.js";
 import type { Intent } from "../types/intent.js";
 import type { ReasonCode } from "../types/policy.js";
@@ -93,6 +95,10 @@ function mustIncludeReason(out: DenyResult, reason: ReasonCode) {
   if (!out.reasons.includes(reason)) {
     throw new Error(`Expected reasons to include ${reason}, got: ${out.reasons.join(",")}`);
   }
+}
+
+function assert(condition: boolean, message: string): void {
+  if (!condition) throw new Error(message);
 }
 
 async function main() {
@@ -223,24 +229,67 @@ async function main() {
     console.log("- Tool amplification test passed");
   }
 
-  // ---- Snapshot determinism smoke (manual) ----
+  // ---- Snapshot roundtrip invariant ----
   {
     const state = baseState();
-    const snap1 = engine.exportState(state);
-    const hash1 = engine.computeStateHash(state);
+    const originalStateHash = engine.computeStateHash(state);
+    const snap = engine.exportState(state);
+    const encoded = encodeCanonicalState(snap);
+    const decoded = decodeCanonicalState(encoded);
 
     const clone = structuredClone(state);
-    engine.importState(clone, snap1);
-    const hash2 = engine.computeStateHash(clone);
+    engine.importState(clone, decoded);
+    const afterHash = engine.computeStateHash(clone);
+    assert(originalStateHash === afterHash, "snapshot roundtrip hash must match");
 
-    console.log(hash1 === hash2);
+    const snapshotHash = createHash("sha256").update(encoded).digest("hex");
+    console.log(`DETERMINISM snapshotHash=${snapshotHash}`);
+  }
+
+  // ---- Decision equivalence before/after import ----
+  {
+    const sequence = [
+      intentBase({ nonce: 500n, type: "EXECUTE", tool_call: true, tool: "openai.responses" }),
+      intentBase({ nonce: 501n, type: "EXECUTE", tool_call: true, tool: "openai.responses" })
+    ];
+
+    const liveStart = baseState();
+    let liveState = liveStart;
+    const liveDecisions: Array<"ALLOW" | "DENY"> = [];
+    for (const i of sequence) {
+      const out = engine.evaluatePure(i, liveState, { mode: "fail-fast" });
+      liveDecisions.push(out.decision);
+      if (out.decision === "ALLOW") liveState = out.nextState;
+    }
+    const liveHash = engine.computeStateHash(liveState);
+
+    const importedStart = baseState();
+    const snap = engine.exportState(importedStart);
+    const encoded = encodeCanonicalState(snap);
+    const decoded = decodeCanonicalState(encoded);
+    engine.importState(importedStart, decoded);
+
+    let importedState = importedStart;
+    const importedDecisions: Array<"ALLOW" | "DENY"> = [];
+    for (const i of sequence) {
+      const out = engine.evaluatePure(i, importedState, { mode: "fail-fast" });
+      importedDecisions.push(out.decision);
+      if (out.decision === "ALLOW") importedState = out.nextState;
+    }
+    const importedHash = engine.computeStateHash(importedState);
+
+    assert(
+      liveDecisions.join(",") === importedDecisions.join(","),
+      "decision sequence must match before/after import"
+    );
+    assert(liveHash === importedHash, "final state hash must match before/after import");
   }
 
   // ---- Replay equivalence smoke (audit-level invariants) ----
   {
     const events = engine.audit.snapshot();
     const replay = ReplayEngine.replay(events, { policyId: engine.computePolicyId() });
-    console.log(replay.invariantViolations.length === 0);
+    assert(replay.invariantViolations.length === 0, "audit replay invariants must hold");
   }
 
   // ---- Deterministic rebuild fingerprint ----

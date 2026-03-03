@@ -83,14 +83,15 @@ export type State = {
 export type StateHash = string;
 
 export type CanonicalState = {
+  formatVersion: 1;
   engineVersion: string;
-  policyId?: string;
-  moduleStates: Record<string, Uint8Array>;
-  globalStateHash: StateHash;
+  policyId: string;
+  modules: Record<string, unknown>;
 };
 
 export interface ModuleStateCodec {
-  serialize(): Uint8Array;
-  deserialize(bytes: Uint8Array): void;
-  stateHash(): StateHash;
+  moduleId: string;
+  serializeState(state: State): unknown;
+  deserializeState(state: State, payload: unknown): void;
+  stateHash(state: State): StateHash;
 }
