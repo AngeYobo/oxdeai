@@ -1,6 +1,7 @@
 # @oxdeai/core
 
 **Deterministic Economic Containment Engine for Autonomous Systems**
+> Deterministic · Canonical Snapshots · Property-Tested
 
 [![npm version](https://img.shields.io/npm/v/@oxdeai/core.svg)](https://www.npmjs.com/package/@oxdeai/core)
 [![license](https://img.shields.io/npm/l/@oxdeai/core.svg)](https://github.com/AngeYobo/oxdeai-core/blob/main/packages/core/LICENSE)
@@ -82,11 +83,15 @@ It is the deterministic outer boundary.
 
 ## Deterministic Guarantees
 
-v0.5.0 formalizes three reproducible identifiers:
+v0.6.0 formalizes deterministic snapshot and identity guarantees:
 
 * `policyId` - content-addressed engine configuration
 * `stateHash` - canonical snapshot hash
 * `auditHeadHash` - tamper-evident execution trace hash
+* `formatVersion: 1` for canonical snapshots
+* canonical JSON snapshot payloads (`modules: Record<string, unknown>`)
+* portability across runtimes (no v8 blobs in snapshots)
+* decode validation rejects malformed snapshots
 
 If the engine version, module set, state, and event sequence are the same, these hashes are identical across runs.
 
@@ -100,10 +105,9 @@ Strict mode removes implicit entropy sources.
 
 ```ts
 const out = engine.evaluatePure(intent, state);
-const { policyId } = engine;
+const policyId = engine.computePolicyId();
 const stateHash = engine.computeStateHash(out.nextState);
 const auditHead = engine.audit.headHash();
-
 console.log(policyId, stateHash, auditHead);
 ```
 
@@ -200,7 +204,7 @@ import { PolicyEngine } from "@oxdeai/core";
 import type { State, Intent } from "@oxdeai/core";
 
 const engine = new PolicyEngine({
-  policy_version: "v0.5",
+  policy_version: "v0.6",
   engine_secret: process.env.OXDEAI_ENGINE_SECRET!,
   authorization_ttl_seconds: 60,
   strictDeterminism: false
@@ -209,7 +213,7 @@ const engine = new PolicyEngine({
 const now = 1730000000; // injected timestamp (seconds)
 
 const state: State = {
-  policy_version: "v0.5",
+  policy_version: "v0.6",
   period_id: "2026-02",
   kill_switch: { global: false, agents: {} },
   allowlists: {},
@@ -284,17 +288,50 @@ const rel = engine.evaluatePure(releaseIntent, out.nextState);
 * Sorted key hashing
 * Hash-chained audit log
 * Strict-mode clock injection
+* Property-based determinism tests (seeded, no deps)
+
+---
+
+## Snapshot API (v0.6)
+
+```ts
+import {
+  PolicyEngine,
+  encodeCanonicalState,
+  decodeCanonicalState
+} from "@oxdeai/core";
+
+// 1. Export canonical snapshot
+const snapshot = engine.exportState(state);
+// 2. Encode to portable bytes (canonical JSON)
+const bytes = encodeCanonicalState(snapshot);
+// 3. Decode in another process/runtime
+const decoded = decodeCanonicalState(bytes);
+// 4. Import into fresh state container
+const freshState = structuredClone(state);
+engine.importState(freshState, decoded);
+engine.computeStateHash(freshState); // identical to original
+```
+
+`importState` enforces `formatVersion: 1` and rejects policy mismatches (`policyId` must match `engine.computePolicyId()`).
+
+Snapshots are:
+
+- Canonical JSON (no v8 serialization)
+- Versioned (`formatVersion: 1`)
+- Policy-bound (policyId must match)
+- Deterministically hashed
 
 ---
 
 ## Roadmap
 
-### v0.6 -  Stateful Canonical Snapshots
+### v0.6 - Stateful Canonical Snapshots (shipped)
 
-* State-bound module codecs
-* Snapshot round-trip invariants
-* Versioned canonical snapshot format
-* Strict determinism completeness
+* State-bound module codecs (canonical JSON)
+* Snapshot round-trip invariants (smoke + property tests)
+* Versioned canonical snapshot format (formatVersion=1)
+* Strict determinism completeness (no implicit entropy)
 
 ### v0.7 -  Replay as Verification
 
@@ -313,4 +350,3 @@ const rel = engine.evaluatePure(releaseIntent, out.nextState);
 ## License
 
 Apache-2.0
-
