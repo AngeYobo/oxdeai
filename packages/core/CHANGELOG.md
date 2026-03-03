@@ -7,6 +7,22 @@ This project follows Semantic Versioning.
 
 ---
 
+## [0.5.1] - 2026-03-03
+
+### Changed
+
+* README rewritten for clarity and infra positioning.
+* Added “Show me the invariant” deterministic snippet.
+* Updated roadmap to reflect post-v0.5 direction (v0.6 snapshot hardening, v0.7 replay verification, v0.8 adapters).
+
+### Documentation
+
+* Clarified deterministic guarantees (`policyId`, `stateHash`, `auditHeadHash`).
+* Reframed project positioning as deterministic economic containment.
+* Removed outdated roadmap references (v0.3-era notes).
+
+---
+
 ## [0.5.0] - 2026-02-27
 
 ### Added
