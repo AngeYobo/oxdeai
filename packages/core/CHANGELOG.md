@@ -7,6 +7,16 @@ This project follows Semantic Versioning.
 
 ---
 
+## [0.7.1] - 2026-03-03
+
+### Added
+- Cross-process determinism test (spawn child process) to validate reproducible fingerprints.
+
+### Fixed / Hardened
+- (If applicable) any small fixes you made while adding tests.
+
+---
+
 ## [0.7.0] - 2026-03-03
 
 ### Added
