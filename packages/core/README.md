@@ -193,7 +193,7 @@ If an intent is allowed, the engine emits a signed authorization:
 
 ---
 
-## Example: Pure Evaluation (Recommended)
+## Example: Pure Evaluation
 
 ```ts
 import { PolicyEngine } from "@oxdeai/core";
