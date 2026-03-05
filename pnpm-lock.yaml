@@ -43,21 +43,21 @@ importers:
         specifier: ^7.57.6
         version: 7.57.6(@types/node@25.3.3)
 
-  packages/core/tests:
-    dependencies:
-      '@oxdeai/core':
-        specifier: workspace:*
-        version: link:..
-    devDependencies:
-      tsx:
-        specifier: ^4.21.0
-        version: 4.21.0
-
   packages/sdk:
     dependencies:
       '@oxdeai/core':
         specifier: workspace:*
         version: link:../core
+
+  tests:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../packages/core
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
 
 packages:
 
