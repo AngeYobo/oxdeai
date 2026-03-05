@@ -1,0 +1,16 @@
+{
+  "name": "@oxdeai/conformance",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "extract": "ts-node scripts/extract-vectors.ts"
+  },
+  "dependencies": {
+    "@oxdeai/core": "workspace:*"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.0.0"
+  }
+}
