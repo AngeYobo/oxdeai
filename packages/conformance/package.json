@@ -3,6 +3,18 @@
   "version": "1.0.2",
   "description": "Conformance test suite for OxDeAI Core implementations, ensuring compliance with the deterministic policy engine protocol through standardized test cases and validation tools.",
   "license": "Apache-2.0",
+  "keywords": [
+    "oxdeai",
+    "conformance",
+    "protocol",
+    "verification",
+    "deterministic",
+    "test-vectors",
+    "compliance",
+    "audit",
+    "snapshot",
+    "envelope"
+  ],
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
