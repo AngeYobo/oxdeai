@@ -7,6 +7,31 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.0.2] - 2026-03-05
+
+### Added
+
+- Published protocol JSON Schemas for core artifacts:
+  - `Intent`
+  - `CanonicalState`
+  - `Authorization`
+  - `AuditEvent` / audit log list
+  - `VerificationEnvelopeV1`
+  - `VerificationResult`
+- Schema validation utilities under `src/schemas`.
+- Schema validation script: `pnpm -C packages/core schema:validate`.
+
+### Changed
+
+- Verification/schema handling refined to keep deterministic validation behavior aligned with existing protocol semantics.
+- Protocol and integration documentation updated (`protocol/` companion docs).
+
+### Notes
+
+- Patch release only; no intentional protocol-breaking changes vs `1.0.1`.
+
+---
+
 ## [1.0.1] - 2026-03-05
 
 ### Changed
