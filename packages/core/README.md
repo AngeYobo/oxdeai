@@ -12,7 +12,7 @@ Deterministic Economic Containment Engine for Autonomous Systems
 
 `@oxdeai/core` is a stable protocol library.
 
-Version 1.0.0 freezes the stateless verification surface introduced in v0.9:
+Version 1.0.1 preserves the stateless verification surface frozen in v1.0.0:
 
 - verifySnapshot
 - verifyAuditEvents
