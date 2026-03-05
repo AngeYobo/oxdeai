@@ -7,6 +7,15 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.0.1] - 2026-03-05
+
+### Changed
+
+- Documentation and release metadata updates for post-1.0 protocol stability.
+- Clarified status wording to reflect stable verification surface continuity after `1.0.0`.
+
+---
+
 ## [1.0.0] - 2026-03-04
 
 Protocol stability release.
