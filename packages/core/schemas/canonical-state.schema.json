@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oxdeai.org/schemas/v1/canonical-state.schema.json",
+  "title": "OxDeAI CanonicalState",
+  "description": "Versioned canonical snapshot object used for portable verification.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "engineVersion", "policyId", "modules"],
+  "properties": {
+    "formatVersion": { "type": "integer", "const": 1 },
+    "engineVersion": { "type": "string", "minLength": 1 },
+    "policyId": { "type": "string", "minLength": 1 },
+    "modules": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

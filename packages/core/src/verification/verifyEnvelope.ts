@@ -19,11 +19,11 @@ export function verifyEnvelope(
   let envelope;
   try {
     envelope = decodeEnvelope(envelopeBytes);
-  } catch {
+  } catch (error) {
     return {
       ok: false,
       status: "invalid",
-      violations: [{ code: "ENVELOPE_MALFORMED", message: "envelope decode failed" }]
+      violations: [{ code: "ENVELOPE_MALFORMED", message: (error as Error).message || "envelope decode failed" }]
     };
   }
 

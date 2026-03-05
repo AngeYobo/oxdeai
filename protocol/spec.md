@@ -1,111 +1,247 @@
-# OxDeAI-core Specification v0.1
+# OxDeAI SPEC (Developer Companion, Non-Normative)
 
-## 1. Overview
+This document is an implementation and integration companion to the OxDeAI protocol specification.
 
-OxDeAI-core is a deterministic economic guardrails engine for autonomous systems and AI agents.
-
-The engine evaluates:
-
-    evaluate(intent, state) -> decision
-
-decision ∈ { ALLOW, DENY }
-
-Evaluation is deterministic.
+- **Normative source of truth:** `PROTOCOL.md` / `protocol/protocol.md`
+- This file is **non-normative** and explains rationale, patterns, and practical guidance.
+- If any statement here conflicts with the protocol spec, **the protocol spec wins**.
 
 ---
 
-## 2. Fail-Closed Semantics
+## 1) Why Pre-Execution Economic Containment
 
-If state is malformed or incomplete:
+Traditional observability is post-fact:
+- detect anomaly
+- alert operator
+- respond after damage
 
-    decision = DENY (STATE_INVALID)
+OxDeAI is pre-execution:
+- evaluate intent against policy state
+- allow or deny before side effects
+- emit verifiable artifacts
 
-The engine MUST never ALLOW under uncertainty.
+This shifts control from:
+- **“detect and react”**  
+to
+- **“verify and gate”**
 
----
-
-## 3. Normative Predicates (evaluated on PRE-STATE)
-
-All predicates below are evaluated against the **pre-evaluation state** (snapshot at function entry).
-
-An intent MAY be ALLOWED iff ALL predicates hold:
-
-P-KILL:
-    global_kill == false
-    agent_kill == false
-
-P-ALLOWLIST:
-    action_type ∈ allowed_action_types
-    asset ∈ allowed_assets
-    target ∈ allowed_targets
-
-P-CAP:
-    amount ≤ max_amount_per_action
-
-P-BUDGET:
-    spent_pre + amount ≤ budget_limit
-
-P-VELOCITY:
-    if within_window(pre_state):
-        count_pre + 1 ≤ max_actions
-
-P-REPLAY:
-    nonce not previously seen (pre_state)
+Practical effect:
+- budget overruns are blocked, not merely observed
+- replay/duplication is rejected before execution
+- concurrency and recursion risks are bounded by policy, not dashboards
 
 ---
 
-## 4. State Update Semantics
+## 2) System Boundary
 
-State updates are applied **only if decision = ALLOW**.
+```text
++---------------------------+      +-----------------------+      +-----------------------------+
+| Agent / Runtime / Orchestrator | -> | OxDeAI Policy Engine | -> | Tools / Payments / Infra APIs |
++---------------------------+      +-----------------------+      +-----------------------------+
+               |                               |
+               |                               +--> Canonical Snapshot
+               |                               +--> Audit Events (hash-chained)
+               |                               +--> Authorization (ALLOW only)
+               |
+               +--> persists state/audit + forwards envelope for offline verification
+```
 
-After an ALLOW decision, the implementation MAY update internal counters, such as:
-
-- spent_in_period[agent] := spent_pre + amount
-- velocity.counters[agent] := (window_start, count_pre + 1) or reset window if expired
-- replay protection store: mark (agent_id, nonce) as seen
-
-After a DENY decision, the implementation MUST NOT apply economic state increments
-(spent/counters). (Audit logging is allowed.)
-
----
-
-## 5. Meta-Invariant
-
-ALLOW ⇒ all normative predicates hold (on PRE-STATE).
-
-This property is enforced through fuzz + meta-property testing.
+Boundary rule of thumb:
+- Side effects (tool call, spend, provisioning) MUST happen only after `ALLOW`.
 
 ---
 
-## 6. Authorization
+## 3) Happy Path Sequence
 
-If decision = ALLOW:
+## 3.1 Deterministic evaluation
 
-authorization = HMAC_SHA256(engine_secret, canonical_intent)
+1. Runtime loads current policy `state`.
+2. Runtime builds `intent`.
+3. Runtime calls `evaluatePure(intent, state)` (or `evaluate(...)` if using mutating commit path).
+4. Engine returns:
+   - `DENY` with reasons, or
+   - `ALLOW` + `authorization` + `nextState`.
 
-Verification must be constant-time.
+## 3.2 Commit and execute
 
----
+On `ALLOW`:
 
-## 7. Audit Log
+1. Persist `nextState` atomically.
+2. Persist emitted audit events in order.
+3. Execute external side effect (tool/payment/infra).
+4. Optionally append execution attestation event.
 
-Each evaluation result is appended to a hash chain:
+On `DENY`:
 
-hash_n = SHA256(hash_(n-1) || decision_payload)
-
-Any tampering invalidates the chain.
-
----
-
-## 8. Determinism
-
-Given identical (intent, pre-state):
-
-    evaluate() MUST return identical decision and reason codes.
-
-No randomness is permitted inside the engine.
+1. Persist audit events.
+2. Do not execute side effect.
+3. Return deny reason(s) upstream.
 
 ---
 
-Spec Version: 0.1
-Status: Deterministic, invariant-driven.
+## 4) Offline Verification Flow
+
+Typical auditor flow:
+
+```text
+Producer runtime
+  -> exports VerificationEnvelopeV1 (snapshot + events)
+  -> sends envelope bytes to auditor/verifier
+
+Auditor
+  -> runs verifyEnvelope(envelopeBytes)
+  -> gets VerificationResult { status, violations, policyId, stateHash, auditHeadHash }
+  -> stores report / compliance evidence
+```
+
+What this enables:
+- independent replay-grade verification without running the live engine runtime
+- deterministic evidence sharing across org boundaries
+
+---
+
+## 5) Failure Handling Matrix
+
+| Result | Meaning | Recommended Runtime Action |
+|---|---|---|
+| `DENY` (evaluation) | Policy rejected intent | Fail closed; do not execute side effect; return reasons |
+| `invalid` (verification) | Artifact/trace malformed or inconsistent | Treat as security/compliance failure; reject artifact |
+| `inconclusive` (verification) | Structurally valid but insufficient strict anchors | Do not auto-approve; escalate/manual review or best-effort policy |
+| `ok` (verification) | Artifact verifies under selected mode | Accept/report as verified |
+
+Operational policy tip:
+- strict environments SHOULD treat `inconclusive` as non-pass for settlement/compliance decisions.
+
+---
+
+## 6) Recommended v1 Module Set
+
+Recommended baseline module set for production containment:
+
+- `BudgetModule`
+- `VelocityModule`
+- `ConcurrencyModule`
+- `ReplayModule`
+- `RecursionDepthModule`
+- `KillSwitchModule`
+- `ToolAmplificationModule`
+- `AllowlistModule`
+
+Why this set:
+- spend control (`Budget`, per-action caps)
+- rate/loop control (`Velocity`, `ToolAmplification`, `RecursionDepth`)
+- duplication resistance (`Replay`)
+- blast-radius control (`Concurrency`)
+- emergency stop (`KillSwitch`)
+- explicit surface restriction (`Allowlist`)
+
+## 6.1 Extending with custom modules
+
+Custom modules should:
+1. Consume only explicit `(intent, workingState)` input.
+2. Return deterministic `ALLOW/DENY` + optional `stateDelta`.
+3. Avoid hidden entropy (no random/system time reads inside module logic).
+4. Define canonical state slice serialization if snapshot hashing includes the module.
+
+---
+
+## 7) State Persistence Patterns
+
+## 7.1 Atomic commit
+
+Persist state with atomic write pattern:
+- write temp file / transaction row
+- fsync/commit
+- rename/commit pointer
+
+Never partially overwrite live state.
+
+## 7.2 Idempotency keys
+
+Use `intent_id` / `nonce` as idempotency keys at runtime boundaries.
+- repeated delivery should not duplicate side effects.
+
+## 7.3 WAL or append-first strategy
+
+For robust recovery:
+- append audit event(s) first or in same transaction boundary as state commit
+- on crash, recover by replaying committed audit/state logs
+
+## 7.4 Crash recovery
+
+On restart:
+1. load last committed state
+2. verify audit chain integrity
+3. reconcile pending executions against authorization IDs and local execution ledger
+
+---
+
+## 8) Clock and Time Guidance
+
+Time-sensitive controls include:
+- authorization expiry
+- velocity windows
+- replay windows
+
+Recommendations:
+1. Use monotonic non-decreasing runtime timestamps for event emission.
+2. Define drift tolerance policy at system boundary (e.g., max accepted skew).
+3. In strict deterministic contexts, inject `now` explicitly; avoid implicit wall clock reads in verification/evidence pipelines.
+4. Keep replay window and velocity window parameters explicit in state/policy.
+
+---
+
+## 9) Security Guidance
+
+## 9.1 Secret key custody
+
+- Engine signing secret MUST be protected (KMS/HSM or equivalent).
+- Never embed long-lived secrets in client-side or untrusted runtime surfaces.
+
+## 9.2 Rotation strategy
+
+- Support key rotation with planned overlap period.
+- Record key metadata externally (or via key-id mapping) for historical verification.
+
+## 9.3 Key IDs
+
+Even if current artifact carries only signature, deployments SHOULD maintain key-id association in runtime metadata or audit context for operational debugging and rotation traceability.
+
+## 9.4 Multi-tenant isolation
+
+Per tenant/environment:
+- isolate policy state
+- isolate signing keys
+- isolate audit streams
+- isolate authorization namespaces
+
+Never share mutable state buckets across tenants.
+
+---
+
+## 10) Integration Guidance
+
+Minimal runtime loop:
+
+1. Load state.
+2. Build intent.
+3. Evaluate.
+4. If ALLOW:
+   - persist nextState + audit
+   - execute side effect
+5. If DENY:
+   - persist audit
+   - reject request
+6. Periodically package snapshot + audit into envelope for external verification.
+
+This keeps execution gating deterministic while preserving independent auditability.
+
+---
+
+## 11) Practical Notes
+
+- Keep protocol-facing serialization canonical from day one.
+- Treat verification outputs as first-class operational signals.
+- Keep module ordering fixed and explicit.
+- Avoid introducing non-deterministic dependencies in policy-critical path.
+- Use conformance vectors to validate non-TypeScript implementations (Go/Rust/Python).

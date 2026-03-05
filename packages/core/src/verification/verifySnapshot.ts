@@ -1,5 +1,6 @@
 import { sha256HexFromJson } from "../crypto/hashes.js";
 import { decodeCanonicalState } from "../snapshot/CanonicalCodec.js";
+import { mapIssuesToViolation, validateCanonicalStateJson } from "../schemas/validate.js";
 import type { VerificationResult, VerificationViolation } from "./types.js";
 
 function sortViolations(violations: VerificationViolation[]): VerificationViolation[] {
@@ -33,6 +34,16 @@ export function verifySnapshot(
     snapshot = decodeCanonicalState(snapshotBytes);
   } catch {
     return invalid("snapshot decode failed");
+  }
+
+  const schemaIssues = validateCanonicalStateJson(snapshot);
+  if (schemaIssues.length > 0) {
+    return {
+      ok: false,
+      status: "invalid",
+      violations: sortViolations(mapIssuesToViolation("SNAPSHOT_CORRUPT", schemaIssues)),
+      policyId: typeof (snapshot as any).policyId === "string" ? (snapshot as any).policyId : undefined
+    };
   }
 
   if (snapshot.formatVersion !== 1) {

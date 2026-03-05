@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oxdeai.org/schemas/v1/verification-result.schema.json",
+  "title": "OxDeAI VerificationResult",
+  "description": "Unified stateless verifier result shape.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ok", "status", "violations"],
+  "properties": {
+    "ok": { "type": "boolean" },
+    "status": { "type": "string", "enum": ["ok", "invalid", "inconclusive"] },
+    "violations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "MALFORMED_EVENT",
+              "POLICY_ID_MISSING",
+              "POLICY_ID_MISMATCH",
+              "MIXED_POLICY_ID",
+              "NON_MONOTONIC_TIMESTAMP",
+              "HASH_CHAIN_INVALID",
+              "NO_STATE_ANCHOR",
+              "SNAPSHOT_CORRUPT",
+              "ENVELOPE_MALFORMED"
+            ]
+          },
+          "message": { "type": "string" },
+          "index": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "policyId": { "type": "string" },
+    "stateHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "auditHeadHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

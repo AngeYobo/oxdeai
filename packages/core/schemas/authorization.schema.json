@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oxdeai.org/schemas/v1/authorization.schema.json",
+  "title": "OxDeAI Authorization",
+  "description": "Signed ALLOW authorization emitted by the policy engine.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "authorization_id",
+    "intent_hash",
+    "policy_version",
+    "state_snapshot_hash",
+    "decision",
+    "expires_at",
+    "engine_signature"
+  ],
+  "properties": {
+    "authorization_id": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "intent_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "policy_version": { "type": "string", "minLength": 1 },
+    "state_snapshot_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "decision": { "type": "string", "const": "ALLOW" },
+    "expires_at": { "type": "integer", "minimum": 0 },
+    "engine_signature": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

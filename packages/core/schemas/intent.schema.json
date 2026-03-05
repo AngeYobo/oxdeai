@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oxdeai.org/schemas/v1/intent.schema.json",
+  "title": "OxDeAI Intent",
+  "description": "Protocol-level intent payload (JSON representation).",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent_id",
+        "agent_id",
+        "action_type",
+        "amount",
+        "target",
+        "timestamp",
+        "metadata_hash",
+        "nonce",
+        "signature"
+      ],
+      "properties": {
+        "intent_id": { "type": "string", "minLength": 1 },
+        "agent_id": { "type": "string", "minLength": 1 },
+        "action_type": { "type": "string", "enum": ["PAYMENT", "PURCHASE", "PROVISION", "ONCHAIN_TX"] },
+        "depth": { "type": "integer", "minimum": 0 },
+        "amount": { "oneOf": [{ "type": "integer" }, { "type": "string", "pattern": "^-?[0-9]+n?$" }] },
+        "asset": { "type": "string" },
+        "target": { "type": "string", "minLength": 1 },
+        "timestamp": { "type": "integer", "minimum": 0 },
+        "metadata_hash": { "type": "string", "minLength": 1 },
+        "nonce": { "oneOf": [{ "type": "integer" }, { "type": "string", "pattern": "^-?[0-9]+n?$" }] },
+        "signature": { "type": "string" },
+        "tool": { "type": "string" },
+        "tool_call": { "type": "boolean" },
+        "type": { "type": "string", "enum": ["EXECUTE"] },
+        "authorization_id": { "type": "string" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent_id",
+        "agent_id",
+        "action_type",
+        "amount",
+        "target",
+        "timestamp",
+        "metadata_hash",
+        "nonce",
+        "signature",
+        "type",
+        "authorization_id"
+      ],
+      "properties": {
+        "intent_id": { "type": "string", "minLength": 1 },
+        "agent_id": { "type": "string", "minLength": 1 },
+        "action_type": { "type": "string", "enum": ["PAYMENT", "PURCHASE", "PROVISION", "ONCHAIN_TX"] },
+        "depth": { "type": "integer", "minimum": 0 },
+        "amount": { "oneOf": [{ "type": "integer" }, { "type": "string", "pattern": "^-?[0-9]+n?$" }] },
+        "asset": { "type": "string" },
+        "target": { "type": "string", "minLength": 1 },
+        "timestamp": { "type": "integer", "minimum": 0 },
+        "metadata_hash": { "type": "string", "minLength": 1 },
+        "nonce": { "oneOf": [{ "type": "integer" }, { "type": "string", "pattern": "^-?[0-9]+n?$" }] },
+        "signature": { "type": "string" },
+        "tool": { "type": "string" },
+        "tool_call": { "type": "boolean" },
+        "type": { "type": "string", "const": "RELEASE" },
+        "authorization_id": { "type": "string", "minLength": 1 }
+      }
+    }
+  ]
+}

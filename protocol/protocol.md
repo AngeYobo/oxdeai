@@ -1,85 +1,105 @@
-# OxDeAI Protocol Specification
+# OxDeAI Protocol v1.0.0
 
-Version: 1.0.0  
-Status: Stable
+This document is the normative protocol specification for OxDeAI v1.0.0.
 
-## 1. Introduction
-OxDeAI is a deterministic economic containment protocol for autonomous systems and AI agents. It enforces economic constraints before execution, so systems can decide whether an action is economically permissible prior to calling external tools, APIs, payment rails, or infrastructure.
+## 1. Conformance Language
 
-OxDeAI addresses operational failure modes including:
-- runaway agent spending
-- uncontrolled tool/API execution
-- recursive planning explosions
-- unbounded concurrency growth
-- replayed actions and duplicate effects
+The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHOULD**, **SHOULD NOT**, and **MAY** are to be interpreted as described in RFC 2119.
 
-This document defines the protocol, not a specific implementation. Any language/runtime implementation is compliant if it satisfies this specification and produces equivalent deterministic outcomes.
+---
 
-## 2. Protocol Design Principles
-OxDeAI implementations MUST follow these principles:
-- Deterministic evaluation: identical `(intent, state, policy configuration)` MUST produce identical outputs.
-- Fail-closed behavior: malformed state/intent or verification ambiguity MUST deny execution.
-- Portable state: policy state MUST be serializable into canonical snapshots for transfer and verification.
-- Verifiable artifacts: outputs MUST be independently verifiable without engine re-execution when possible.
-- Replayable history: audit traces MUST support deterministic integrity validation.
+## 2. Scope and Goals
 
-## 3. Core Concepts
-### Intent
-A structured request describing a proposed economic action.
-Purpose: input to policy evaluation.
+OxDeAI defines deterministic economic containment for autonomous systems.
 
-### State
-The full policy state at evaluation time.
-Purpose: source of economic limits and counters.
+Given `(intent, state)`, a compliant implementation produces deterministic outputs:
 
-### Policy Engine
-A deterministic function over `(intent, state)` producing decision artifacts.
-Purpose: decide ALLOW or DENY and compute next state.
+- `decision` (`ALLOW` or `DENY`)
+- `authorization` (only when `ALLOW`)
+- `nextState` (only when `ALLOW`)
+- audit events for verifiable replay
 
-### Authorization
-A signed artifact emitted only on ALLOW.
-Purpose: bind a permitted action to policy identity, state hash, and expiry.
+This protocol is implementation-independent. `@oxdeai/core` is a reference implementation, not the protocol itself.
 
-### Audit Event
-An append-only event describing evaluation lifecycle transitions.
-Purpose: create tamper-evident execution history.
+---
 
-### Canonical Snapshot
-Canonical serialized state artifact.
-Purpose: cross-runtime portability and deterministic hashing.
+## 3. Glossary
 
-### Verification Envelope
-Portable bundle containing snapshot bytes and audit events.
-Purpose: third-party stateless verification.
+- **Intent**: requested action, actor, amount, nonce, timestamp, and related context.
+- **State**: policy state used for evaluation and mutation.
+- **PolicyEngine**: deterministic evaluator over `(intent, state)`.
+- **CanonicalState**: portable canonical snapshot object.
+- **Authorization**: signed, expiring allow artifact bound to intent and state hash.
+- **AuditEvent**: append-only event emitted during evaluation.
+- **Audit Head Hash**: chain tip hash over ordered audit events.
+- **VerificationEnvelopeV1**: portable artifact containing snapshot + events.
+- **VerificationResult**: unified verifier output (`ok|invalid|inconclusive`) with violations.
 
-## 4. Intent Structure
-An intent MUST be a deterministic object with protocol-defined fields.
+---
 
-Example shape:
-```json
-{
-  "agent_id": "agent-1",
-  "action_type": "PAYMENT",
-  "amount": "1000000",
-  "nonce": "42",
-  "timestamp": 1730000000,
-  "depth": 0,
-  "tool": "openai.responses"
-}
-```
+## 4. Threat Model
 
-Field semantics:
-- `agent_id`: principal requesting action.
-- `action_type`: protocol action category.
-- `amount`: fixed-point integer quantity in the smallest denomination of the applicable asset/unit. Implementations MUST treat `amount` as an integer count of minor units and MUST NOT interpret it as floating point. If `asset` is present in the intent, denomination is resolved from that field; if `asset` is absent, denomination MUST be resolved from policy context for the action.
-- `nonce`: per-agent uniqueness input for replay protection.
-- `timestamp`: UNIX seconds used by time-window rules.
-- `depth`: recursion/planning depth for bounded recursion control.
-- `tool`: optional tool/API identifier for amplification controls.
+OxDeAI addresses these classes of failures:
 
-Implementations MAY include additional fields. For deterministic identity, implementations MUST define a canonical binding set for intent hashing and MUST apply it consistently across signing and verification. Unknown/non-binding fields MUST be excluded from canonical intent identity; binding fields MUST be included.
+- runaway spending
+- replayed intents / duplicate effects
+- unbounded concurrency
+- recursion/amplification loops
+- tampered or reordered audit traces
+- schema corruption / malformed inputs
 
-For v1.0, the canonical `intent_hash` binding set is:
+OxDeAI does **not** replace domain authn/authz, settlement finality, or infrastructure-level fault tolerance.
+
+---
+
+## 5. Canonical JSON Rules (Normative)
+
+All protocol hashing/encoding paths MUST use canonical JSON.
+
+Canonicalization rules:
+
+1. Objects: keys MUST be sorted lexicographically ascending.
+2. Arrays: order MUST be preserved as provided by protocol rules.
+3. `undefined`: MUST normalize to `null` before serialization.
+4. BigInt / integer values outside JSON safe range: MUST be encoded as base-10 strings.
+5. Non-finite numbers (`NaN`, `+/-Infinity`) MUST be rejected.
+6. UTF-8 encoding MUST be used for bytes prior to hashing.
+
+`sha256HexFromJson(x)` is defined as:
+
+- `sha256( utf8(canonicalJson(x)) )` in lowercase hex.
+
+---
+
+## 6. Intent Schema and Hashing
+
+## 6.1 Intent fields
+
+A protocol Intent MUST include:
+
+- `intent_id: string`
+- `agent_id: string`
+- `action_type: "PAYMENT" | "PURCHASE" | "PROVISION" | "ONCHAIN_TX"`
+- `amount: bigint` (semantic integer quantity; unit determined by `asset` or policy context)
+- `target: string`
+- `timestamp: number` (unix seconds, integer)
+- `metadata_hash: string`
+- `nonce: bigint`
+- `signature: string`
+
+Optional:
+
+- `depth?: number`
+- `asset?: string`
+- `type?: "EXECUTE" | "RELEASE"` (default `EXECUTE`)
+- `authorization_id?` (REQUIRED when `type="RELEASE"`)
+- `tool?: string`
+- `tool_call?: boolean`
+
+## 6.2 Binding projection for `intent_hash`
+
+`intent_hash` MUST be computed from canonical JSON over the following binding fields only (if present):
+
 - `intent_id`
 - `agent_id`
 - `action_type`
@@ -95,218 +115,372 @@ For v1.0, the canonical `intent_hash` binding set is:
 - `tool`
 - `tool_call`
 
-`signature` MUST be excluded from `intent_hash`. Unknown fields not listed above MUST be excluded.
+`signature` MUST NOT be included in `intent_hash`.  
+Unknown/non-binding fields MUST NOT affect `intent_hash`.
 
-## 5. Policy State
-State MUST contain module-relevant slices. Typical slices include:
-- budget state (`budget_limit`, `spent_in_period`)
-- velocity counters (window config + counters)
-- replay window (`window_seconds`, nonce history)
-- recursion limits (`max_depth`)
-- concurrency (`max_concurrent`, active slots)
-- kill switches (global/per-agent)
-- allowlists (action, asset, target)
-- tool amplification limits (`max_calls`, call history)
+### Example Intent JSON
 
-State evolution rule:
-- Each evaluation computes a deterministic `nextState`.
-- DENY MUST NOT commit partial mutations.
-- ALLOW state transitions MUST be deterministic and fully derivable from prior state plus intent.
-- State/module keys MUST be serialized with deterministic sorted-key ordering for canonical hashing and cross-runtime consistency.
-
-## 6. Deterministic Evaluation
-Protocol function:
-```text
-evaluate(intent, state) -> { decision, reasons?, authorization?, nextState? }
-```
-
-Decision semantics:
-- `ALLOW`: action is economically permitted.
-- `DENY`: action is blocked; execution MUST NOT proceed.
-
-Determinism requirements:
-- Module ordering MUST be stable.
-- State merge/transition order MUST be stable.
-- Evaluation MUST avoid hidden entropy (e.g., random values, implicit wall-clock access in strict deterministic mode).
-- Equivalent semantic inputs MUST produce identical decision artifacts.
-
-Clock source rule:
-- Time-dependent evaluation MUST use an explicit timestamp input.
-- Implementations MUST NOT call system wall-clock APIs inside deterministic evaluation logic.
-- If an implementation supports non-strict mode with implicit clock fallback, strict deterministic mode MUST disable that fallback.
-
-## 7. Authorization
-Authorization is emitted only on ALLOW.
-
-Canonical fields:
-- `intent_hash`
-- `policy_id`
-- `state_hash`
-- `expires_at`
-- `signature`
-
-Example:
 ```json
 {
-  "intent_hash": "<hex>",
-  "policy_id": "<hex>",
-  "state_hash": "<hex>",
-  "expires_at": 1730000060,
-  "signature": "<hex>"
+  "intent_id": "intent-42",
+  "agent_id": "agent-1",
+  "action_type": "PROVISION",
+  "type": "EXECUTE",
+  "amount": "320",
+  "asset": "GPU_MINUTE",
+  "target": "us-east-1",
+  "timestamp": 1772718102,
+  "metadata_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "nonce": "1",
+  "signature": "agent-signature-placeholder",
+  "tool_call": true,
+  "tool": "openai.responses"
 }
 ```
 
-Signature algorithm:
-- Reference profile: HMAC-SHA256 over canonical serialized authorization payload.
-- Compliant implementations MUST use canonical serialization for signing and verification.
-- The canonical signing payload for v1.0 MUST include exactly these fields: `intent_hash`, `policy_id`, `state_hash`, `expires_at`.
-- Payload keys MUST be serialized in canonical sorted-key order prior to signature computation.
-- Signature is proof; intent identity SHOULD be derived from canonical unsigned intent payload.
-- `expires_at` MUST be computed deterministically. The v1.0 reference rule is: `expires_at = intent.timestamp + authorization_ttl_seconds`, where `authorization_ttl_seconds` is policy configuration.
+---
 
-Canonical signing payload example:
-```json
-{
-  "expires_at": 1730000060,
-  "intent_hash": "<hex>",
-  "policy_id": "<hex>",
-  "state_hash": "<hex>"
-}
-```
+## 7. Policy State and Canonical Snapshots
 
-## 8. Canonical Snapshots
-Snapshot format is versioned.
+## 7.1 Normative State fields
 
-CanonicalState v1:
+A conforming state MUST include:
+
+- `policy_version: string`
+- `period_id: string`
+- `kill_switch`
+- `allowlists`
+- `budget`
+- `max_amount_per_action`
+- `velocity`
+- `replay`
+- `concurrency`
+- `recursion`
+- `tool_limits`
+
+Per-agent required config MUST exist for the evaluated `intent.agent_id`:
+budget/caps/concurrency/recursion/tool limits.
+
+## 7.2 CanonicalState (snapshot object)
+
+`CanonicalState` MUST be:
+
 ```json
 {
   "formatVersion": 1,
-  "engineVersion": "1.0.0",
-  "policyId": "<hex>",
-  "modules": {
-    "BudgetModule": {"budget_limit": {"agent-1": "10000"}}
-  }
+  "engineVersion": "string",
+  "policyId": "string",
+  "modules": {}
 }
 ```
 
 Rules:
-- Encoding MUST be canonical JSON.
-- Object keys MUST be sorted deterministically.
-- Integer-like large values (e.g., BigInt) MUST be normalized to canonical decimal strings.
-- `formatVersion` MUST be validated on decode.
-- `policyId` binding MUST be enforced at import/verification boundaries.
-- `engineVersion` MUST be parsed and surfaced by verifiers; mismatch against local runtime version SHOULD be treated as a compatibility warning, not an automatic protocol-invalid condition.
 
-## 9. Audit Chain
-Evaluation emits ordered audit events.
+- `formatVersion` MUST equal `1`.
+- `modules` MUST be a JSON object (`Record<string, unknown>`).
+- Snapshot bytes MUST be `utf8(canonicalJson(CanonicalState))`.
 
-Event examples:
-- `INTENT_RECEIVED`
-- `DECISION`
-- `AUTH_EMITTED`
-- optional `STATE_CHECKPOINT`
+### Example CanonicalState JSON
 
-Hash chaining rule:
-```text
-genesis = SHA256("OxDeAI::GENESIS::v1")
-head_0 = genesis
-head_1 = SHA256(head_0 || 0x0A || canonical(event_0))
-head_(k+1) = SHA256(head_k || 0x0A || canonical(event_k))
-```
-
-Tamper detection:
-- Any event mutation, insertion, deletion, or reorder changes downstream head hash.
-- Recomputed head mismatch implies trace integrity failure.
-
-## 10. Replay Verification
-Replay verification validates an event sequence without executing business side effects.
-
-Checks:
-- policy consistency (`policyId` invariants)
-- non-decreasing timestamps
-- chain hash recomputation integrity
-- state checkpoint anchor presence in strict mode
-
-Result statuses:
-- `ok`: checks passed
-- `invalid`: integrity/policy/timestamp violations
-- `inconclusive`: no invalid violation, but strict anchoring requirement not satisfied
-
-Host runtime handling:
-- Hosts MUST treat `invalid` as deny/no-execute.
-- Hosts SHOULD treat `inconclusive` as deny/no-execute in fail-closed deployments.
-- If a host permits `inconclusive`, it MUST apply an explicit local override policy outside this protocol.
-
-## 11. Verification Envelope
-Envelope format (`VerificationEnvelopeV1`) combines snapshot bytes and audit events.
-
-Wire shape:
 ```json
 {
   "formatVersion": 1,
-  "snapshot": "<base64>",
+  "engineVersion": "1.0.1",
+  "policyId": "6586c13bd8fa4e9de87d4c84ca8efdb7677e0a397609bd9ded7ee9ef048274de",
+  "modules": {
+    "BudgetModule": {
+      "budget_limit": { "agent-1": "1000000" },
+      "spent_in_period": { "agent-1": "320" }
+    },
+    "VelocityModule": {
+      "config": { "window_seconds": 60, "max_actions": 10 },
+      "counters": { "agent-1": { "window_start": 1772718102, "count": 1 } }
+    }
+  }
+}
+```
+
+---
+
+## 8. Authorization Artifact
+
+On `ALLOW`, an Authorization MUST be emitted with:
+
+- `authorization_id: string`
+- `intent_hash: string`
+- `policy_version: string` (policy binding identifier in v1 reference profile)
+- `state_snapshot_hash: string`
+- `decision: "ALLOW"`
+- `expires_at: number` (unix seconds)
+- `engine_signature: string` (HMAC-SHA256 hex)
+
+Signing payload MUST be canonical JSON over:
+
+- `intent_hash`
+- `policy_version`
+- `state_snapshot_hash`
+- `decision`
+- `expires_at`
+
+`expires_at` MUST be computed as:
+
+- `intent.timestamp + authorization_ttl_seconds`
+
+`authorization_id` SHOULD be deterministic from payload + signature (reference profile: SHA-256 of canonical payload with signature included).
+
+### Example Authorization JSON
+
+```json
+{
+  "authorization_id": "19e9022f6bc34e77489c3c480629ae41a68f17c8b42685c482ae060755b800ef",
+  "intent_hash": "0378394eb990e096126013b090ac3271c9368074477f58d46f03ba18e1aa7510",
+  "policy_version": "v1",
+  "state_snapshot_hash": "8e0d8542b8c9b02fdd9862d720f4755ff3ae04bd51fae5fb58dae7089ddf1beb",
+  "decision": "ALLOW",
+  "expires_at": 1772718222,
+  "engine_signature": "hex-hmac-sha256"
+}
+```
+
+---
+
+## 9. Audit Events and Hash Chaining
+
+## 9.1 Event union
+
+Audit events MUST be one of:
+
+- `INTENT_RECEIVED`
+- `DECISION`
+- `AUTH_EMITTED`
+- `EXECUTION_ATTESTED`
+- `STATE_CHECKPOINT`
+
+All events MUST include:
+
+- `timestamp: number` (finite, unix seconds)
+- optional `policyId: string`
+
+`STATE_CHECKPOINT` MUST include:
+
+- `stateHash: string` (64 lowercase hex) when used as strict anchor.
+
+## 9.2 Chain algorithm
+
+Canonical event bytes are computed from event object with:
+
+- `policyId` normalized as `policyId ?? null`
+- canonical JSON, UTF-8 bytes
+
+Chain recurrence:
+
+- `head_0 = ""` (empty UTF-8 string)
+- `head_{n+1} = sha256_hex( head_n || "\n" || canonical_event_bytes_n )`
+
+Events MUST be processed in order.  
+`timestamp` MUST be non-decreasing across the sequence.
+
+### Example audit excerpt
+
+```json
+[
+  {
+    "type": "INTENT_RECEIVED",
+    "intent_hash": "0378394eb990e096126013b090ac3271c9368074477f58d46f03ba18e1aa7510",
+    "agent_id": "agent-1",
+    "timestamp": 1772718102,
+    "policyId": "6586c13bd8fa4e9de87d4c84ca8efdb7677e0a397609bd9ded7ee9ef048274de"
+  },
+  {
+    "type": "DECISION",
+    "intent_hash": "0378394eb990e096126013b090ac3271c9368074477f58d46f03ba18e1aa7510",
+    "decision": "ALLOW",
+    "reasons": [],
+    "policy_version": "v1",
+    "timestamp": 1772718102,
+    "policyId": "6586c13bd8fa4e9de87d4c84ca8efdb7677e0a397609bd9ded7ee9ef048274de"
+  }
+]
+```
+
+Example resulting head hash:
+`3cb6631cf0202df06094502b085878b2ad93bb0dbab590144ac6be1cd37d044e`
+
+---
+
+## 10. Stateless Verification APIs
+
+The protocol defines three pure verifiers:
+
+- `verifySnapshot(snapshotBytes)`
+- `verifyAuditEvents(events, opts?)`
+- `verifyEnvelope(envelopeBytes, opts?)`
+
+All MUST return unified `VerificationResult`:
+
+```json
+{
+  "ok": true,
+  "status": "ok",
+  "violations": [],
+  "policyId": "optional",
+  "stateHash": "optional",
+  "auditHeadHash": "optional"
+}
+```
+
+Status enum:
+
+- `ok`
+- `invalid`
+- `inconclusive`
+
+Violations MUST be deterministically sorted by:
+
+1. `code` (lexicographic)
+2. `index` (missing treated as `0`)
+
+`inconclusive` is reserved for traces that are structurally valid but not strictly anchor-complete (for example: no `STATE_CHECKPOINT` when strict anchors are required).
+
+---
+
+## 11. Verification Envelope (V1)
+
+`VerificationEnvelopeV1` logical structure:
+
+- `formatVersion: 1`
+- `snapshot: Uint8Array`
+- `events: AuditEvent[]`
+
+Wire format JSON:
+
+```json
+{
+  "formatVersion": 1,
+  "snapshot": "<base64 of CanonicalState bytes>",
   "events": []
 }
 ```
 
-Verification procedure:
-1. Decode envelope and validate schema.
-2. Verify snapshot integrity (decode success, schema/version validation, canonical state-hash recomputation from snapshot payload, and policyId checks).
-3. Verify audit sequence integrity.
-4. Enforce policy identity consistency across snapshot and audit.
-5. Return canonical `VerificationResult` with `ok | invalid | inconclusive`.
+Wire bytes MUST be `utf8(canonicalJson(envelope_wire))`.
 
-## 12. Module Interface
-Policy behavior is composed from deterministic modules.
+`decodeEnvelope` MUST reject malformed schema:
+- missing/unsupported `formatVersion`
+- non-string `snapshot`
+- non-array `events`
+- non-object entries in `events`
 
-Each module MUST define:
-- state schema it reads/writes
-- deterministic evaluation rule
-- deterministic state transition rule
+### Example Envelope JSON
 
-Module contract:
-```text
-module.evaluate(intent, state) -> { decision, reasons?, stateDelta? }
+```json
+{
+  "formatVersion": 1,
+  "snapshot": "eyJmb3JtYXRWZXJzaW9uIjoxLCJlbmdpbmVWZXJzaW9uIjoiMS4wLjEiLCJwb2xpY3lJZCI6IjY1ODZjMTNiZDhmYTRlOWRlODdkNGM4NGNhOGVmZGI3Njc3ZTBhMzk3NjA5YmQ5ZGVkN2VlOWVmMDQ4Mjc0ZGUiLCJtb2R1bGVzIjp7fX0=",
+  "events": [
+    {
+      "type": "INTENT_RECEIVED",
+      "intent_hash": "0378394eb990e096126013b090ac3271c9368074477f58d46f03ba18e1aa7510",
+      "agent_id": "agent-1",
+      "timestamp": 1772718102,
+      "policyId": "6586c13bd8fa4e9de87d4c84ca8efdb7677e0a397609bd9ded7ee9ef048274de"
+    }
+  ]
+}
 ```
 
-`stateDelta` semantics:
-- `stateDelta` MUST be a deterministic partial-state patch.
-- Patches MUST be merged using deterministic deep-merge semantics with stable key ordering.
-- Implementations MUST NOT commit partial deltas when final decision is `DENY`.
-- For `ALLOW`, final `nextState` MUST be exactly reproducible from `(state, ordered module deltas)`.
+---
 
-Module requirements:
-- no hidden entropy
-- deterministic serialization for hashed state
-- explicit validation and fail-closed behavior
+## 12. Verifier Semantics
 
-## 13. Deterministic Invariants
-Implementations MUST maintain invariants including:
-- Canonical hashing ignores key insertion order.
-- Snapshot export/import round-trip is deterministic.
-- Replay verification is deterministic for identical event sequences.
-- Cross-runtime results are consistent for identical canonical inputs.
-- Stable identifiers (`policyId`, `stateHash`, `auditHeadHash`) reproduce across processes.
+## 12.1 `verifySnapshot`
 
-## 14. Security Considerations
-OxDeAI is designed to reduce economic risk from autonomous execution.
+MUST:
+- decode canonical snapshot bytes
+- enforce `formatVersion == 1`
+- require non-empty `policyId`
+- hash each `modules[moduleId]` payload with sorted module IDs
+- compute `stateHash` from canonical object:
+  - `formatVersion`
+  - `engineVersion`
+  - `policyId`
+  - `modules: { moduleId -> moduleHash }`
 
-Threat classes addressed:
-- replay attacks via nonce windows and replay checks
-- runaway loops via velocity/tool-call amplification controls
-- unbounded concurrency via slot limits and release rules
-- silent budget drain via per-period budgets and per-action caps
+## 12.2 `verifyAuditEvents`
 
-Operational guidance:
-- use strict deterministic mode in safety-critical flows
-- verify signatures before execution
-- verify envelope artifacts offline for disputes/settlement
-- deny on malformed or ambiguous inputs
+MUST:
+- validate each event shape (`object`, finite `timestamp`)
+- enforce non-decreasing timestamps
+- recompute `auditHeadHash` using chain algorithm
+- enforce policy binding rules:
+  - if `expectedPolicyId` is set, each event MUST carry matching `policyId`
+  - mixed non-null policy IDs are invalid
+- in strict mode (or `requireStateAnchors=true`), absence of a valid checkpoint anchor yields `inconclusive` with `NO_STATE_ANCHOR`
 
-## 15. Implementation Notes
-`@oxdeai/core` is the TypeScript reference implementation of this protocol (`npm:@oxdeai/core@1.0.0`; repository path: `packages/core`).
+## 12.3 `verifyEnvelope`
 
-Conformance model:
-- The protocol is implementation-independent.
-- Other languages/runtimes MAY implement OxDeAI if they preserve canonical formats, deterministic evaluation semantics, verification outputs, and invariant behavior defined in this specification.
-- Implementations SHOULD validate against shared protocol test vectors (known inputs and expected hashes/decisions) to demonstrate cross-runtime conformance.
+MUST:
+- decode envelope
+- run `verifySnapshot` on `snapshot`
+- run `verifyAuditEvents` on `events`
+- enforce snapshot `policyId` equals audit inferred `policyId` (when both available)
+- merge violations with deterministic ordering
+- propagate `policyId`, `stateHash`, and `auditHeadHash`
+
+Status resolution:
+- `invalid` if any invalid condition exists
+- `inconclusive` if no invalid condition exists but strict anchor condition is unmet
+- `ok` otherwise
+
+---
+
+## 13. Determinism Constraints
+
+Compliant implementations MUST NOT introduce hidden entropy in protocol paths.
+
+Disallowed in deterministic evaluation/verification:
+- wall-clock reads not supplied as explicit input
+- random number generation
+- non-deterministic iteration order in hashed objects
+- locale-dependent formatting
+- floating-point non-finite values in canonicalized data
+
+Strict mode MUST fail closed when required deterministic inputs (for example `now`) are missing.  
+Best-effort mode MAY continue but MUST preserve deterministic processing over provided inputs.
+
+---
+
+## 14. Compatibility and Versioning
+
+- `formatVersion` governs wire/schema compatibility.
+- Changing `formatVersion` is breaking and requires a new major protocol version.
+- Adding optional fields that do not alter existing canonicalized semantics is non-breaking.
+- Changing canonicalization rules, hash input ordering, or verifier status semantics is breaking.
+- Unknown future `formatVersion` values MUST be rejected.
+
+---
+
+## 15. Conformance and Test Vectors
+
+A third-party implementation is conformant if it reproduces protocol outputs on the official vectors, including:
+
+- intent hashes
+- authorization payload/signature-linked fields
+- snapshot bytes/hashes
+- audit chain heads
+- envelope verification statuses/violations
+
+Conformance suites MUST check deterministic equivalence, including:
+- key-order insensitivity in canonical hashing
+- snapshot roundtrip idempotence
+- deterministic violation ordering
+- replay/verification consistency across processes/runtimes
+
+Reference vectors are distributed in `@oxdeai/conformance`.
+
+---
+
+## 16. Implementation Notes
+
+- `@oxdeai/core` is the TypeScript reference implementation.
+- Equivalent implementations in Rust/Go/Python MUST follow this protocol text and conformance vectors.
+- Where field naming differs in implementation-specific APIs, canonical semantics in this spec are authoritative.

@@ -1,5 +1,6 @@
 // packages/core/src/dev/smoke.ts
 import { createHash } from "node:crypto";
+import { writeFile } from "node:fs/promises";
 import { PolicyEngine } from "../policy/PolicyEngine.js"; // adjust path if needed
 import { intentHash } from "../crypto/hashes.js";
 import { ReplayEngine } from "../replay/ReplayEngine.js";
@@ -299,13 +300,18 @@ async function main() {
   }
 
   // ---- Deterministic rebuild fingerprint ----
+  let determinism: { policyId: string; stateHash: string; auditHeadHash: string } | undefined;
   {
     const policyId = engine.computePolicyId();
     const stateHash = engine.computeStateHash(baseState());
     const auditHeadHash = engine.audit.headHash();
+    determinism = { policyId, stateHash, auditHeadHash };
     console.log(`DETERMINISM policyId=${policyId}`);
     console.log(`DETERMINISM stateHash=${stateHash}`);
     console.log(`DETERMINISM auditHeadHash=${auditHeadHash}`);
+  }
+  if (process.env["OXDEAI_SMOKE_OUT"] && determinism) {
+    await writeFile(process.env["OXDEAI_SMOKE_OUT"], JSON.stringify(determinism), "utf8");
   }
   
 

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { canonicalJson } from "../crypto/hashes.js";
 import type { AuditEvent } from "../audit/AuditLog.js";
+import { mapIssuesToViolation, validateAuditEventJson } from "../schemas/validate.js";
 import type { VerificationResult, VerificationViolation, VerifyAuditOptions } from "./types.js";
 
 function sortViolations(violations: VerificationViolation[]): VerificationViolation[] {
@@ -64,6 +65,11 @@ export function verifyAuditEvents(
     }
 
     const event = raw;
+    const schemaIssues = validateAuditEventJson(event);
+    if (schemaIssues.length > 0) {
+      violations.push(...mapIssuesToViolation("MALFORMED_EVENT", schemaIssues, i));
+      continue;
+    }
 
     if (typeof event.timestamp !== "number" || !Number.isFinite(event.timestamp)) {
       violations.push({ code: "MALFORMED_EVENT", message: "event.timestamp must be a finite number", index: i });

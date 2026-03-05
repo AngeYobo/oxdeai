@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oxdeai.org/schemas/v1/audit-log.schema.json",
+  "title": "OxDeAI AuditLog",
+  "description": "Ordered list of audit events.",
+  "type": "array",
+  "items": {
+    "$ref": "https://oxdeai.org/schemas/v1/audit-event.schema.json"
+  }
+}

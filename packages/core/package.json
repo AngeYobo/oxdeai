@@ -1,6 +1,6 @@
 {
   "name": "@oxdeai/core",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Deterministic policy engine for economic containment with canonical snapshots, audit chaining, and stateless verification.",
   "license": "Apache-2.0",
   "type": "module",
@@ -43,6 +43,7 @@
   ],
   "files": [
     "dist",
+    "schemas",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
@@ -54,6 +55,7 @@
     "test": "pnpm build && pnpm test:node",
     "api:report": "pnpm build && api-extractor run --local --config api-extractor.json",
     "api:check": "pnpm build && api-extractor run --config api-extractor.json",
+    "schema:validate": "node scripts/schema-validate.mjs",
     "api:fingerprint": "pnpm build && ../../scripts/api-fingerprint.sh",
     "api:fingerprint:check": "pnpm build && ../../scripts/check-api-fingerprint.sh"
   },

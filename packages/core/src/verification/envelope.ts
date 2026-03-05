@@ -1,5 +1,6 @@
 import { canonicalJson } from "../crypto/hashes.js";
 import type { AuditEntry } from "../audit/AuditLog.js";
+import { validateVerificationEnvelopeWireJson } from "../schemas/validate.js";
 
 /** @public */
 export type VerificationEnvelopeV1 = {
@@ -73,6 +74,11 @@ export function encodeEnvelope(envelope: VerificationEnvelopeV1): Uint8Array {
 /** @public */
 export function decodeEnvelope(bytes: Uint8Array): VerificationEnvelopeV1 {
   const parsed = JSON.parse(new TextDecoder().decode(bytes)) as unknown;
+  const issues = validateVerificationEnvelopeWireJson(parsed);
+  if (issues.length > 0) {
+    const first = issues[0];
+    throw new Error(`invalid verification envelope: ${first.path}: ${first.message}`);
+  }
   const wire = assertEnvelope(parsed);
 
   return {
