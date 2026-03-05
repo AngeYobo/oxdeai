@@ -79,6 +79,24 @@ Field semantics:
 
 Implementations MAY include additional fields. For deterministic identity, implementations MUST define a canonical binding set for intent hashing and MUST apply it consistently across signing and verification. Unknown/non-binding fields MUST be excluded from canonical intent identity; binding fields MUST be included.
 
+For v1.0, the canonical `intent_hash` binding set is:
+- `intent_id`
+- `agent_id`
+- `action_type`
+- `depth`
+- `amount`
+- `asset`
+- `target`
+- `timestamp`
+- `metadata_hash`
+- `nonce`
+- `type`
+- `authorization_id`
+- `tool`
+- `tool_call`
+
+`signature` MUST be excluded from `intent_hash`. Unknown fields not listed above MUST be excluded.
+
 ## 5. Policy State
 State MUST contain module-relevant slices. Typical slices include:
 - budget state (`budget_limit`, `spent_in_period`)
