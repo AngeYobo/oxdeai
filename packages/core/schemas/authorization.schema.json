@@ -7,20 +7,15 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "authorization_id",
     "auth_id",
     "issuer",
     "audience",
     "intent_hash",
     "state_hash",
     "policy_id",
-    "policy_version",
-    "state_snapshot_hash",
     "decision",
     "issued_at",
-    "expiry",
-    "expires_at",
-    "engine_signature"
+    "expiry"
   ],
   "properties": {
     "authorization_id": { "type": "string", "pattern": "^[0-9a-f]{64}$" },

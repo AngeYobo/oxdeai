@@ -71,25 +71,30 @@ export function validateAuthorizationJson(value: unknown): SchemaValidationIssue
   if (!isObject(value)) return [{ path: "$", code: "TYPE", message: "must be object" }];
 
   const required = [
-    "authorization_id",
     "auth_id",
     "issuer",
     "audience",
     "intent_hash",
     "state_hash",
     "policy_id",
-    "policy_version",
-    "state_snapshot_hash",
     "decision",
     "issued_at",
-    "expiry",
-    "expires_at",
-    "engine_signature"
+    "expiry"
   ] as const;
   for (const key of required) {
     if (!(key in value)) issues.push({ path: "$", code: "REQUIRED", message: `missing ${key}` });
   }
-  const allowed = [...required, "nonce", "capability", "signature"] as const;
+  const allowed = [
+    ...required,
+    "nonce",
+    "capability",
+    "signature",
+    "authorization_id",
+    "policy_version",
+    "state_snapshot_hash",
+    "expires_at",
+    "engine_signature"
+  ] as const;
   pushAdditional(value, allowed, "$", issues);
 
   if ("auth_id" in value && (typeof value.auth_id !== "string" || value.auth_id.length === 0)) issues.push({ path: "$.auth_id", code: "TYPE", message: "must be non-empty string" });

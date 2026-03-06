@@ -105,3 +105,19 @@ test("policy mismatch", () => {
   assert.equal(result.status, "invalid");
   assert.ok(result.violations.some((v) => v.code === "AUTH_POLICY_ID_MISMATCH"));
 });
+
+test("decision != ALLOW => invalid", () => {
+  const { out } = allowOutput();
+  const auth = { ...out.authorization, decision: "DENY" as const };
+  const result = verifyAuthorization(auth, { now: 1010 });
+  assert.equal(result.status, "invalid");
+  assert.ok(result.violations.some((v) => v.code === "AUTH_DECISION_INVALID"));
+});
+
+test("missing mandatory field => invalid", () => {
+  const { out } = allowOutput();
+  const auth = { ...out.authorization, issued_at: undefined as unknown as number };
+  const result = verifyAuthorization(auth, { now: 1010 });
+  assert.equal(result.status, "invalid");
+  assert.ok(result.violations.some((v) => v.code === "AUTH_MISSING_FIELD"));
+});

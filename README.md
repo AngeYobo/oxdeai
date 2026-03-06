@@ -14,6 +14,7 @@ autonomous agents (AI agents, workflows, bots) under strict economic constraints
 - Fail-closed semantics
 - Explicit invariants
 - Cryptographic authorization
+- AuthorizationV1 pre-execution gating
 - Hash-chained audit logs
 - Stateless verifiability (snapshot/audit/envelope)
 - Property testing (fuzz + meta-property)
@@ -39,3 +40,9 @@ pnpm install
 ## Release
 
 - [Release checklist](./docs/release-checklist.md)
+
+## Protocol Flow (v1.1.0)
+
+- OxDeAI issues `AuthorizationV1` artifacts on `ALLOW`.
+- External relying parties verify `AuthorizationV1` before execution.
+- Verification envelopes remain post-execution proof artifacts.

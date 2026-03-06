@@ -57,6 +57,9 @@ export function verifyAuthorization(
   if (!hasText(auth.auth_id)) {
     violations.push({ code: "AUTH_MISSING_FIELD", message: "auth_id is required" });
   }
+  if (!Number.isInteger(auth.issued_at)) {
+    violations.push({ code: "AUTH_MISSING_FIELD", message: "issued_at must be integer unix seconds" });
+  }
 
   if (!Number.isInteger(auth.expiry)) {
     violations.push({ code: "AUTH_MISSING_FIELD", message: "expiry must be integer unix seconds" });

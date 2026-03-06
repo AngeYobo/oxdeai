@@ -67,7 +67,6 @@
           "state_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
           "policy_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
           "decision": "ALLOW",
-          "issued_at": 100,
           "expiry": 160
         },
         "opts": {
@@ -80,6 +79,10 @@
           {
             "code": "AUTH_MISSING_FIELD",
             "message": "intent_hash is required"
+          },
+          {
+            "code": "AUTH_MISSING_FIELD",
+            "message": "issued_at must be integer unix seconds"
           }
         ]
       }

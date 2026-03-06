@@ -89,8 +89,9 @@ Stateless verification API:
 * `verifySnapshot(snapshotBytes)`
 * `verifyAuditEvents(events)`
 * `verifyEnvelope(envelopeBytes)`
+* `verifyAuthorization(auth, opts?)`
 
-All three return `VerificationResult` with status:
+All return `VerificationResult` with status:
 
 * `ok`
 * `invalid`
@@ -276,13 +277,15 @@ Deterministic policy state containing:
 
 ### Authorization
 
-If an intent is allowed, the engine emits a signed authorization:
+If an intent is allowed, the engine emits AuthorizationV1:
 
-* bound to `intent_hash`
-* bound to `policy_version`
-* bound to `state_snapshot_hash`
-* includes `expires_at`
-* verifiable via `verifyAuthorization()`
+* `auth_id`, `issuer`, `audience`
+* `intent_hash`, `state_hash`, `policy_id`
+* `issued_at`, `expiry`, `decision`
+* optional `nonce`, `capability`, `signature`
+* verified pre-execution via `verifyAuthorization()`
+
+Verification envelopes remain post-execution evidence artifacts verified with `verifyEnvelope()`.
 
 ---
 

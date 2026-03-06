@@ -1,4 +1,4 @@
-# OxDeAI Protocol (v1.0.2)
+# OxDeAI Protocol (v1.1.0)
 
 OxDeAI is a deterministic economic containment protocol for autonomous systems.
 
@@ -40,7 +40,7 @@ If denied, execution MUST NOT proceed.
 ```text
 Agent/Runtime
   -> OxDeAI Policy Engine
-  -> Decision + Authorization (ALLOW only)
+  -> Decision + AuthorizationV1 (ALLOW only)
   -> External verifier (stateless)
   -> Execution (only if allowed)
   -> Snapshot + Audit -> Verification Envelope
@@ -57,11 +57,11 @@ Expanded flow:
 
 ## 4) Protocol Artifacts (Overview)
 
-OxDeAI v1.0.2 protocol surface centers on:
+OxDeAI v1.1.0 protocol surface centers on:
 
 - Intent (request + binding fields)
 - Canonical snapshot (`formatVersion: 1`)
-- Authorization (`ALLOW` proof with expiry)
+- AuthorizationV1 (`ALLOW` pre-execution artifact with issuer/audience/intent/state/policy binding)
 - Hash-chained audit events
 - Verification envelope (`snapshot + events`)
 - Unified verification result (`ok | invalid | inconclusive`)
@@ -75,6 +75,7 @@ The protocol-stable verification APIs are:
 - `verifySnapshot(snapshotBytes)`
 - `verifyAuditEvents(events, opts?)`
 - `verifyEnvelope(envelopeBytes, opts?)`
+- `verifyAuthorization(auth, opts?)`
 
 All return unified `VerificationResult`.
 
@@ -86,6 +87,9 @@ Operational meaning:
 
 Strict/best-effort behavior and deterministic violation ordering are specified in [`SPEC.md`](./SPEC.md).
 Relying-party execution gate requirements are specified in [`SPEC.md` §10](./SPEC.md#10-relying-party-pep-contract).
+
+`verifyAuthorization` is the pre-execution gate.
+`verifyEnvelope` remains the post-execution evidence verifier.
 
 ## 6) Package Roles
 
