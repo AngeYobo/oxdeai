@@ -14,8 +14,11 @@ export type AllowLists = {
     targets?: string[];
 };
 
+// @public
+export type Authorization = AuthorizationLegacy & AuthorizationV1;
+
 // @public (undocumented)
-export type Authorization = {
+export type AuthorizationLegacy = {
     authorization_id: string;
     intent_hash: string;
     policy_version: string;
@@ -23,6 +26,22 @@ export type Authorization = {
     decision: "ALLOW";
     expires_at: number;
     engine_signature: string;
+};
+
+// @public (undocumented)
+export type AuthorizationV1 = {
+    auth_id: string;
+    issuer: string;
+    audience: string;
+    intent_hash: string;
+    state_hash: string;
+    policy_id: string;
+    decision: "ALLOW" | "DENY";
+    issued_at: number;
+    expiry: number;
+    nonce?: string;
+    capability?: string;
+    signature?: string;
 };
 
 // @public (undocumented)
@@ -324,7 +343,7 @@ export type VerificationViolation = {
 };
 
 // @public (undocumented)
-export type VerificationViolationCode = "MALFORMED_EVENT" | "POLICY_ID_MISSING" | "POLICY_ID_MISMATCH" | "MIXED_POLICY_ID" | "NON_MONOTONIC_TIMESTAMP" | "HASH_CHAIN_INVALID" | "NO_STATE_ANCHOR" | "SNAPSHOT_CORRUPT" | "ENVELOPE_MALFORMED";
+export type VerificationViolationCode = "MALFORMED_EVENT" | "POLICY_ID_MISSING" | "POLICY_ID_MISMATCH" | "MIXED_POLICY_ID" | "NON_MONOTONIC_TIMESTAMP" | "HASH_CHAIN_INVALID" | "NO_STATE_ANCHOR" | "SNAPSHOT_CORRUPT" | "ENVELOPE_MALFORMED" | "AUTH_DECISION_INVALID" | "AUTH_EXPIRED" | "AUTH_MISSING_FIELD" | "AUTH_ISSUER_MISMATCH" | "AUTH_AUDIENCE_MISMATCH" | "AUTH_POLICY_ID_MISMATCH" | "AUTH_REPLAY";
 
 // @public (undocumented)
 export function verifyAuditEvents(events: readonly AuditEvent[], opts?: VerifyAuditOptions): VerificationResult;
@@ -335,6 +354,11 @@ export type VerifyAuditOptions = {
     mode?: "strict" | "best-effort";
     requireStateAnchors?: boolean;
 };
+
+// Warning: (ae-forgotten-export) The symbol "VerifyAuthorizationOptions" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export function verifyAuthorization(auth: AuthorizationV1, opts?: VerifyAuthorizationOptions): VerificationResult;
 
 // @public (undocumented)
 export function verifyEnvelope(envelopeBytes: Uint8Array, opts?: VerifyEnvelopeOptions): VerificationResult;
