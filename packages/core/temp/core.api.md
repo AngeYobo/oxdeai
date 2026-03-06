@@ -26,10 +26,16 @@ export type Authorization = {
 };
 
 // @public (undocumented)
+export function authPayloadString(auth: Omit<Authorization, "engine_signature">): string;
+
+// @public (undocumented)
 export type BudgetState = {
     budget_limit: Record<string, bigint | undefined>;
     spent_in_period: Record<string, bigint | undefined>;
 };
+
+// @public (undocumented)
+export function canonicalJson(value: unknown): string;
 
 // @public (undocumented)
 export type CanonicalState = {
@@ -38,6 +44,16 @@ export type CanonicalState = {
     policyId: string;
     modules: Record<string, unknown>;
 };
+
+// Warning: (ae-forgotten-export) The symbol "CanonicalState_2" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export function createCanonicalState(args: {
+    formatVersion?: 1;
+    engineVersion: string;
+    modules: Record<string, unknown>;
+    policyId: string;
+}): CanonicalState_2;
 
 // @public (undocumented)
 export const Decision: {
@@ -48,8 +64,6 @@ export const Decision: {
 // @public (undocumented)
 export type Decision = (typeof Decision)[keyof typeof Decision];
 
-// Warning: (ae-forgotten-export) The symbol "CanonicalState_2" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
 export function decodeCanonicalState(bytes: Uint8Array): CanonicalState_2;
 
@@ -64,6 +78,25 @@ export function encodeCanonicalState(state: CanonicalState_2): Uint8Array;
 // @public (undocumented)
 export function encodeEnvelope(envelope: VerificationEnvelopeV1): Uint8Array;
 
+// @public (undocumented)
+export function engineSignHmac(payload: unknown, secret: string): string;
+
+// @public (undocumented)
+export function engineVerifyHmac(payload: unknown, signatureHex: string, secret: string): boolean;
+
+// @public (undocumented)
+export class HashChainedLog {
+    // Warning: (ae-forgotten-export) The symbol "AuditEvent" needs to be exported by the entry point index.d.ts
+    //
+    // (undocumented)
+    append(event: AuditEvent): string;
+    // (undocumented)
+    drain(): AuditEvent[];
+    headHash(): string;
+    snapshot(): AuditEvent[];
+    verify(): boolean;
+}
+
 // Warning: (ae-forgotten-export) The symbol "IntentBase" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
@@ -74,6 +107,9 @@ export type Intent = (IntentBase & {
     type: "RELEASE";
     authorization_id: string;
 });
+
+// @public (undocumented)
+export function intentHash(intent: Intent): string;
 
 // @public (undocumented)
 export type KillSwitchState = {
@@ -100,8 +136,6 @@ export interface ModuleStateCodec {
 export class PolicyEngine {
     // Warning: (ae-forgotten-export) The symbol "EngineOptions" needs to be exported by the entry point index.d.ts
     constructor(opts: EngineOptions);
-    // Warning: (ae-forgotten-export) The symbol "HashChainedLog" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     readonly audit: HashChainedLog;
     // (undocumented)
@@ -199,6 +233,9 @@ export type RecursionState = {
 };
 
 // @public (undocumented)
+export function sha256HexFromJson(value: unknown): string;
+
+// @public (undocumented)
 export type State = {
     policy_version: string;
     period_id: string;
@@ -239,6 +276,9 @@ export type State = {
 
 // @public (undocumented)
 export type StateHash = string;
+
+// @public (undocumented)
+export function stateSnapshotHash(state: State): string;
 
 // @public (undocumented)
 export type ToolLimitsState = {
@@ -286,8 +326,6 @@ export type VerificationViolation = {
 // @public (undocumented)
 export type VerificationViolationCode = "MALFORMED_EVENT" | "POLICY_ID_MISSING" | "POLICY_ID_MISMATCH" | "MIXED_POLICY_ID" | "NON_MONOTONIC_TIMESTAMP" | "HASH_CHAIN_INVALID" | "NO_STATE_ANCHOR" | "SNAPSHOT_CORRUPT" | "ENVELOPE_MALFORMED";
 
-// Warning: (ae-forgotten-export) The symbol "AuditEvent" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
 export function verifyAuditEvents(events: readonly AuditEvent[], opts?: VerifyAuditOptions): VerificationResult;
 
@@ -311,6 +349,9 @@ export type VerifyEnvelopeOptions = {
 export function verifySnapshot(snapshotBytes: Uint8Array, opts?: {
     expectedPolicyId?: string;
 }): VerificationResult;
+
+// @public (undocumented)
+export function withModuleState(state: CanonicalState_2, moduleId: string, payload: unknown): CanonicalState_2;
 
 // (No @packageDocumentation comment for this package)
 
