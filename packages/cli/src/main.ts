@@ -16,6 +16,9 @@ type Flags = {
   agent?: string;
   nonce?: string;
   asset?: string;
+  kind?: "snapshot" | "audit" | "envelope";
+  mode?: "strict" | "best-effort";
+  expectedPolicyId?: string;
 };
 
 type Io = {
@@ -32,6 +35,9 @@ function usage(): string {
   return `oxdeai CLI
 
 Usage:
+  oxdeai build [--state <state.json>] [--out <snapshot.bin>] [--json]
+  oxdeai verify --kind <snapshot|audit|envelope> [--file <path>|-] [--mode <strict|best-effort>] [--expected-policy-id <hex>] [--json]
+  oxdeai replay [--json]
   oxdeai init --file <policy.json> [--state <state.json>] [--audit <audit.ndjson>] [--json]
   oxdeai launch <actionType> <amount> <target> --agent <id> --nonce <n> [--asset <asset>] [--state <state.json>] [--audit <audit.ndjson>] [--json]
   oxdeai make-envelope --out <file> [--state <state.json>] [--audit <audit.ndjson>] [--json]
@@ -93,6 +99,26 @@ function parseFlags(argv: string[]): { args: string[]; flags: Flags } {
       flags.asset = next();
       continue;
     }
+    if (a === "--kind") {
+      const v = next();
+      if (v !== "snapshot" && v !== "audit" && v !== "envelope") {
+        throw new Error("Invalid --kind value (must be snapshot|audit|envelope)");
+      }
+      flags.kind = v;
+      continue;
+    }
+    if (a === "--mode") {
+      const v = next();
+      if (v !== "strict" && v !== "best-effort") {
+        throw new Error("Invalid --mode value (must be strict|best-effort)");
+      }
+      flags.mode = v;
+      continue;
+    }
+    if (a === "--expected-policy-id") {
+      flags.expectedPolicyId = next();
+      continue;
+    }
 
     if (a.startsWith("--state=")) {
       flags.state = a.slice(8);
@@ -122,6 +148,26 @@ function parseFlags(argv: string[]): { args: string[]; flags: Flags } {
       flags.asset = a.slice(8);
       continue;
     }
+    if (a.startsWith("--kind=")) {
+      const v = a.slice(7);
+      if (v !== "snapshot" && v !== "audit" && v !== "envelope") {
+        throw new Error("Invalid --kind value (must be snapshot|audit|envelope)");
+      }
+      flags.kind = v;
+      continue;
+    }
+    if (a.startsWith("--mode=")) {
+      const v = a.slice(7);
+      if (v !== "strict" && v !== "best-effort") {
+        throw new Error("Invalid --mode value (must be strict|best-effort)");
+      }
+      flags.mode = v;
+      continue;
+    }
+    if (a.startsWith("--expected-policy-id=")) {
+      flags.expectedPolicyId = a.slice("--expected-policy-id=".length);
+      continue;
+    }
 
     throw new Error(`Unknown flag: ${a}`);
   }
@@ -136,6 +182,29 @@ function toJson(value: unknown): string {
 function parseBigIntArg(input: string): bigint {
   const s = input.endsWith("n") ? input.slice(0, -1) : input;
   return BigInt(s);
+}
+
+async function readStdinBytes(): Promise<Uint8Array> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Uint8Array.from(Buffer.concat(chunks));
+}
+
+function parseAuditInputBytes(bytes: Uint8Array): unknown[] {
+  const text = new TextDecoder().decode(bytes).trim();
+  if (text.length === 0) return [];
+  if (text.startsWith("[")) {
+    const parsed = JSON.parse(text);
+    if (!Array.isArray(parsed)) throw new Error("audit payload must be a JSON array or NDJSON");
+    return parsed;
+  }
+  return text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
 }
 
 function buildValidationIntent(state: State): Intent {
@@ -205,6 +274,73 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
   const auditPath = flags.audit ?? DEFAULT_AUDIT_PATH;
 
   try {
+    if (cmd === "build") {
+      const state = await readStateFile(statePath);
+      const engine = buildEngine(state);
+      const snapshot = engine.exportState(state);
+      const snapshotBytes = encodeCanonicalState(snapshot);
+      const verified = verifySnapshot(snapshotBytes, flags.expectedPolicyId ? { expectedPolicyId: flags.expectedPolicyId } : undefined);
+
+      if (flags.out) {
+        await mkdir(dirname(flags.out), { recursive: true });
+        await writeFile(flags.out, Buffer.from(snapshotBytes));
+      }
+
+      const payload = {
+        ok: verified.ok,
+        status: verified.status,
+        policyId: snapshot.policyId,
+        stateHash: verified.stateHash,
+        violations: verified.violations,
+        snapshotBytes: snapshotBytes.length,
+        out: flags.out
+      };
+      out(flags.json ? toJson(payload) : toJson(payload));
+      return verified.ok ? 0 : 1;
+    }
+
+    if (cmd === "verify") {
+      if (!flags.kind) throw new Error("Usage: verify --kind <snapshot|audit|envelope> [--file <path>|-]");
+      const mode = flags.mode ?? "strict";
+      const fromFile = flags.file && flags.file !== "-";
+      const bytes = fromFile
+        ? Uint8Array.from(await readFile(flags.file as string))
+        : await readStdinBytes();
+
+      if (flags.kind === "snapshot") {
+        const res = verifySnapshot(bytes, flags.expectedPolicyId ? { expectedPolicyId: flags.expectedPolicyId } : undefined);
+        out(flags.json ? toJson(res) : toJson(res));
+        return res.ok ? 0 : 1;
+      }
+
+      if (flags.kind === "envelope") {
+        const res = verifyEnvelope(bytes, {
+          mode,
+          expectedPolicyId: flags.expectedPolicyId
+        });
+        out(flags.json ? toJson(res) : toJson(res));
+        return res.ok ? 0 : 1;
+      }
+
+      const events = parseAuditInputBytes(bytes);
+      const res = verifyAuditEvents(events as Parameters<typeof verifyAuditEvents>[0], {
+        mode,
+        expectedPolicyId: flags.expectedPolicyId
+      });
+      out(flags.json ? toJson(res) : toJson(res));
+      return res.ok ? 0 : 1;
+    }
+
+    if (cmd === "replay") {
+      const payload = {
+        ok: false,
+        status: "unsupported",
+        message: "Replay verifier command is not exposed in @oxdeai/cli v0.1.0. Use verify-audit / verify --kind audit."
+      };
+      out(flags.json ? toJson(payload) : toJson(payload));
+      return 0;
+    }
+
     if (cmd === "init") {
       if (!flags.file) throw new Error("Missing --file <policy.json>");
       const text = await readFile(flags.file, "utf8");

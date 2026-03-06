@@ -220,3 +220,36 @@ test("make-envelope writes envelope file that verify-envelope accepts", async ()
   assert.equal(typeof latest.status, "string");
   assert.equal(Array.isArray(latest.violations), true);
 });
+
+test("build emits snapshot verification payload and optional file", async () => {
+  const { policyFile, stateFile, auditFile, dir } = await setup();
+  const cap = ioCapture();
+  await runCli(["init", "--file", policyFile, "--state", stateFile, "--audit", auditFile], cap.io);
+
+  const snapshotOut = join(dir, "snapshot.bin");
+  const code = await runCli(["build", "--state", stateFile, "--out", snapshotOut, "--json"], cap.io);
+  assert.equal(code, 0);
+  const latest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(latest.status, "ok");
+  assert.equal(typeof latest.policyId, "string");
+  assert.equal(typeof latest.stateHash, "string");
+  const bytes = await readFile(snapshotOut);
+  assert.ok(bytes.length > 0);
+});
+
+test("verify supports --kind audit from file and replay command is clear stub", async () => {
+  const { policyFile, stateFile, auditFile } = await setup();
+  const cap = ioCapture();
+  await runCli(["init", "--file", policyFile, "--state", stateFile, "--audit", auditFile], cap.io);
+  await runCli(["launch", "PROVISION", "100", "us-east-1", "--agent", "agent-1", "--nonce", "20", "--state", stateFile, "--audit", auditFile], cap.io);
+
+  const verifyCode = await runCli(["verify", "--kind", "audit", "--file", auditFile, "--mode", "strict", "--json"], cap.io);
+  assert.equal(verifyCode, 1); // strict mode without checkpoint => inconclusive
+  const verifyLatest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(verifyLatest.status, "inconclusive");
+
+  const replayCode = await runCli(["replay", "--json"], cap.io);
+  assert.equal(replayCode, 0);
+  const replayLatest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(replayLatest.status, "unsupported");
+});
