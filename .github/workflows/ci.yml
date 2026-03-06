@@ -39,6 +39,9 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Conformance
+        run: pnpm -C packages/conformance validate
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true

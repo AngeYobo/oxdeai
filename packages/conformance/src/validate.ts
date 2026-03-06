@@ -6,6 +6,7 @@ import {
   encodeEnvelope,
   PolicyEngine,
   sha256HexFromJson,
+  verifyAuditEvents,
   verifyEnvelope,
   verifySnapshot
 } from "@oxdeai/core";
@@ -27,6 +28,10 @@ type ConformanceAdapter = {
   evaluateAuthorization(intent: Intent): { authorization: AuthorizationLike; policyId: string };
   encodeSnapshot(state: State): { bytes: Uint8Array; policyId: string };
   verifySnapshot(bytes: Uint8Array, expectedPolicyId?: string): VerificationResult;
+  verifyAuditEvents(
+    events: unknown[],
+    opts?: { expectedPolicyId?: string; mode?: "strict" | "best-effort"; requireStateAnchors?: boolean }
+  ): VerificationResult;
   verifyEnvelope(bytes: Uint8Array, opts?: { expectedPolicyId?: string; mode?: "strict" | "best-effort" }): VerificationResult;
 };
 
@@ -229,6 +234,9 @@ const coreAdapter: ConformanceAdapter = {
   },
   verifySnapshot(bytes: Uint8Array, expectedPolicyId?: string): VerificationResult {
     return verifySnapshot(bytes, expectedPolicyId ? { expectedPolicyId } : undefined);
+  },
+  verifyAuditEvents(events, opts) {
+    return verifyAuditEvents(events as any, opts);
   },
   verifyEnvelope
 };
@@ -444,6 +452,130 @@ function validateEnvelopeVectors(ctx: CheckCtx, adapter: ConformanceAdapter): vo
   }
 }
 
+function buildAuditVerificationCases(
+  adapter: ConformanceAdapter
+): Array<{ status: string; violations: unknown[] }> {
+  const expectedPolicyId = "a".repeat(64);
+  const mismatchPolicyId = "b".repeat(64);
+  const altPolicyId = "c".repeat(64);
+
+  const policyMismatch = adapter.verifyAuditEvents(
+    [
+      {
+        type: "INTENT_RECEIVED",
+        intent_hash: "11".repeat(32),
+        agent_id: "agent-1",
+        timestamp: 100,
+        policyId: mismatchPolicyId
+      }
+    ],
+    { expectedPolicyId, mode: "best-effort" }
+  );
+
+  const nonMonotonic = adapter.verifyAuditEvents(
+    [
+      {
+        type: "INTENT_RECEIVED",
+        intent_hash: "22".repeat(32),
+        agent_id: "agent-1",
+        timestamp: 200,
+        policyId: expectedPolicyId
+      },
+      {
+        type: "DECISION",
+        intent_hash: "22".repeat(32),
+        decision: "ALLOW",
+        reasons: [],
+        policy_version: "v1",
+        timestamp: 100,
+        policyId: expectedPolicyId
+      }
+    ],
+    { mode: "best-effort" }
+  );
+
+  const mixedPolicy = adapter.verifyAuditEvents(
+    [
+      {
+        type: "INTENT_RECEIVED",
+        intent_hash: "33".repeat(32),
+        agent_id: "agent-1",
+        timestamp: 100,
+        policyId: expectedPolicyId
+      },
+      {
+        type: "DECISION",
+        intent_hash: "33".repeat(32),
+        decision: "ALLOW",
+        reasons: [],
+        policy_version: "v1",
+        timestamp: 100,
+        policyId: mismatchPolicyId
+      }
+    ],
+    { mode: "best-effort" }
+  );
+
+  const strictMissingAnchor = adapter.verifyAuditEvents(
+    [
+      {
+        type: "INTENT_RECEIVED",
+        intent_hash: "44".repeat(32),
+        agent_id: "agent-1",
+        timestamp: 100,
+        policyId: expectedPolicyId
+      },
+      {
+        type: "DECISION",
+        intent_hash: "44".repeat(32),
+        decision: "ALLOW",
+        reasons: [],
+        policy_version: "v1",
+        timestamp: 100,
+        policyId: expectedPolicyId
+      }
+    ],
+    { mode: "strict" }
+  );
+
+  const orderingCase = adapter.verifyAuditEvents(
+    [
+      {
+        type: "INTENT_RECEIVED",
+        intent_hash: "55".repeat(32),
+        agent_id: "agent-1",
+        timestamp: 300,
+        policyId: altPolicyId
+      },
+      {
+        type: "DECISION",
+        intent_hash: "55".repeat(32),
+        decision: "ALLOW",
+        reasons: [],
+        policy_version: "v1",
+        timestamp: 100,
+        policyId: mismatchPolicyId
+      }
+    ],
+    { expectedPolicyId, mode: "strict" }
+  );
+
+  return [policyMismatch, nonMonotonic, mixedPolicy, strictMissingAnchor, orderingCase];
+}
+
+function validateAuditVerificationVectors(ctx: CheckCtx, adapter: ConformanceAdapter): void {
+  const file = loadJson<VectorFile>("audit-verification.json");
+  const actual = buildAuditVerificationCases(adapter);
+
+  for (let i = 0; i < file.vectors.length; i++) {
+    const id = String(file.vectors[i].id);
+    const expected = asRecord(file.vectors[i].expected);
+    const got = actual[i];
+    eq(ctx, `${id} status`, got.status, String(expected.status));
+    eq(ctx, `${id} violations`, got.violations, expected.violations ?? []);
+  }
+}
+
 function main(): void {
   const ctx: CheckCtx = { failures: [], passed: 0 };
   const adapter = coreAdapter;
@@ -454,6 +586,7 @@ function main(): void {
   validateAuthorizationVectors(ctx, adapter);
   validateSnapshotVectors(ctx, adapter);
   validateAuditChainVectors(ctx, adapter);
+  validateAuditVerificationVectors(ctx, adapter);
   validateEnvelopeVectors(ctx, adapter);
 
   if (ctx.failures.length > 0) {

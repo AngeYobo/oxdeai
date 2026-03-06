@@ -16,9 +16,10 @@ Passing validation means the implementation reproduces expected deterministic ar
 - `authorization-payload.json`
 - `snapshot-hash.json`
 - `audit-chain.json`
+- `audit-verification.json`
 - `envelope-verification.json`
 
-Current validator assertion count: `40`.
+Current validator assertion count: `50`.
 
 ## Usage
 From repo root:

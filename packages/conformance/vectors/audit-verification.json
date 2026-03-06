@@ -1,0 +1,91 @@
+{
+  "version": "1.0.2",
+  "vectors": [
+    {
+      "id": "audit-001",
+      "description": "invalid — policyId mismatch against expectedPolicyId (best-effort)",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "POLICY_ID_MISMATCH",
+            "message": "event.policyId mismatch (expected=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, got=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)",
+            "index": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "audit-002",
+      "description": "invalid — non-monotonic timestamp",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "NON_MONOTONIC_TIMESTAMP",
+            "message": "event timestamps must be non-decreasing (prev=200, next=100)",
+            "index": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "audit-003",
+      "description": "invalid — mixed policyId values",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "MIXED_POLICY_ID",
+            "message": "multiple distinct policyId values observed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "audit-004",
+      "description": "inconclusive — strict mode without STATE_CHECKPOINT",
+      "expected": {
+        "status": "inconclusive",
+        "violations": [
+          {
+            "code": "NO_STATE_ANCHOR",
+            "message": "no STATE_CHECKPOINT event with stateHash found"
+          }
+        ]
+      }
+    },
+    {
+      "id": "audit-005",
+      "description": "invalid — deterministic violation ordering with mixed+timestamp+policy checks",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "MIXED_POLICY_ID",
+            "message": "multiple distinct policyId values observed"
+          },
+          {
+            "code": "NON_MONOTONIC_TIMESTAMP",
+            "message": "event timestamps must be non-decreasing (prev=300, next=100)",
+            "index": 1
+          },
+          {
+            "code": "NO_STATE_ANCHOR",
+            "message": "no STATE_CHECKPOINT event with stateHash found"
+          },
+          {
+            "code": "POLICY_ID_MISMATCH",
+            "message": "event.policyId mismatch (expected=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, got=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc)",
+            "index": 0
+          },
+          {
+            "code": "POLICY_ID_MISMATCH",
+            "message": "event.policyId mismatch (expected=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, got=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)",
+            "index": 1
+          }
+        ]
+      }
+    }
+  ]
+}
