@@ -7,6 +7,20 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.0.3] - 2026-03-06
+
+### Changed
+
+- Documentation refresh for protocol/spec alignment in the `v1.0.x` line.
+- Release/process guidance tightened for deterministic verification workflows.
+
+### Notes
+
+- Patch release only; no intentional protocol semantic changes vs `1.0.2`.
+- Snapshot/envelope `formatVersion` and stateless verifier result semantics remain unchanged.
+
+---
+
 ## [1.0.2] - 2026-03-05
 
 ### Added
