@@ -40,7 +40,7 @@ jobs:
         run: pnpm test
 
       - name: Conformance
-        run: pnpm -C packages/conformance validate
+        run: pnpm -C packages/core build && pnpm -C packages/conformance validate
 
 concurrency:
   group: ci-${{ github.ref }}
