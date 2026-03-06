@@ -87,7 +87,8 @@ function deepMerge<T>(base: T, patch: Partial<T>): T {
   return out as T;
 }
 
-const ENGINE_VERSION = process.env.npm_package_version ?? "unknown";
+// Keep canonical snapshot hashes stable across host package managers/runners.
+const ENGINE_VERSION = "unknown";
 
 const RELEASE_MODULES: readonly PolicyModule[] = [
   { id: "KillSwitchModule", evaluate: KillSwitchModule, codec: MODULE_CODECS.KillSwitchModule },
