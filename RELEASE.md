@@ -71,7 +71,7 @@ Update API baseline only when the API change is intentional and reviewed.
 
 ## Security Requirements
 
-- Follow coordinated disclosure process in [SECURITY.md](/home/ange/OxDeAI-core/SECURITY.md).
+- Follow coordinated disclosure process in [SECURITY.md](/home/ange/oxdeai-core/SECURITY.md).
 - Release notes MUST mention any security-relevant changes.
 - Secrets used for signing/verification tests MUST remain test-only and non-production.
 
