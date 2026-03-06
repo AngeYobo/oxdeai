@@ -18,6 +18,7 @@ import {
 } from "@oxdeai/core";
 import type { Intent, State, Authorization } from "@oxdeai/core";
 type ExecuteIntent = Extract<Intent, { type?: "EXECUTE" }>;
+type EnvelopeEvent = Parameters<typeof encodeEnvelope>[0]["events"][number];
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
 const BINDING_FIELDS = [
@@ -363,24 +364,29 @@ async function extractEnvelopeVerification(): Promise<void> {
     events
   });
 
+  const withCheckpointEvents: EnvelopeEvent[] = [
+    ...events,
+    {
+      type: "STATE_CHECKPOINT" as const,
+      stateHash: snapCheck.stateHash,
+      timestamp: makeIntent(300n, 1730000000).timestamp,
+      policyId: engine.computePolicyId()
+    }
+  ];
   const withCheckpointBytes = encodeEnvelope({
     formatVersion: 1,
     snapshot: snapshotBytes,
-    events: [
-      ...events,
-      {
-        type: "STATE_CHECKPOINT",
-        stateHash: snapCheck.stateHash,
-        timestamp: makeIntent(300n, 1730000000).timestamp,
-        policyId: engine.computePolicyId()
-      }
-    ]
+    events: withCheckpointEvents
   });
+  const mismatchedEvents: EnvelopeEvent[] = events.map((e) => ({
+    ...e,
+    policyId: "c".repeat(64)
+  }));
 
   const mismatchedPolicyBytes = encodeEnvelope({
     formatVersion: 1,
     snapshot: snapshotBytes,
-    events: events.map((e) => ({ ...e, policyId: "c".repeat(64) }))
+    events: mismatchedEvents
   });
 
   const corruptBytes = new Uint8Array([1, 2, 3, 4, 5]);

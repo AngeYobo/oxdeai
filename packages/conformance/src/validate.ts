@@ -21,6 +21,8 @@ type AuthorizationLike = {
   engine_signature: string;
 };
 
+type EnvelopeEvent = Parameters<typeof encodeEnvelope>[0]["events"][number];
+
 type ConformanceAdapter = {
   name: string;
   canonicalJson(value: unknown): string;
@@ -406,23 +408,28 @@ function buildEnvelopeCases(adapter: ConformanceAdapter): Array<{ status: string
   if (snap.status !== "ok" || !snap.stateHash) throw new Error("failed to build envelope cases");
 
   const valid = encodeEnvelope({ formatVersion: 1, snapshot: snapshotBytes, events });
+  const withCheckpointEvents: EnvelopeEvent[] = [
+    ...events,
+    {
+      type: "STATE_CHECKPOINT" as const,
+      stateHash: snap.stateHash,
+      timestamp: intent.timestamp,
+      policyId: engine.computePolicyId()
+    }
+  ];
   const withCheckpoint = encodeEnvelope({
     formatVersion: 1,
     snapshot: snapshotBytes,
-    events: [
-      ...events,
-      {
-        type: "STATE_CHECKPOINT",
-        stateHash: snap.stateHash,
-        timestamp: intent.timestamp,
-        policyId: engine.computePolicyId()
-      }
-    ]
+    events: withCheckpointEvents
   });
+  const mismatchedEvents: EnvelopeEvent[] = events.map((e) => ({
+    ...e,
+    policyId: "c".repeat(64)
+  }));
   const mismatched = encodeEnvelope({
     formatVersion: 1,
     snapshot: snapshotBytes,
-    events: events.map((e) => ({ ...e, policyId: "c".repeat(64) }))
+    events: mismatchedEvents
   });
   const corrupt = new Uint8Array([1, 2, 3, 4, 5]);
 

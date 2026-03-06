@@ -34,3 +34,8 @@ autonomous agents (AI agents, workflows, bots) under strict economic constraints
 Install dependencies:
 ```bash
 pnpm install
+```
+
+## Release
+
+- [Release checklist](./docs/release-checklist.md)

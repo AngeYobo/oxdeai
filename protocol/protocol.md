@@ -1,6 +1,6 @@
-# OxDeAI Protocol v1.0.0
+# OxDeAI Protocol v1.0.2
 
-This document is the normative protocol specification for OxDeAI v1.0.0.
+This document is the normative protocol specification for OxDeAI v1.0.2.
 
 ## 1. Conformance Language
 
@@ -185,7 +185,7 @@ Rules:
 ```json
 {
   "formatVersion": 1,
-  "engineVersion": "1.0.1",
+  "engineVersion": "1.0.2",
   "policyId": "6586c13bd8fa4e9de87d4c84ca8efdb7677e0a397609bd9ded7ee9ef048274de",
   "modules": {
     "BudgetModule": {
@@ -451,6 +451,7 @@ Best-effort mode MAY continue but MUST preserve deterministic processing over pr
 
 ## 14. Compatibility and Versioning
 
+- v1.0.2 is patch-compatible with v1.0.0 and v1.0.1 protocol semantics.
 - `formatVersion` governs wire/schema compatibility.
 - Changing `formatVersion` is breaking and requires a new major protocol version.
 - Adding optional fields that do not alter existing canonicalized semantics is non-breaking.

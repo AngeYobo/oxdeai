@@ -487,12 +487,38 @@ Stateless verification layer for protocol artifacts.
 * Unified `VerificationResult` (`ok` / `invalid` / `inconclusive`)
 * Deterministic violation ordering
 
-### v1.0 - Protocol Stability Release (shipped)
-* API freeze for verification surface + envelope codec
-* Spec lock (formats, invariants, violation codes)
-* Backwards-compat policy and conformance tests
+### v1.0.2 — Stable Protocol Core (shipped)
+* deterministic policy engine
+* canonical snapshots
+* hash-chained audit
+* stateless verification
+* verification envelope
+* conformance tests
+* reference integration demo (OpenAI tools boundary)
 
----
+### v1.1 — Authorization Artifact
+* formalize AuthorizationV1 as first-class protocol artifact
+* relying-party verification contract
+* verifyAuthorization() as explicit protocol primitive
+* spec updates for PDP / PEP separation
+
+### v1.2 — Non-Forgeable Verification
+* Ed25519 support
+* kid / alg fields
+* public-key verification
+* future keyset / rotation model
+
+### v1.3 — Protocol CLI
+* oxdeai build
+* oxdeai verify
+* oxdeai replay
+* cross-platform dev UX
+
+### v1.4 — Conformance & Ecosystem
+* stronger conformance vectors
+* external implementation guide
+* sdk guard adapter
+* additional integration wrappers
 
 ## License
 

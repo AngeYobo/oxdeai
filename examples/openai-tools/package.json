@@ -1,0 +1,19 @@
+{
+  "name": "@oxdeai/example-openai-tools",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OxDeAI pre-execution economic boundary demo - OpenAI Tools pattern",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "pnpm build && node dist/run.js",
+    "start:deny": "pnpm build && DEMO_DENY=1 node dist/run.js",
+    "demo:openai-tools": "pnpm -C examples/openai-tools build && node examples/openai-tools/dist/run.js"
+  },
+  "dependencies": {
+    "@oxdeai/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
