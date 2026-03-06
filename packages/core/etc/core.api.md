@@ -26,10 +26,16 @@ export type Authorization = {
 };
 
 // @public (undocumented)
+export function authPayloadString(auth: Omit<Authorization, "engine_signature">): string;
+
+// @public (undocumented)
 export type BudgetState = {
     budget_limit: Record<string, bigint | undefined>;
     spent_in_period: Record<string, bigint | undefined>;
 };
+
+// @public (undocumented)
+export function canonicalJson(value: unknown): string;
 
 // @public (undocumented)
 export type CanonicalState = {
@@ -38,6 +44,16 @@ export type CanonicalState = {
     policyId: string;
     modules: Record<string, unknown>;
 };
+
+// Warning: (ae-forgotten-export) The symbol "CanonicalState_2" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export function createCanonicalState(args: {
+    formatVersion?: 1;
+    engineVersion: string;
+    modules: Record<string, unknown>;
+    policyId: string;
+}): CanonicalState_2;
 
 // @public (undocumented)
 export const Decision: {
@@ -48,8 +64,6 @@ export const Decision: {
 // @public (undocumented)
 export type Decision = (typeof Decision)[keyof typeof Decision];
 
-// Warning: (ae-forgotten-export) The symbol "CanonicalState_2" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
 export function decodeCanonicalState(bytes: Uint8Array): CanonicalState_2;
 
@@ -63,6 +77,12 @@ export function encodeCanonicalState(state: CanonicalState_2): Uint8Array;
 
 // @public (undocumented)
 export function encodeEnvelope(envelope: VerificationEnvelopeV1): Uint8Array;
+
+// @public (undocumented)
+export function engineSignHmac(payload: unknown, secret: string): string;
+
+// @public (undocumented)
+export function engineVerifyHmac(payload: unknown, signatureHex: string, secret: string): boolean;
 
 // @public (undocumented)
 export class HashChainedLog {
@@ -87,6 +107,9 @@ export type Intent = (IntentBase & {
     type: "RELEASE";
     authorization_id: string;
 });
+
+// @public (undocumented)
+export function intentHash(intent: Intent): string;
 
 // @public (undocumented)
 export type KillSwitchState = {
@@ -255,6 +278,9 @@ export type State = {
 export type StateHash = string;
 
 // @public (undocumented)
+export function stateSnapshotHash(state: State): string;
+
+// @public (undocumented)
 export type ToolLimitsState = {
     window_seconds: number;
     max_calls: Record<string, number | undefined>;
@@ -323,6 +349,9 @@ export type VerifyEnvelopeOptions = {
 export function verifySnapshot(snapshotBytes: Uint8Array, opts?: {
     expectedPolicyId?: string;
 }): VerificationResult;
+
+// @public (undocumented)
+export function withModuleState(state: CanonicalState_2, moduleId: string, payload: unknown): CanonicalState_2;
 
 // (No @packageDocumentation comment for this package)
 

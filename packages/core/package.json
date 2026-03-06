@@ -10,6 +10,22 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./adapters": {
+      "import": "./dist/adapters/index.js",
+      "types": "./dist/adapters/index.d.ts"
+    },
+    "./verification": {
+      "import": "./dist/verification/index.js",
+      "types": "./dist/verification/index.d.ts"
+    },
+    "./snapshot": {
+      "import": "./dist/snapshot/index.js",
+      "types": "./dist/snapshot/index.d.ts"
+    },
+    "./crypto": {
+      "import": "./dist/crypto/hashes.js",
+      "types": "./dist/crypto/hashes.d.ts"
     }
   },
   "sideEffects": false,
