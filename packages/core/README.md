@@ -487,7 +487,7 @@ Stateless verification layer for protocol artifacts.
 * Unified `VerificationResult` (`ok` / `invalid` / `inconclusive`)
 * Deterministic violation ordering
 
-### v1.0.2 — Stable Protocol Core (shipped)
+### v1.0.3 — Stable Protocol Core (shipped)
 * deterministic policy engine
 * canonical snapshots
 * hash-chained audit
