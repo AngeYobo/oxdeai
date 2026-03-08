@@ -36,19 +36,24 @@ Practical effect:
 ## 2) System Boundary
 
 ```text
-+---------------------------+      +-----------------------+      +-----------------------------+
-| Agent / Runtime / Orchestrator | -> | OxDeAI Policy Engine | -> | Tools / Payments / Infra APIs |
-+---------------------------+      +-----------------------+      +-----------------------------+
-               |                               |
-               |                               +--> Canonical Snapshot
-               |                               +--> Audit Events (hash-chained)
-               |                               +--> Authorization (ALLOW only)
++------------------------------+        +----------------------------+        +-------------------------------+
+| Agent Runtime / Orchestrator | -----> | OxDeAI PDP (Policy Engine)| -----> | External Execution Surfaces   |
+| (proposes intents)           |        | (deterministic decision)   |        | (tools/payments/infra APIs)   |
++------------------------------+        +----------------------------+        +-------------------------------+
+               |                                      |
+               |                                      +--> AuthorizationV1 (on ALLOW only)
+               |                                      +--> Canonical Snapshot (state-bound)
+               |                                      +--> Audit Events (hash-chained)
                |
-               +--> persists state/audit + forwards envelope for offline verification
+               +--> PEP boundary verifies AuthorizationV1 before execution
+               +--> persists state + audit
+               +--> emits VerificationEnvelopeV1 for offline/stateless verification
 ```
 
 Boundary rule of thumb:
-- Side effects (tool call, spend, provisioning) MUST happen only after `ALLOW`.
+- Side effects (tool call, spend, provisioning) MUST happen only after `ALLOW` and successful PEP verification.
+- `DENY` or verification failure MUST result in no side effect.
+- `auth_id` SHOULD be treated as single-use at the relying-party boundary.
 
 ---
 
