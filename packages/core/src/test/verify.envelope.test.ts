@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { generateKeyPairSync } from "node:crypto";
 
 import { PolicyEngine } from "../policy/PolicyEngine.js";
 import { encodeCanonicalState } from "../snapshot/CanonicalCodec.js";
@@ -7,10 +8,11 @@ import { encodeEnvelope, signEnvelopeEd25519, verifyEnvelope } from "../verifica
 import type { AuditEntry } from "../audit/AuditLog.js";
 import type { State } from "../types/state.js";
 import type { KeySet } from "../types/keyset.js";
-import {
-  TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
-  TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
-} from "./fixtures/ed25519.test-only.fixture.js";
+
+const TEST_RUNTIME_ED25519_KEYPAIR_DO_NOT_USE_IN_PRODUCTION = generateKeyPairSync("ed25519", {
+  privateKeyEncoding: { format: "pem", type: "pkcs8" },
+  publicKeyEncoding: { format: "pem", type: "spki" },
+});
 
 function baseState(): State {
   return {
@@ -93,7 +95,7 @@ function makeAuditEvents(policyId: string, withCheckpoint: boolean): AuditEntry[
 const TEST_KEYSET: KeySet = {
   issuer: "oxdeai.policy-engine",
   version: "1",
-  keys: [{ kid: "2026-01", alg: "Ed25519", public_key: TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION }]
+  keys: [{ kid: "2026-01", alg: "Ed25519", public_key: TEST_RUNTIME_ED25519_KEYPAIR_DO_NOT_USE_IN_PRODUCTION.publicKey }]
 };
 
 test("ok: valid snapshot + audit + checkpoint in strict mode", () => {
@@ -170,7 +172,7 @@ test("ok: signed envelope verifies with trusted keyset", () => {
       snapshot: bytes,
       events: makeAuditEvents(policyId, true)
     },
-    { issuer: "oxdeai.policy-engine", kid: "2026-01", privateKeyPem: TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION }
+    { issuer: "oxdeai.policy-engine", kid: "2026-01", privateKeyPem: TEST_RUNTIME_ED25519_KEYPAIR_DO_NOT_USE_IN_PRODUCTION.privateKey }
   );
   const out = verifyEnvelope(encodeEnvelope(signed), {
     mode: "strict",
@@ -189,7 +191,7 @@ test("invalid: signed envelope tampering fails signature verification", () => {
       snapshot: bytes,
       events: makeAuditEvents(policyId, true)
     },
-    { issuer: "oxdeai.policy-engine", kid: "2026-01", privateKeyPem: TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION }
+    { issuer: "oxdeai.policy-engine", kid: "2026-01", privateKeyPem: TEST_RUNTIME_ED25519_KEYPAIR_DO_NOT_USE_IN_PRODUCTION.privateKey }
   );
   const tampered = { ...signed, events: [...signed.events, { ...signed.events[0] }] };
   const out = verifyEnvelope(encodeEnvelope(tampered), {

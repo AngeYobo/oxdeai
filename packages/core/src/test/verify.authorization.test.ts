@@ -1,16 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { generateKeyPairSync } from "node:crypto";
 import { signAuthorizationEd25519, verifyAuthorization } from "../verification/index.js";
 import type { KeySet } from "../types/keyset.js";
-import {
-  TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
-  TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
-} from "./fixtures/ed25519.test-only.fixture.js";
+
+const TEST_RUNTIME_ED25519_KEYPAIR_DO_NOT_USE_IN_PRODUCTION = generateKeyPairSync("ed25519", {
+  privateKeyEncoding: { format: "pem", type: "pkcs8" },
+  publicKeyEncoding: { format: "pem", type: "spki" },
+});
 
 const TEST_KEYSET: KeySet = {
   issuer: "issuer-A",
   version: "1",
-  keys: [{ kid: "2026-01", alg: "Ed25519", public_key: TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION }]
+  keys: [{ kid: "2026-01", alg: "Ed25519", public_key: TEST_RUNTIME_ED25519_KEYPAIR_DO_NOT_USE_IN_PRODUCTION.publicKey }]
 };
 
 function makeAuth() {
@@ -27,7 +29,7 @@ function makeAuth() {
       expiry: 1060,
       kid: "2026-01"
     },
-    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
+    TEST_RUNTIME_ED25519_KEYPAIR_DO_NOT_USE_IN_PRODUCTION.privateKey
   );
 }
 

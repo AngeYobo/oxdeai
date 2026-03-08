@@ -12,7 +12,29 @@ The SDK is an integration surface and does not redefine protocol semantics.
 
 - Intent/state builder helpers
 - Typed client wrapper for common flow: evaluate + persist + verify
+- Public guard API for callback-boundary enforcement (`createGuard`)
 - Runtime adapters (in-memory and file-based)
+
+## Guard API (v1.3 adoption layer)
+
+The SDK exposes a framework-agnostic guard boundary:
+
+```ts
+const guard = createGuard({ engine, stateAdapter, auditAdapter, clock });
+const result = await guard(intent, async ({ authorization }) => {
+  return executeTool(authorization);
+});
+```
+
+The callback runs only when OxDeAI returns `ALLOW` and authorization enforcement passes.
+On `DENY` (or failed auth verification), the callback is not executed.
+
+This keeps PDP/PEP separation explicit:
+
+- PDP: `PolicyEngine.evaluatePure(...)` decides
+- PEP: guard callback boundary enforces execute-or-refuse
+
+OxDeAI sits below agent frameworks (OpenAI tools, LangGraph, others) as the deterministic authorization boundary.
 
 ## Quick Example
 
@@ -20,6 +42,7 @@ The SDK is an integration surface and does not redefine protocol semantics.
 import { PolicyEngine } from "@oxdeai/core";
 import {
   OxDeAIClient,
+  createGuard,
   buildState,
   buildIntent,
   InMemoryStateAdapter,
@@ -60,6 +83,18 @@ const intent = buildIntent({
 });
 
 const result = await client.evaluateAndCommit(intent);
+
+const guard = createGuard({
+  engine,
+  stateAdapter,
+  auditAdapter,
+  clock: { now: () => 1770000000 }
+});
+
+await guard(intent, async () => {
+  // execute side effect only when ALLOW + auth checks pass
+  return { ok: true };
+});
 ```
 
 ## Main Exports

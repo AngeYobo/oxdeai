@@ -149,9 +149,10 @@ test("verify-audit returns strict result for current audit file", async () => {
   await runCli(["launch", "PROVISION", "100", "us-east-1", "--agent", "agent-1", "--nonce", "11", "--state", stateFile, "--audit", auditFile], cap.io);
 
   const code = await runCli(["verify-audit", "--audit", auditFile, "--json"], cap.io);
-  assert.equal(code, 0);
+  assert.equal(code, 3);
   const latest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
   assert.equal(typeof latest.status, "string");
+  assert.equal(latest.status, "inconclusive");
   assert.equal(Array.isArray(latest.violations), true);
 });
 
@@ -195,9 +196,10 @@ test("verify-envelope reads file and verifies", async () => {
   await writeFile(envelopePath, Buffer.from(envelope));
 
   const code = await runCli(["verify-envelope", envelopePath, "--json"], cap.io);
-  assert.equal(code, 0);
+  assert.equal(code, 3);
   const latest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
   assert.equal(typeof latest.status, "string");
+  assert.equal(latest.status, "inconclusive");
   assert.equal(Array.isArray(latest.violations), true);
 });
 
@@ -215,9 +217,10 @@ test("make-envelope writes envelope file that verify-envelope accepts", async ()
   assert.equal(makeCode, 0);
 
   const verifyCode = await runCli(["verify-envelope", envelopePath, "--json"], cap.io);
-  assert.equal(verifyCode, 0);
+  assert.equal(verifyCode, 3);
   const latest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
   assert.equal(typeof latest.status, "string");
+  assert.equal(latest.status, "inconclusive");
   assert.equal(Array.isArray(latest.violations), true);
 });
 
@@ -244,7 +247,7 @@ test("verify supports --kind audit from file and replay command is clear stub", 
   await runCli(["launch", "PROVISION", "100", "us-east-1", "--agent", "agent-1", "--nonce", "20", "--state", stateFile, "--audit", auditFile], cap.io);
 
   const verifyCode = await runCli(["verify", "--kind", "audit", "--file", auditFile, "--mode", "strict", "--json"], cap.io);
-  assert.equal(verifyCode, 1); // strict mode without checkpoint => inconclusive
+  assert.equal(verifyCode, 3); // strict mode without checkpoint => inconclusive
   const verifyLatest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
   assert.equal(verifyLatest.status, "inconclusive");
 
@@ -252,4 +255,74 @@ test("verify supports --kind audit from file and replay command is clear stub", 
   assert.equal(replayCode, 0);
   const replayLatest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
   assert.equal(replayLatest.status, "unsupported");
+});
+
+test("verify supports --kind authorization from file", async () => {
+  const { policyFile, stateFile, auditFile, dir } = await setup();
+  const cap = ioCapture(1_770_000_500);
+  await runCli(["init", "--file", policyFile, "--state", stateFile, "--audit", auditFile], cap.io);
+  await runCli(["launch", "PROVISION", "100", "us-east-1", "--agent", "agent-1", "--nonce", "21", "--state", stateFile, "--audit", auditFile], cap.io);
+
+  const state = JSON.parse(await readFile(stateFile, "utf8"), (_k, v) => {
+    if (typeof v === "string" && /^-?\d+n$/.test(v)) return BigInt(v.slice(0, -1));
+    return v;
+  }) as State;
+
+  const engine = new PolicyEngine({
+    policy_version: state.policy_version,
+    engine_secret: "dev-secret",
+    authorization_ttl_seconds: 120
+  });
+  const intent = {
+    intent_id: "intent:agent-1:22",
+    type: "EXECUTE" as const,
+    agent_id: "agent-1",
+    action_type: "PROVISION" as const,
+    amount: 100n,
+    asset: "a100",
+    target: "us-east-1",
+    timestamp: cap.io.now(),
+    metadata_hash: "0x" + "0".repeat(64),
+    nonce: 22n,
+    signature: "cli-signature-placeholder"
+  };
+  const evaluated = engine.evaluatePure(intent, state, { mode: "fail-fast" });
+  assert.equal(evaluated.decision, "ALLOW");
+
+  const authPath = join(dir, "authorization.json");
+  await writeFile(authPath, jsonWithBigInt(evaluated.authorization), "utf8");
+
+  const code = await runCli(
+    [
+      "verify",
+      "--kind",
+      "authorization",
+      "--file",
+      authPath,
+      "--expected-issuer",
+      evaluated.authorization.issuer,
+      "--expected-audience",
+      evaluated.authorization.audience,
+      "--json"
+    ],
+    cap.io
+  );
+  assert.equal(code, 0);
+  const latest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(latest.status, "ok");
+  assert.equal(Array.isArray(latest.violations), true);
+  assert.equal(latest.violations.length, 0);
+});
+
+test("verify fails closed on malformed authorization payload", async () => {
+  const { dir } = await setup();
+  const cap = ioCapture();
+  const malformedPath = join(dir, "bad-auth.json");
+  await writeFile(malformedPath, "{\"not\":\"authorization\"}", "utf8");
+
+  const code = await runCli(["verify", "--kind", "authorization", "--file", malformedPath, "--json"], cap.io);
+  assert.equal(code, 1);
+  const latest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(latest.status, "invalid");
+  assert.ok((latest.violations ?? []).length > 0);
 });

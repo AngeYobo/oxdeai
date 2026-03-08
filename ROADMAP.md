@@ -7,7 +7,7 @@ Last updated: 2026-03-08
 - `@oxdeai/core`: `1.2.0`
 - `@oxdeai/sdk`: `1.2.0`
 - `@oxdeai/conformance`: `1.2.0`
-- `@oxdeai/cli`: `0.1.0`
+- `@oxdeai/cli`: `0.2.0`
 - `@oxdeai/tests`: `0.1.0`
 - `@oxdeai/example-openai-tools`: `1.0.0`
 - `@oxdeai/example-gpu-guard`: no `version` field
@@ -17,7 +17,7 @@ Last updated: 2026-03-08
 
 Latest local validation (2026-03-08):
 
-- [x] `pnpm build:core`
+- [x] `pnpm build`
 - [x] `pnpm -C packages/conformance validate` (94 assertions passed)
 - [x] `pnpm -r test` (core/cli/sdk/tests passing)
 - [x] `pnpm -C examples/openai-tools start` (ALLOW, ALLOW, DENY; envelope `ok`)
@@ -27,7 +27,9 @@ Latest local validation (2026-03-08):
 
 - `v1.1` — Authorization Artifact: `DONE`
 - `v1.2` — Non-Forgeable Verification: `DONE`
-- `v1.3` — Guard Adapter + Integration Surface: `IN PROGRESS`
+- `v1.3` — Guard Adapter + Integration Surface: `SUBSTANTIALLY COMPLETE`
+- `v1.4` — Ecosystem Adoption: `NEXT`
+- `v3.x` — Public Proof Infrastructure: `LATER`
 
 Working integration demonstrations:
 
@@ -140,23 +142,24 @@ Acceptance criteria:
 
 ### CLI + SDK guard adapter
 
-Status: `In Progress`
+Status: `Substantially Complete`
 
 Evidence:
 
 - SDK integration surface exists: [`packages/sdk/src/index.ts`](./packages/sdk/src/index.ts)
-- PEP enforcement example exists: [`examples/openai-tools/src/pep.ts`](./examples/openai-tools/src/pep.ts)
-- CLI package is pre-1.0: [`packages/cli/package.json`](./packages/cli/package.json)
+- Stable guard API exists: [`packages/sdk/src/guard.ts`](./packages/sdk/src/guard.ts)
+- SDK guard tests exist: [`packages/sdk/src/guard.test.ts`](./packages/sdk/src/guard.test.ts)
+- CLI command surface stabilized: [`packages/cli/src/main.ts`](./packages/cli/src/main.ts)
 
 Exit criteria:
 
-- [ ] Stable guard-adapter API in SDK for common PEP enforcement flow.
-- [ ] CLI commands for guard setup/verification documented and tested.
+- [x] Stable guard-adapter API in SDK for common PEP enforcement flow.
+- [x] CLI commands for guard setup/verification documented and tested.
 - [ ] At least one integration guide for production PEP wiring.
 
 ### Easy integrations
 
-Status: `In Progress`
+Status: `Substantially Complete`
 
 Evidence:
 

@@ -2,8 +2,16 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { PolicyEngine, encodeCanonicalState, encodeEnvelope, verifyAuditEvents, verifyEnvelope, verifySnapshot } from "@oxdeai/core";
-import type { ActionType, Intent, State } from "@oxdeai/core";
+import {
+  PolicyEngine,
+  encodeCanonicalState,
+  encodeEnvelope,
+  verifyAuditEvents,
+  verifyAuthorization,
+  verifyEnvelope,
+  verifySnapshot
+} from "@oxdeai/core";
+import type { ActionType, AuthorizationV1, Intent, KeySet, State, VerificationResult } from "@oxdeai/core";
 
 import { appendAuditEvents, normalizeStateBigInts, readAuditEvents, readStateFile, resetAuditFile, writeStateFile } from "./store.js";
 
@@ -16,9 +24,15 @@ type Flags = {
   agent?: string;
   nonce?: string;
   asset?: string;
-  kind?: "snapshot" | "audit" | "envelope";
+  kind?: "snapshot" | "audit" | "envelope" | "authorization";
   mode?: "strict" | "best-effort";
   expectedPolicyId?: string;
+  expectedIssuer?: string;
+  expectedAudience?: string;
+  consumedAuthId?: string;
+  trustedKeyset?: string;
+  requireSignatureVerification?: boolean;
+  legacyHmacSecret?: string;
 };
 
 type Io = {
@@ -30,13 +44,17 @@ type Io = {
 const DEFAULT_STATE_PATH = ".oxdeai/state.json";
 const DEFAULT_AUDIT_PATH = ".oxdeai/audit.ndjson";
 const ACTION_TYPES = new Set<ActionType>(["PAYMENT", "PURCHASE", "PROVISION", "ONCHAIN_TX"]);
+const EXIT_CODE_OK = 0;
+const EXIT_CODE_INVALID = 1;
+const EXIT_CODE_USAGE = 2;
+const EXIT_CODE_INCONCLUSIVE = 3;
 
 function usage(): string {
   return `oxdeai CLI
 
 Usage:
   oxdeai build [--state <state.json>] [--out <snapshot.bin>] [--json]
-  oxdeai verify --kind <snapshot|audit|envelope> [--file <path>|-] [--mode <strict|best-effort>] [--expected-policy-id <hex>] [--json]
+  oxdeai verify --kind <snapshot|audit|envelope|authorization> [--file <path>|-] [--mode <strict|best-effort>] [--expected-policy-id <hex>] [--expected-issuer <id>] [--expected-audience <id>] [--consumed-auth-id <id>] [--trusted-keyset <keyset.json>] [--require-signature] [--legacy-hmac-secret <secret>] [--json]
   oxdeai replay [--json]
   oxdeai init --file <policy.json> [--state <state.json>] [--audit <audit.ndjson>] [--json]
   oxdeai launch <actionType> <amount> <target> --agent <id> --nonce <n> [--asset <asset>] [--state <state.json>] [--audit <audit.ndjson>] [--json]
@@ -101,8 +119,8 @@ function parseFlags(argv: string[]): { args: string[]; flags: Flags } {
     }
     if (a === "--kind") {
       const v = next();
-      if (v !== "snapshot" && v !== "audit" && v !== "envelope") {
-        throw new Error("Invalid --kind value (must be snapshot|audit|envelope)");
+      if (v !== "snapshot" && v !== "audit" && v !== "envelope" && v !== "authorization") {
+        throw new Error("Invalid --kind value (must be snapshot|audit|envelope|authorization)");
       }
       flags.kind = v;
       continue;
@@ -117,6 +135,30 @@ function parseFlags(argv: string[]): { args: string[]; flags: Flags } {
     }
     if (a === "--expected-policy-id") {
       flags.expectedPolicyId = next();
+      continue;
+    }
+    if (a === "--expected-issuer") {
+      flags.expectedIssuer = next();
+      continue;
+    }
+    if (a === "--expected-audience") {
+      flags.expectedAudience = next();
+      continue;
+    }
+    if (a === "--consumed-auth-id") {
+      flags.consumedAuthId = next();
+      continue;
+    }
+    if (a === "--trusted-keyset") {
+      flags.trustedKeyset = next();
+      continue;
+    }
+    if (a === "--require-signature") {
+      flags.requireSignatureVerification = true;
+      continue;
+    }
+    if (a === "--legacy-hmac-secret") {
+      flags.legacyHmacSecret = next();
       continue;
     }
 
@@ -150,8 +192,8 @@ function parseFlags(argv: string[]): { args: string[]; flags: Flags } {
     }
     if (a.startsWith("--kind=")) {
       const v = a.slice(7);
-      if (v !== "snapshot" && v !== "audit" && v !== "envelope") {
-        throw new Error("Invalid --kind value (must be snapshot|audit|envelope)");
+      if (v !== "snapshot" && v !== "audit" && v !== "envelope" && v !== "authorization") {
+        throw new Error("Invalid --kind value (must be snapshot|audit|envelope|authorization)");
       }
       flags.kind = v;
       continue;
@@ -166,6 +208,26 @@ function parseFlags(argv: string[]): { args: string[]; flags: Flags } {
     }
     if (a.startsWith("--expected-policy-id=")) {
       flags.expectedPolicyId = a.slice("--expected-policy-id=".length);
+      continue;
+    }
+    if (a.startsWith("--expected-issuer=")) {
+      flags.expectedIssuer = a.slice("--expected-issuer=".length);
+      continue;
+    }
+    if (a.startsWith("--expected-audience=")) {
+      flags.expectedAudience = a.slice("--expected-audience=".length);
+      continue;
+    }
+    if (a.startsWith("--consumed-auth-id=")) {
+      flags.consumedAuthId = a.slice("--consumed-auth-id=".length);
+      continue;
+    }
+    if (a.startsWith("--trusted-keyset=")) {
+      flags.trustedKeyset = a.slice("--trusted-keyset=".length);
+      continue;
+    }
+    if (a.startsWith("--legacy-hmac-secret=")) {
+      flags.legacyHmacSecret = a.slice("--legacy-hmac-secret=".length);
       continue;
     }
 
@@ -205,6 +267,57 @@ function parseAuditInputBytes(bytes: Uint8Array): unknown[] {
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => JSON.parse(line));
+}
+
+function parseJsonObjectBytes<T>(bytes: Uint8Array, label: string): T {
+  const text = new TextDecoder().decode(bytes).trim();
+  if (text.length === 0) throw new Error(`${label} payload is empty`);
+  const parsed = JSON.parse(text) as unknown;
+  if (parsed === null || Array.isArray(parsed) || typeof parsed !== "object") {
+    throw new Error(`${label} payload must be a JSON object`);
+  }
+  return parsed as T;
+}
+
+function verificationExitCode(result: VerificationResult): number {
+  if (result.status === "ok") return EXIT_CODE_OK;
+  if (result.status === "inconclusive") return EXIT_CODE_INCONCLUSIVE;
+  return EXIT_CODE_INVALID;
+}
+
+function writePayload(out: (line: string) => void, flags: Flags, payload: unknown, humanSummary?: string): void {
+  if (flags.json) {
+    out(toJson(payload));
+    return;
+  }
+  if (humanSummary) {
+    out(humanSummary);
+    return;
+  }
+  out(toJson(payload));
+}
+
+function verificationSummary(kind: Flags["kind"], result: VerificationResult): string {
+  const label = kind ?? "artifact";
+  const lines = [`${label}: ${result.status.toUpperCase()}`];
+  if (result.policyId) lines.push(`policyId: ${result.policyId}`);
+  if (result.stateHash) lines.push(`stateHash: ${result.stateHash}`);
+  if (result.auditHeadHash) lines.push(`auditHeadHash: ${result.auditHeadHash}`);
+  if (result.violations.length === 0) {
+    lines.push("violations: none");
+  } else {
+    lines.push(`violations: ${result.violations.map((v) => v.code).join(", ")}`);
+  }
+  return lines.join("\n");
+}
+
+async function readTrustedKeySet(path: string | undefined): Promise<KeySet[] | undefined> {
+  if (!path) return undefined;
+  const text = await readFile(path, "utf8");
+  const parsed = JSON.parse(text) as unknown;
+  if (Array.isArray(parsed)) return parsed as KeySet[];
+  if (parsed && typeof parsed === "object") return [parsed as KeySet];
+  throw new Error("trusted keyset payload must be a JSON object or array");
 }
 
 function buildValidationIntent(state: State): Intent {
@@ -260,14 +373,14 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
   } catch (e) {
     err((e as Error).message);
     err(usage());
-    return 2;
+    return EXIT_CODE_USAGE;
   }
 
   const { args, flags } = parsed;
   const cmd = args[0];
   if (!cmd) {
     err(usage());
-    return 2;
+    return EXIT_CODE_USAGE;
   }
 
   const statePath = flags.state ?? DEFAULT_STATE_PATH;
@@ -295,12 +408,12 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
         snapshotBytes: snapshotBytes.length,
         out: flags.out
       };
-      out(flags.json ? toJson(payload) : toJson(payload));
-      return verified.ok ? 0 : 1;
+      writePayload(out, flags, payload, `build: ${verified.status.toUpperCase()}\npolicyId: ${snapshot.policyId}\nstateHash: ${verified.stateHash ?? "unknown"}${flags.out ? `\nout: ${flags.out}` : ""}`);
+      return verificationExitCode(verified);
     }
 
     if (cmd === "verify") {
-      if (!flags.kind) throw new Error("Usage: verify --kind <snapshot|audit|envelope> [--file <path>|-]");
+      if (!flags.kind) throw new Error("Usage: verify --kind <snapshot|audit|envelope|authorization> [--file <path>|-]");
       const mode = flags.mode ?? "strict";
       const fromFile = flags.file && flags.file !== "-";
       const bytes = fromFile
@@ -309,17 +422,38 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
 
       if (flags.kind === "snapshot") {
         const res = verifySnapshot(bytes, flags.expectedPolicyId ? { expectedPolicyId: flags.expectedPolicyId } : undefined);
-        out(flags.json ? toJson(res) : toJson(res));
-        return res.ok ? 0 : 1;
+        writePayload(out, flags, res, verificationSummary(flags.kind, res));
+        return verificationExitCode(res);
       }
 
       if (flags.kind === "envelope") {
+        const trustedKeySets = await readTrustedKeySet(flags.trustedKeyset);
         const res = verifyEnvelope(bytes, {
           mode,
-          expectedPolicyId: flags.expectedPolicyId
+          expectedPolicyId: flags.expectedPolicyId,
+          expectedIssuer: flags.expectedIssuer,
+          trustedKeySets,
+          requireSignatureVerification: flags.requireSignatureVerification
         });
-        out(flags.json ? toJson(res) : toJson(res));
-        return res.ok ? 0 : 1;
+        writePayload(out, flags, res, verificationSummary(flags.kind, res));
+        return verificationExitCode(res);
+      }
+
+      if (flags.kind === "authorization") {
+        const trustedKeySets = await readTrustedKeySet(flags.trustedKeyset);
+        const auth = parseJsonObjectBytes<AuthorizationV1>(bytes, "authorization");
+        const res = verifyAuthorization(auth, {
+          now: now(),
+          expectedIssuer: flags.expectedIssuer,
+          expectedAudience: flags.expectedAudience,
+          expectedPolicyId: flags.expectedPolicyId,
+          consumedAuthIds: flags.consumedAuthId ? [flags.consumedAuthId] : [],
+          trustedKeySets,
+          requireSignatureVerification: flags.requireSignatureVerification,
+          legacyHmacSecret: flags.legacyHmacSecret
+        });
+        writePayload(out, flags, res, verificationSummary(flags.kind, res));
+        return verificationExitCode(res);
       }
 
       const events = parseAuditInputBytes(bytes);
@@ -327,18 +461,18 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
         mode,
         expectedPolicyId: flags.expectedPolicyId
       });
-      out(flags.json ? toJson(res) : toJson(res));
-      return res.ok ? 0 : 1;
+      writePayload(out, flags, res, verificationSummary(flags.kind, res));
+      return verificationExitCode(res);
     }
 
     if (cmd === "replay") {
       const payload = {
         ok: false,
         status: "unsupported",
-        message: "Replay verifier command is not exposed in @oxdeai/cli v0.1.0. Use verify-audit / verify --kind audit."
+        message: "Replay verifier is a protocol-aware stub in @oxdeai/cli v0.1.x. Use verify --kind audit for deterministic offline chain checks."
       };
-      out(flags.json ? toJson(payload) : toJson(payload));
-      return 0;
+      writePayload(out, flags, payload, `${payload.status.toUpperCase()}: ${payload.message}`);
+      return EXIT_CODE_OK;
     }
 
     if (cmd === "init") {
@@ -348,14 +482,14 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
       validateStateStructure(state);
       await writeStateFile(statePath, state);
       await resetAuditFile(auditPath);
-      out(flags.json ? toJson({ ok: true }) : "OK");
-      return 0;
+      writePayload(out, flags, { ok: true }, "OK");
+      return EXIT_CODE_OK;
     }
 
     if (cmd === "state") {
       const state = await readStateFile(statePath);
-      out(flags.json ? toJson(state) : toJson(state));
-      return 0;
+      writePayload(out, flags, state);
+      return EXIT_CODE_OK;
     }
 
     if (cmd === "audit") {
@@ -366,15 +500,15 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
         verify: verified.ok,
         events
       };
-      out(flags.json ? toJson(payload) : toJson(payload));
-      return 0;
+      writePayload(out, flags, payload);
+      return EXIT_CODE_OK;
     }
 
     if (cmd === "verify-audit") {
       const events = await readAuditEvents(auditPath);
       const verified = verifyAuditEvents(events as Parameters<typeof verifyAuditEvents>[0], { mode: "strict" });
-      out(flags.json ? toJson(verified) : toJson(verified));
-      return 0;
+      writePayload(out, flags, verified, verificationSummary("audit", verified));
+      return verificationExitCode(verified);
     }
 
     if (cmd === "verify-envelope") {
@@ -382,8 +516,8 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
       if (!file) throw new Error("Usage: verify-envelope <file>");
       const bytes = Uint8Array.from(await readFile(file));
       const verified = verifyEnvelope(bytes, { mode: "strict" });
-      out(flags.json ? toJson(verified) : toJson(verified));
-      return 0;
+      writePayload(out, flags, verified, verificationSummary("envelope", verified));
+      return verificationExitCode(verified);
     }
 
     if (cmd === "make-envelope") {
@@ -401,8 +535,8 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
       await mkdir(dirname(flags.out), { recursive: true });
       await writeFile(flags.out, Buffer.from(envelope));
       const payload = { ok: true, file: flags.out };
-      out(flags.json ? toJson(payload) : `OK: ${flags.out}`);
-      return 0;
+      writePayload(out, flags, payload, `OK: ${flags.out}`);
+      return EXIT_CODE_OK;
     }
 
     if (cmd === "snapshot-hash") {
@@ -417,8 +551,8 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
         status: verified.status,
         violations: verified.violations
       };
-      out(flags.json ? toJson(payload) : toJson(payload));
-      return 0;
+      writePayload(out, flags, payload, `snapshot: ${verified.status.toUpperCase()}\npolicyId: ${snapshot.policyId}\nstateHash: ${verified.stateHash ?? "unknown"}`);
+      return verificationExitCode(verified);
     }
 
     if (cmd === "launch") {
@@ -455,20 +589,20 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
       if (outEval.decision === "ALLOW") {
         await writeStateFile(statePath, outEval.nextState);
         const payload = { decision: "ALLOW" as const, authorization_id: outEval.authorization.authorization_id, reasons: [] as string[] };
-        out(flags.json ? toJson(payload) : `ALLOW: ${payload.authorization_id}`);
-        return 0;
+        writePayload(out, flags, payload, `ALLOW: ${payload.authorization_id}`);
+        return EXIT_CODE_OK;
       }
 
       const payload = { decision: "DENY" as const, reasons: outEval.reasons };
-      out(flags.json ? toJson(payload) : `DENY: ${toJson(payload.reasons)}`);
-      return 0;
+      writePayload(out, flags, payload, `DENY: ${toJson(payload.reasons)}`);
+      return EXIT_CODE_OK;
     }
 
     err(usage());
-    return 2;
+    return EXIT_CODE_USAGE;
   } catch (e) {
     err((e as Error).message);
-    return 1;
+    return EXIT_CODE_INVALID;
   }
 }
 

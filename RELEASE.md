@@ -1,14 +1,48 @@
 # OxDeAI Release Policy
 
-This document defines release discipline for OxDeAI protocol and implementation artifacts.
+Last updated: 2026-03-08
 
-## Scope
+This document is the single source of truth for OxDeAI release governance and release execution.
 
-- Protocol spec and artifacts (`protocol/`, `packages/core` verification surface)
-- Reference implementation (`@oxdeai/core`)
-- Companion packages (`@oxdeai/sdk`, `@oxdeai/conformance`)
+## 1. Scope
 
-## SemVer Rules
+This policy covers:
+
+- protocol specifications and artifacts
+- release governance for published packages
+- versioning rules and breaking-change boundaries
+- release workflow, tagging, and provenance
+- validation and publication checks
+
+Audience: maintainers, contributors, and auditors.
+
+## 2. Package Groups
+
+Protocol stack packages (coordinated releases):
+
+- `@oxdeai/core`
+- `@oxdeai/sdk`
+- `@oxdeai/conformance`
+
+Tooling package (independent release line):
+
+- `@oxdeai/cli`
+
+Non-release packages for protocol versioning:
+
+- examples (for example `examples/openai-tools`, `examples/langgraph`)
+- internal tests (for example `@oxdeai/tests`)
+
+Examples and internal tests do not define protocol release status.
+
+## 3. Versioning Policy
+
+- The protocol stack (`core`, `sdk`, `conformance`) MUST move on a shared version line.
+- Protocol milestones and compatibility claims MUST map to the shared protocol stack version.
+- `@oxdeai/cli` MAY release independently until declared stable under the protocol-stack line.
+- Examples/tests MUST NOT be used as authoritative protocol version indicators.
+
+## 4. SemVer Rules (Protocol Stack)
 
 ### Patch (`1.0.x`)
 
@@ -20,32 +54,49 @@ This document defines release discipline for OxDeAI protocol and implementation 
   - verification result semantics
 - MAY include:
   - documentation clarifications
-  - schema publication/validation tightening aligned to existing behavior
+  - schema validation tightening aligned to existing behavior
   - CI/tooling hardening
-  - non-breaking bug fixes
+  - non-breaking fixes
 
-### Minor (`1.x.0`, `x>0`)
+### Minor (`1.x.0`, `x > 0`)
 
-- Adds backward-compatible capabilities (new helpers/modules/adapters).
-- MUST preserve all stable protocol artifacts from `1.0.0`.
+- Adds backward-compatible capabilities.
+- MUST preserve stable protocol artifacts from `1.0.0`.
 
-### Major (`2.0.0`)
+### Major (`2.0.0+`)
 
-- Required for any breaking protocol/API change.
+- Required for breaking protocol/API changes.
 
-## What Is Breaking
+## 5. What Is Breaking
 
 The following require a major release:
 
-- Changing `VerificationResult` schema in a non-backward-compatible way
+- Changing `VerificationResult` in a non-backward-compatible way
 - Changing `VerificationEnvelopeV1` wire semantics
-- Changing violation code semantics used by stateless verifiers
+- Changing violation-code semantics used by stateless verifiers
 - Changing canonical hashing behavior for stable artifacts
-- Removing/renaming public API symbols relied on by documented usage
+- Removing/renaming documented public API symbols
 
-## Required CI Gates (Release Branch / Main)
+## 6. Tagging Policy
 
-All must pass before tagging:
+- Coordinated protocol stack releases MUST use repo tags `vX.Y.Z`.
+- Tags MUST point to the exact commit used for publication.
+- Package-specific tags are discouraged for coordinated protocol releases.
+- If package-specific tags are introduced, mapping rules to protocol tags MUST be documented first.
+
+## 7. Changelog Requirements
+
+Every protocol stack release MUST be documented in:
+
+- `packages/core/CHANGELOG.md`
+- `packages/sdk/CHANGELOG.md`
+- `packages/conformance/CHANGELOG.md`
+
+Release notes MUST map npm versions to Git history (commit/tag references).
+
+## 8. Required Validation Gates
+
+All required gates MUST pass before protocol tagging/publication:
 
 1. `pnpm install --frozen-lockfile`
 2. `pnpm build`
@@ -53,11 +104,11 @@ All must pass before tagging:
 4. `pnpm -C packages/core api:check`
 5. `pnpm -C packages/core api:fingerprint:check`
 6. `pnpm -C packages/conformance validate`
-7. Demo smoke (if demo package is in repo)
+7. Demo smoke checks when affected
 
-## API Report / Fingerprint Baseline Update
+## 9. API Report / Fingerprint Baseline
 
-Update API baseline only when the API change is intentional and reviewed.
+Update API baselines only when API change is intentional and reviewed.
 
 1. Run:
    - `pnpm -C packages/core api:report`
@@ -66,23 +117,36 @@ Update API baseline only when the API change is intentional and reviewed.
    - `packages/core/temp/core.api.md`
    - `packages/core/etc/core.api.md`
    - `packages/core/API_FINGERPRINT`
-3. If approved, copy/update baseline files in the same PR with rationale.
+3. If approved, update baselines in the same PR with rationale.
 4. Re-run `api:check` and `api:fingerprint:check`.
 
-## Security Requirements
+## 10. Release Workflow (Protocol Stack)
 
-- Follow coordinated disclosure process in [SECURITY.md](./SECURITY.md).
-- Release notes MUST mention any security-relevant changes.
-- Secrets used for signing/verification tests MUST remain test-only and non-production.
-
-## Release Checklist
-
-1. Ensure working tree is clean.
-2. Ensure changelog/version updates are complete.
-3. Run all required gates.
-4. Tag release commit.
-5. Publish packages in dependency order:
+1. Ensure clean working tree.
+2. Bump `core`, `sdk`, and `conformance` to one target version.
+3. Update changelogs and release notes.
+4. Run required validation gates.
+5. Commit release changes.
+6. Create/push coordinated tag (`vX.Y.Z`).
+7. Publish packages in order:
    - `@oxdeai/core`
    - `@oxdeai/sdk`
    - `@oxdeai/conformance`
-6. Verify npm published versions.
+8. Verify published npm versions.
+
+If publication fails, resolve and retry from the same committed state, or cut a new patch release with explicit notes.
+
+## 11. Security and Provenance
+
+- npm publication is immutable; Git tags/commits provide provenance context.
+- Published versions MUST correspond to committed and tagged repository state.
+- Post-release fixes MUST ship as new versions; published versions MUST NOT be rewritten.
+- Follow coordinated disclosure process in [SECURITY.md](./SECURITY.md).
+- Release notes MUST mention security-relevant changes.
+- Test signing material MUST be explicitly test-only and non-production.
+
+## 12. Future Evolution
+
+Shared protocol-stack versioning is the current model.
+
+If protocol package cadence diverges significantly, maintainers MAY adopt a new model. Any change MUST be documented here before use.

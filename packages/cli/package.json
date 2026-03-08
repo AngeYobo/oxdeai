@@ -1,7 +1,15 @@
 {
   "name": "@oxdeai/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "description": "Protocol-focused CLI tooling for OxDeAI artifact build/verify/replay workflows",
   "type": "module",
+  "bin": {
+    "oxdeai": "dist/main.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "dependencies": {
     "@oxdeai/core": "workspace:*"
   },
