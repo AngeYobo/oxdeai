@@ -50,6 +50,10 @@ Tooling package:
 Examples:
 - `examples/openai-tools` - protocol reference boundary demo
 - `examples/langgraph` - framework integration boundary demo
+- `examples/crewai` - CrewAI-shaped boundary integration demo
+- `examples/openai-agents-sdk` - OpenAI Agents SDK-shaped boundary integration demo
+- `examples/autogen` - AutoGen-shaped boundary integration demo
+- `examples/openclaw` - OpenClaw-shaped boundary integration demo
 
 Specifications and docs:
 - `SPEC.md`, `SECURITY.md`, `PROTOCOL.md`
@@ -67,6 +71,22 @@ Specifications and docs:
 - [`examples/langgraph`](./examples/langgraph) - framework integration demo
   - same boundary model embedded in a LangGraph workflow
   - frameworks propose actions; OxDeAI authorizes execution
+
+- [`examples/crewai`](./examples/crewai) - CrewAI-shaped integration demo
+  - same deterministic economic policy scenario
+  - same PDP/PEP enforcement and envelope verification path
+
+- [`examples/openai-agents-sdk`](./examples/openai-agents-sdk) - OpenAI Agents SDK-shaped integration demo
+  - same deterministic economic policy scenario
+  - same PDP/PEP enforcement and envelope verification path
+
+- [`examples/autogen`](./examples/autogen) - AutoGen-shaped integration demo
+  - same deterministic economic policy scenario
+  - same PDP/PEP enforcement and envelope verification path
+
+- [`examples/openclaw`](./examples/openclaw) - OpenClaw-shaped integration demo
+  - same deterministic economic policy scenario
+  - same PDP/PEP enforcement and envelope verification path
 
 ## Stack Placement
 
@@ -135,6 +155,10 @@ Latest local validation (2026-03-08):
 - `pnpm -r test` pass
 - `pnpm -C examples/openai-tools start` pass (`ALLOW`, `ALLOW`, `DENY`, envelope `ok`)
 - `pnpm -C examples/langgraph start` pass (`ALLOW`, `ALLOW`, `DENY`, envelope `ok`)
+- `pnpm -C examples/crewai start` pass (`ALLOW`, `ALLOW`, `DENY`, envelope `ok`)
+- `pnpm -C examples/openai-agents-sdk start` pass (`ALLOW`, `ALLOW`, `DENY`, envelope `ok`)
+- `pnpm -C examples/autogen start` pass (`ALLOW`, `ALLOW`, `DENY`, envelope `ok`)
+- `pnpm -C examples/openclaw start` pass (`ALLOW`, `ALLOW`, `DENY`, envelope `ok`)
 
 ## Protocol Flow (v1.3.x)
 

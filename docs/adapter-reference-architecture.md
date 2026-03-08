@@ -36,3 +36,11 @@ This architecture is framework-agnostic because runtimes interact through the sa
 - artifacts are verified with common stateless verifiers
 
 Framework choice changes adapter code, not protocol semantics.
+
+Current runtime-style demo coverage in this repository:
+- OpenAI tools reference boundary demo
+- LangGraph
+- CrewAI
+- OpenAI Agents SDK
+- AutoGen
+- OpenClaw

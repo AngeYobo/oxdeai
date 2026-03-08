@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-type AdapterId = "openai-tools" | "langgraph";
+type AdapterId = "openai-tools" | "langgraph" | "openclaw";
 
 type CheckResult = {
   name: AdapterId;
@@ -17,14 +17,14 @@ type CheckResult = {
   notes: string[];
 };
 
-const ADAPTERS: readonly AdapterId[] = ["openai-tools", "langgraph"] as const;
+const ADAPTERS: readonly AdapterId[] = ["openai-tools", "langgraph", "openclaw"] as const;
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, "..", "..");
 
 function usage(): string {
   return [
     "Usage:",
-    "  verify-adapter.ts [--adapter <openai-tools|langgraph|all>]",
+    "  verify-adapter.ts [--adapter <openai-tools|langgraph|openclaw|all>]",
     "",
     "Examples:",
     "  pnpm -C packages/conformance tsx ../../scripts/adapter-check/verify-adapter.ts",
@@ -55,8 +55,8 @@ function parseAdapterArg(argv: string[]): AdapterId[] {
   }
 
   if (target === "all") return [...ADAPTERS];
-  if (target === "openai-tools" || target === "langgraph") return [target];
-  throw new Error("Invalid --adapter value (must be openai-tools|langgraph|all)");
+  if (target === "openai-tools" || target === "langgraph" || target === "openclaw") return [target];
+  throw new Error("Invalid --adapter value (must be openai-tools|langgraph|openclaw|all)");
 }
 
 function runAdapter(adapter: AdapterId): CheckResult {

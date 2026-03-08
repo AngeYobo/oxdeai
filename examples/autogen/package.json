@@ -1,0 +1,18 @@
+{
+  "name": "@oxdeai/example-autogen",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OxDeAI pre-execution economic boundary demo - AutoGen pattern",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "pnpm build && node dist/run.js",
+    "demo:autogen": "pnpm -C examples/autogen build && node examples/autogen/dist/run.js"
+  },
+  "dependencies": {
+    "@oxdeai/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

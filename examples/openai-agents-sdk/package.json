@@ -1,0 +1,18 @@
+{
+  "name": "@oxdeai/example-openai-agents-sdk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OxDeAI pre-execution economic boundary demo - OpenAI Agents SDK pattern",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "pnpm build && node dist/run.js",
+    "demo:openai-agents-sdk": "pnpm -C examples/openai-agents-sdk build && node examples/openai-agents-sdk/dist/run.js"
+  },
+  "dependencies": {
+    "@oxdeai/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

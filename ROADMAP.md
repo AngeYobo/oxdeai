@@ -65,6 +65,10 @@ Delivered:
 References:
 - [`examples/openai-tools`](./examples/openai-tools)
 - [`examples/langgraph`](./examples/langgraph)
+- [`examples/crewai`](./examples/crewai)
+- [`examples/openai-agents-sdk`](./examples/openai-agents-sdk)
+- [`examples/autogen`](./examples/autogen)
+- [`examples/openclaw`](./examples/openclaw)
 - [`docs/pep-production-guide.md`](./docs/pep-production-guide.md)
 
 ### v1.4 - Ecosystem Adoption
@@ -80,12 +84,15 @@ Examples of target integrations:
 - CrewAI
 - OpenAI Agents SDK
 - AutoGen
+- OpenClaw
 - other runtime adapters
 
 Note: OxDeAI remains a protocol/enforcement layer, not a framework.
+OpenClaw status: demo integration is implemented; broader production/runtime-specific integration remains future work.
 
 Execution checklist:
-- [ ] Ship 3 maintained adapter targets (`OpenAI Agents SDK`, `CrewAI`, `AutoGen`).
+- [x] Ship 3 maintained adapter targets (`OpenAI Agents SDK`, `CrewAI`, `AutoGen`).
+- [x] Ship OpenClaw adapter demo coverage (`examples/openclaw`).
 - [ ] Define one shared adapter contract (proposed action input, authorization gate, execute/refuse output, audit emission).
 - [ ] Publish a consistent integration kit for each adapter:
   - install

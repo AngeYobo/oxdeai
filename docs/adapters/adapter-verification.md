@@ -32,6 +32,7 @@ For each target adapter demo:
 
 - `examples/openai-tools`
 - `examples/langgraph`
+- `examples/openclaw`
 
 ## Usage
 
@@ -44,8 +45,9 @@ pnpm -C packages/conformance tsx ../../scripts/adapter-check/verify-adapter.ts
 Single adapter:
 
 ```bash
-pnpm -C packages/conformance tsx ../../scripts/adapter-check/verify-adapter.ts --adapter openai-tools
-pnpm -C packages/conformance tsx ../../scripts/adapter-check/verify-adapter.ts --adapter langgraph
+  pnpm -C packages/conformance tsx ../../scripts/adapter-check/verify-adapter.ts --adapter openai-tools
+  pnpm -C packages/conformance tsx ../../scripts/adapter-check/verify-adapter.ts --adapter langgraph
+  pnpm -C packages/conformance tsx ../../scripts/adapter-check/verify-adapter.ts --adapter openclaw
 ```
 
 ## Output

@@ -47,7 +47,11 @@ Equivalent formatting is allowed, but decision order and verification outcome mu
 
 - [`examples/openai-tools`](../../examples/openai-tools)
 - [`examples/langgraph`](../../examples/langgraph)
+- [`examples/crewai`](../../examples/crewai)
+- [`examples/openai-agents-sdk`](../../examples/openai-agents-sdk)
+- [`examples/autogen`](../../examples/autogen)
+- [`examples/openclaw`](../../examples/openclaw)
 
 ## Adapter Requirement
 
-Future adapters MUST replicate this scenario before being treated as integration-complete.
+Any new adapter MUST replicate this scenario before being treated as integration-complete.

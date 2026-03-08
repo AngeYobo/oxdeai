@@ -15,6 +15,26 @@ importers:
         specifier: ^5.6.0
         version: 5.9.3
 
+  examples/autogen:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
+  examples/crewai:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   examples/gpu-guard: {}
 
   examples/langgraph:
@@ -22,6 +42,16 @@ importers:
       '@langchain/langgraph':
         specifier: ^0.2.0
         version: 0.2.74(@langchain/core@0.3.80)(zod-to-json-schema@3.25.1(zod@3.25.76))
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
+  examples/openai-agents-sdk:
+    dependencies:
       '@oxdeai/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -40,17 +70,27 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
+  examples/openclaw:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   packages/cli:
     dependencies:
       '@oxdeai/core':
         specifier: ^1.3.0
-        version: link:../core
+        version: 1.3.0
 
   packages/conformance:
     dependencies:
       '@oxdeai/core':
         specifier: ^1.3.0
-        version: link:../core
+        version: 1.3.0
     devDependencies:
       ts-node:
         specifier: ^10.9.0
@@ -72,7 +112,7 @@ importers:
     dependencies:
       '@oxdeai/core':
         specifier: ^1.3.0
-        version: link:../core
+        version: 1.3.0
 
   tests:
     dependencies:
@@ -305,6 +345,10 @@ packages:
 
   '@microsoft/tsdoc@0.16.0':
     resolution: {integrity: sha512-xgAyonlVVS+q7Vc7qLW0UrJU7rSFcETRWsqdXZtjzRU8dF+6CkozTK4V4y1LwOX7j8r/vHphjDeMeGI4tNGeGA==}
+
+  '@oxdeai/core@1.3.0':
+    resolution: {integrity: sha512-ScWmPqrRKpOZ46YeVlSHLGX+fCm0LxFsigIjHVoz3PVK/IoFfSqIWqTuB8Df5hUb2DQnv2TEZaY0h24eohmB1w==}
+    engines: {node: '>=18'}
 
   '@rushstack/node-core-library@5.20.3':
     resolution: {integrity: sha512-95JgEPq2k7tHxhF9/OJnnyHDXfC9cLhhta0An/6MlkDsX2A6dTzDrTUG18vx4vjc280V0fi0xDH9iQczpSuWsw==}
@@ -864,6 +908,8 @@ snapshots:
       resolve: 1.22.11
 
   '@microsoft/tsdoc@0.16.0': {}
+
+  '@oxdeai/core@1.3.0': {}
 
   '@rushstack/node-core-library@5.20.3(@types/node@25.3.3)':
     dependencies:
