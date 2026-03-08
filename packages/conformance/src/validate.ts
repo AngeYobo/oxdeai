@@ -6,12 +6,14 @@ import {
   encodeEnvelope,
   PolicyEngine,
   sha256HexFromJson,
+  signAuthorizationEd25519,
+  signEnvelopeEd25519,
   verifyAuthorization,
   verifyAuditEvents,
   verifyEnvelope,
   verifySnapshot
 } from "@oxdeai/core";
-import type { AuthorizationV1, Intent, State, VerificationResult } from "@oxdeai/core";
+import type { AuthorizationV1, Intent, KeySet, State, VerificationResult } from "@oxdeai/core";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -25,6 +27,9 @@ type AuthorizationLike = {
   decision: "ALLOW" | "DENY";
   issued_at: number;
   expiry: number;
+  alg: "Ed25519" | "HMAC-SHA256";
+  kid: string;
+  signature: string;
   state_snapshot_hash: string;
   expires_at: number;
   engine_signature: string;
@@ -43,14 +48,42 @@ type ConformanceAdapter = {
     events: unknown[],
     opts?: { expectedPolicyId?: string; mode?: "strict" | "best-effort"; requireStateAnchors?: boolean }
   ): VerificationResult;
-  verifyEnvelope(bytes: Uint8Array, opts?: { expectedPolicyId?: string; mode?: "strict" | "best-effort" }): VerificationResult;
+  verifyEnvelope(bytes: Uint8Array, opts?: {
+    expectedPolicyId?: string;
+    mode?: "strict" | "best-effort";
+    expectedIssuer?: string;
+    trustedKeySets?: KeySet | readonly KeySet[];
+    requireSignatureVerification?: boolean;
+    now?: number;
+  }): VerificationResult;
   verifyAuthorization(auth: AuthorizationV1, opts?: {
     now?: number;
     expectedIssuer?: string;
     expectedAudience?: string;
     expectedPolicyId?: string;
     consumedAuthIds?: readonly string[];
+    trustedKeySets?: KeySet | readonly KeySet[];
+    requireSignatureVerification?: boolean;
+    legacyHmacSecret?: string;
   }): VerificationResult;
+};
+
+const TEST_ED25519_PRIVATE_KEY = `-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEIBx0hBPi6cIYPo/JZbavNXDDLlfV1vj+IyS+R4oq2Zvx
+-----END PRIVATE KEY-----`;
+const TEST_ED25519_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAWiMMGTYK7zzHwZXLzDpCshxAH6Lgx8gVsJaixePuY7g=
+-----END PUBLIC KEY-----`;
+const TEST_KEYSET: KeySet = {
+  issuer: "oxdeai.policy-engine",
+  version: "1",
+  keys: [
+    {
+      kid: "2026-01",
+      alg: "Ed25519",
+      public_key: TEST_ED25519_PUBLIC_KEY
+    }
+  ]
 };
 
 const CORE_ENGINE_SECRET = "test-secret";
@@ -340,7 +373,12 @@ function validateAuthorizationVerificationVectors(ctx: CheckCtx, adapter: Confor
   for (const v of file.vectors) {
     const id = String(v.id);
     const input = asRecord(v.input);
-    const auth = asRecord(input.auth) as AuthorizationV1;
+    const auth = {
+      alg: "HMAC-SHA256",
+      kid: "legacy",
+      signature: "legacy-placeholder",
+      ...(asRecord(input.auth) as Record<string, unknown>)
+    } as AuthorizationV1;
     const opts = (input.opts ? asRecord(input.opts) : {}) as {
       now?: number;
       expectedIssuer?: string;
@@ -351,6 +389,83 @@ function validateAuthorizationVerificationVectors(ctx: CheckCtx, adapter: Confor
     const expected = asRecord(v.expected);
     const got = adapter.verifyAuthorization(auth, opts);
 
+    eq(ctx, `${id} status`, got.status, String(expected.status));
+    eq(ctx, `${id} violations`, got.violations, expected.violations ?? []);
+  }
+}
+
+function makeSignedAuthorizationBase(now = 1730000000): AuthorizationV1 {
+  return signAuthorizationEd25519(
+    {
+      auth_id: "f".repeat(64),
+      issuer: "oxdeai.policy-engine",
+      audience: "merchant-gateway",
+      intent_hash: "a".repeat(64),
+      state_hash: "b".repeat(64),
+      policy_id: "c".repeat(64),
+      decision: "ALLOW",
+      issued_at: now,
+      expiry: now + 60,
+      kid: "2026-01"
+    },
+    TEST_ED25519_PRIVATE_KEY
+  );
+}
+
+function validateAuthorizationSignatureVectors(ctx: CheckCtx, adapter: ConformanceAdapter): void {
+  const file = loadJson<VectorFile>("authorization-signature-verification.json");
+
+  for (const v of file.vectors) {
+    const id = String(v.id);
+    const mode = String(v.mode);
+    const expected = asRecord(v.expected);
+    let auth = makeSignedAuthorizationBase();
+    const opts: Parameters<ConformanceAdapter["verifyAuthorization"]>[1] = {
+      now: 1730000010,
+      expectedIssuer: "oxdeai.policy-engine",
+      expectedAudience: "merchant-gateway",
+      expectedPolicyId: "c".repeat(64),
+      trustedKeySets: TEST_KEYSET,
+      requireSignatureVerification: true,
+      consumedAuthIds: []
+    };
+
+    if (mode === "invalid-signature") {
+      auth = { ...auth, signature: `${auth.signature.slice(0, -2)}aa` };
+    } else if (mode === "wrong-kid") {
+      auth = { ...auth, kid: "unknown-kid" };
+    } else if (mode === "wrong-issuer") {
+      auth = { ...auth, issuer: "other-issuer" };
+    } else if (mode === "wrong-audience") {
+      const { signature: _sig, alg: _alg, ...unsigned } = auth;
+      auth = signAuthorizationEd25519(
+        {
+          ...unsigned,
+          audience: "other-audience"
+        },
+        TEST_ED25519_PRIVATE_KEY
+      );
+      opts.expectedAudience = "merchant-gateway";
+    } else if (mode === "tampered-field") {
+      auth = { ...auth, state_hash: "d".repeat(64) };
+    } else if (mode === "expired") {
+      const { signature: _sig, alg: _alg, ...unsigned } = auth;
+      auth = signAuthorizationEd25519(
+        {
+          ...unsigned,
+          issued_at: 100,
+          expiry: 110
+        },
+        TEST_ED25519_PRIVATE_KEY
+      );
+      opts.now = 120;
+    } else if (mode === "replay") {
+      opts.consumedAuthIds = [auth.auth_id];
+    } else if (mode === "unknown-alg") {
+      auth = { ...auth, alg: "Unknown" as any };
+    }
+
+    const got = adapter.verifyAuthorization(auth, opts);
     eq(ctx, `${id} status`, got.status, String(expected.status));
     eq(ctx, `${id} violations`, got.violations, expected.violations ?? []);
   }
@@ -498,6 +613,72 @@ function validateEnvelopeVectors(ctx: CheckCtx, adapter: ConformanceAdapter): vo
   }
 }
 
+function validateEnvelopeSignatureVectors(ctx: CheckCtx, adapter: ConformanceAdapter): void {
+  const file = loadJson<VectorFile>("envelope-signature-verification.json");
+  const engine = makeEngine();
+  const state = makeBaseState();
+  const bytes = encodeCanonicalState(engine.exportState(state));
+  const policyId = engine.computePolicyId();
+  const events = [
+    {
+      type: "INTENT_RECEIVED" as const,
+      intent_hash: "11".repeat(32),
+      agent_id: "agent-1",
+      timestamp: 100,
+      policyId
+    },
+    {
+      type: "STATE_CHECKPOINT" as const,
+      stateHash: verifySnapshot(bytes, { expectedPolicyId: policyId }).stateHash!,
+      timestamp: 101,
+      policyId
+    }
+  ];
+  const signed = signEnvelopeEd25519(
+    {
+      formatVersion: 1,
+      snapshot: bytes,
+      events
+    },
+    { issuer: "oxdeai.policy-engine", kid: "2026-01", privateKeyPem: TEST_ED25519_PRIVATE_KEY }
+  );
+
+  for (const v of file.vectors) {
+    const id = String(v.id);
+    const mode = String(v.mode);
+    const expected = asRecord(v.expected);
+    let env = structuredClone(signed);
+    const opts: Parameters<ConformanceAdapter["verifyEnvelope"]>[1] & {
+      trustedKeySets?: KeySet;
+      expectedIssuer?: string;
+      requireSignatureVerification?: boolean;
+      now?: number;
+    } = {
+      mode: "strict",
+      expectedPolicyId: policyId,
+      expectedIssuer: "oxdeai.policy-engine",
+      trustedKeySets: TEST_KEYSET,
+      requireSignatureVerification: true,
+      now: 1730000010
+    };
+
+    if (mode === "tampered-envelope") {
+      env = { ...env, events: [...env.events, { type: "DECISION", intent_hash: "11".repeat(32), decision: "ALLOW", reasons: [], policy_version: "v1", timestamp: 102, policyId }] as any };
+    } else if (mode === "unknown-alg") {
+      env = { ...env, alg: "Unknown" as any };
+    } else if (mode === "unknown-kid") {
+      env = { ...env, kid: "missing-kid" };
+    } else if (mode === "malformed-signature") {
+      env = { ...env, signature: "!!!not-base64!!!" };
+    }
+
+    const wire = encodeEnvelope(env as any);
+    const got = adapter.verifyEnvelope(wire, opts as any);
+    eq(ctx, `${id} status`, got.status, String(expected.status));
+    eq(ctx, `${id} violations`, got.violations, expected.violations ?? []);
+  }
+}
+
 function buildAuditVerificationCases(
   adapter: ConformanceAdapter
 ): Array<{ status: string; violations: unknown[] }> {
@@ -631,10 +812,12 @@ function main(): void {
   validateIntentHashVectors(ctx, adapter);
   validateAuthorizationVectors(ctx, adapter);
   validateAuthorizationVerificationVectors(ctx, adapter);
+  validateAuthorizationSignatureVectors(ctx, adapter);
   validateSnapshotVectors(ctx, adapter);
   validateAuditChainVectors(ctx, adapter);
   validateAuditVerificationVectors(ctx, adapter);
   validateEnvelopeVectors(ctx, adapter);
+  validateEnvelopeSignatureVectors(ctx, adapter);
 
   if (ctx.failures.length > 0) {
     console.error(`\nConformance failed: ${ctx.failures.length} assertion(s)`);

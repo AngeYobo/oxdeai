@@ -79,7 +79,10 @@ export function validateAuthorizationJson(value: unknown): SchemaValidationIssue
     "policy_id",
     "decision",
     "issued_at",
-    "expiry"
+    "expiry",
+    "alg",
+    "kid",
+    "signature"
   ] as const;
   for (const key of required) {
     if (!(key in value)) issues.push({ path: "$", code: "REQUIRED", message: `missing ${key}` });
@@ -109,6 +112,8 @@ export function validateAuthorizationJson(value: unknown): SchemaValidationIssue
   if ("decision" in value && value.decision !== "ALLOW" && value.decision !== "DENY") issues.push({ path: "$.decision", code: "ENUM", message: "must be ALLOW or DENY" });
   if ("issued_at" in value && !intNonNegative(value.issued_at)) issues.push({ path: "$.issued_at", code: "TYPE", message: "must be non-negative integer" });
   if ("expiry" in value && !intNonNegative(value.expiry)) issues.push({ path: "$.expiry", code: "TYPE", message: "must be non-negative integer" });
+  if ("alg" in value && value.alg !== "Ed25519" && value.alg !== "HMAC-SHA256") issues.push({ path: "$.alg", code: "ENUM", message: "must be Ed25519 or HMAC-SHA256" });
+  if ("kid" in value && (typeof value.kid !== "string" || value.kid.length === 0)) issues.push({ path: "$.kid", code: "TYPE", message: "must be non-empty string" });
   if ("expires_at" in value && !intNonNegative(value.expires_at)) issues.push({ path: "$.expires_at", code: "TYPE", message: "must be non-negative integer" });
   if ("engine_signature" in value && !hex64(value.engine_signature)) issues.push({ path: "$.engine_signature", code: "FORMAT", message: "must be 64-char lowercase hex" });
   if ("signature" in value && value.signature !== undefined && typeof value.signature !== "string") issues.push({ path: "$.signature", code: "TYPE", message: "must be string when present" });
@@ -233,7 +238,8 @@ export function validateVerificationEnvelopeWireJson(value: unknown): SchemaVali
   for (const key of required) {
     if (!(key in value)) issues.push({ path: "$", code: "REQUIRED", message: `missing ${key}` });
   }
-  pushAdditional(value, required, "$", issues);
+  const allowed = [...required, "issuer", "alg", "kid", "signature"] as const;
+  pushAdditional(value, allowed, "$", issues);
 
   if ("formatVersion" in value && value.formatVersion !== 1) {
     issues.push({ path: "$.formatVersion", code: "VALUE", message: "must equal 1" });
@@ -250,7 +256,54 @@ export function validateVerificationEnvelopeWireJson(value: unknown): SchemaVali
       }
     }
   }
+  const hasSig = typeof value.signature === "string";
+  if ("issuer" in value && typeof value.issuer !== "string") issues.push({ path: "$.issuer", code: "TYPE", message: "must be string" });
+  if ("alg" in value && value.alg !== "Ed25519") issues.push({ path: "$.alg", code: "ENUM", message: "must be Ed25519" });
+  if ("kid" in value && typeof value.kid !== "string") issues.push({ path: "$.kid", code: "TYPE", message: "must be string" });
+  if ("signature" in value && typeof value.signature !== "string") issues.push({ path: "$.signature", code: "TYPE", message: "must be string" });
+  if (hasSig) {
+    if (typeof value.issuer !== "string" || value.issuer.length === 0) issues.push({ path: "$.issuer", code: "REQUIRED", message: "required when signature is present" });
+    if (value.alg !== "Ed25519") issues.push({ path: "$.alg", code: "REQUIRED", message: "required when signature is present" });
+    if (typeof value.kid !== "string" || value.kid.length === 0) issues.push({ path: "$.kid", code: "REQUIRED", message: "required when signature is present" });
+  }
 
+  return sorted(issues);
+}
+
+export function validateKeySetJson(value: unknown): SchemaValidationIssue[] {
+  const issues: SchemaValidationIssue[] = [];
+  if (!isObject(value)) return [{ path: "$", code: "TYPE", message: "must be object" }];
+  const required = ["issuer", "version", "keys"] as const;
+  for (const key of required) {
+    if (!(key in value)) issues.push({ path: "$", code: "REQUIRED", message: `missing ${key}` });
+  }
+  pushAdditional(value, required, "$", issues);
+  if ("issuer" in value && (typeof value.issuer !== "string" || value.issuer.length === 0)) issues.push({ path: "$.issuer", code: "TYPE", message: "must be non-empty string" });
+  if ("version" in value && (typeof value.version !== "string" || value.version.length === 0)) issues.push({ path: "$.version", code: "TYPE", message: "must be non-empty string" });
+  if ("keys" in value && !Array.isArray(value.keys)) {
+    issues.push({ path: "$.keys", code: "TYPE", message: "must be array" });
+    return sorted(issues);
+  }
+  if (Array.isArray(value.keys)) {
+    for (let i = 0; i < value.keys.length; i++) {
+      const k = value.keys[i];
+      if (!isObject(k)) {
+        issues.push({ path: `$.keys[${i}]`, code: "TYPE", message: "must be object" });
+        continue;
+      }
+      const req = ["kid", "alg", "public_key"] as const;
+      for (const key of req) {
+        if (!(key in k)) issues.push({ path: `$.keys[${i}]`, code: "REQUIRED", message: `missing ${key}` });
+      }
+      pushAdditional(k, ["kid", "alg", "public_key", "status", "not_before", "not_after"], `$.keys[${i}]`, issues);
+      if ("kid" in k && (typeof k.kid !== "string" || k.kid.length === 0)) issues.push({ path: `$.keys[${i}].kid`, code: "TYPE", message: "must be non-empty string" });
+      if ("alg" in k && k.alg !== "Ed25519" && k.alg !== "HMAC-SHA256") issues.push({ path: `$.keys[${i}].alg`, code: "ENUM", message: "must be Ed25519 or HMAC-SHA256" });
+      if ("public_key" in k && (typeof k.public_key !== "string" || k.public_key.length === 0)) issues.push({ path: `$.keys[${i}].public_key`, code: "TYPE", message: "must be non-empty string" });
+      if ("status" in k && k.status !== "active" && k.status !== "retired" && k.status !== "revoked") issues.push({ path: `$.keys[${i}].status`, code: "ENUM", message: "must be active, retired, or revoked" });
+      if ("not_before" in k && !intNonNegative(k.not_before)) issues.push({ path: `$.keys[${i}].not_before`, code: "TYPE", message: "must be non-negative integer" });
+      if ("not_after" in k && !intNonNegative(k.not_after)) issues.push({ path: `$.keys[${i}].not_after`, code: "TYPE", message: "must be non-negative integer" });
+    }
+  }
   return sorted(issues);
 }
 

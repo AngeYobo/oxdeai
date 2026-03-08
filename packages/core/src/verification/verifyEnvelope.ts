@@ -1,7 +1,9 @@
 import { decodeEnvelope } from "./envelope.js";
+import { envelopeSigningPayload } from "./envelope.js";
 import { verifySnapshot } from "./verifySnapshot.js";
 import { verifyAuditEvents } from "./verifyAuditEvents.js";
 import type { VerificationResult, VerificationViolation, VerifyEnvelopeOptions } from "./types.js";
+import { findKeyInKeySets, keyIsActiveAt, SIGNING_DOMAINS, verifyEd25519 } from "../crypto/signatures.js";
 
 function sortViolations(violations: VerificationViolation[]): VerificationViolation[] {
   return [...violations].sort((a, b) => {
@@ -27,6 +29,47 @@ export function verifyEnvelope(
     };
   }
 
+  const violations: VerificationViolation[] = [];
+  const requireSig = opts?.requireSignatureVerification ?? false;
+  const now = opts?.now ?? Math.floor(Date.now() / 1000);
+  const trustedRaw = opts?.trustedKeySets;
+  const trusted = trustedRaw ? (Array.isArray(trustedRaw) ? trustedRaw : [trustedRaw]) : [];
+  const hasSignature = typeof envelope.signature === "string" && envelope.signature.length > 0;
+
+  if (opts?.expectedIssuer !== undefined && envelope.issuer !== opts.expectedIssuer) {
+    violations.push({ code: "ENVELOPE_SIGNATURE_INVALID", message: "envelope issuer does not match expectedIssuer" });
+  }
+  if (requireSig && !hasSignature) {
+    violations.push({ code: "ENVELOPE_SIGNATURE_MISSING", message: "signed envelope is required" });
+  }
+  if (hasSignature) {
+    const signature = envelope.signature as string;
+    if (envelope.alg !== "Ed25519") {
+      violations.push({ code: "ENVELOPE_ALG_UNSUPPORTED", message: "unsupported envelope signature algorithm" });
+    } else if (typeof envelope.kid !== "string" || envelope.kid.length === 0 || typeof envelope.issuer !== "string" || envelope.issuer.length === 0) {
+      violations.push({ code: "ENVELOPE_SIGNATURE_INVALID", message: "signed envelope requires issuer, alg, kid, signature" });
+    } else if (trusted.length === 0) {
+      violations.push({ code: "ENVELOPE_TRUST_MISSING", message: "trustedKeySets required to verify signed envelope" });
+    } else {
+      const key = findKeyInKeySets(trusted, envelope.issuer, envelope.kid, "Ed25519");
+      if (!key) {
+        violations.push({ code: "ENVELOPE_KID_UNKNOWN", message: "envelope kid not found for issuer/alg" });
+      } else if (!keyIsActiveAt(key, now)) {
+        violations.push({ code: "ENVELOPE_KEY_INACTIVE", message: "envelope signing key is not active" });
+      } else {
+        const validSig = verifyEd25519(
+          SIGNING_DOMAINS.ENVELOPE_V1,
+          envelopeSigningPayload(envelope),
+          signature,
+          key.public_key
+        );
+        if (!validSig) {
+          violations.push({ code: "ENVELOPE_SIGNATURE_INVALID", message: "envelope signature verification failed" });
+        }
+      }
+    }
+  }
+
   const snapshotResult = verifySnapshot(envelope.snapshot, {
     expectedPolicyId: opts?.expectedPolicyId
   });
@@ -36,7 +79,7 @@ export function verifyEnvelope(
     mode: opts?.mode
   });
 
-  const violations: VerificationViolation[] = [...snapshotResult.violations, ...auditResult.violations];
+  violations.push(...snapshotResult.violations, ...auditResult.violations);
 
   const snapshotPolicyId = snapshotResult.policyId;
   const auditPolicyId = auditResult.policyId;

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oxdeai.org/schemas/v1/verification-envelope.schema.json",
+  "title": "OxDeAI VerificationEnvelope",
+  "description": "Alias schema for verification-envelope-v1 wire shape.",
+  "allOf": [
+    {
+      "$ref": "https://oxdeai.org/schemas/v1/verification-envelope-v1.schema.json"
+    }
+  ]
+}

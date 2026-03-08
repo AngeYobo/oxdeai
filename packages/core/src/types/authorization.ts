@@ -9,9 +9,11 @@ export type AuthorizationV1 = {
   decision: "ALLOW" | "DENY";
   issued_at: number; // unix seconds
   expiry: number; // unix seconds
+  alg: "Ed25519" | "HMAC-SHA256";
+  kid: string;
+  signature: string;
   nonce?: string;
   capability?: string;
-  signature?: string;
 };
 
 /** @public */

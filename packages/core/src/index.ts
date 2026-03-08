@@ -2,16 +2,27 @@ export type * from "./types/intent.js";
 export type * from "./types/state.js";
 export type * from "./types/policy.js";
 export type * from "./types/authorization.js";
+export type * from "./types/keyset.js";
 export type * from "./verification/types.js";
 export { encodeCanonicalState, decodeCanonicalState } from "./snapshot/CanonicalCodec.js";
 export { createCanonicalState, withModuleState } from "./snapshot/CanonicalState.js";
 export { canonicalJson, sha256HexFromJson, intentHash, stateSnapshotHash, authPayloadString } from "./crypto/hashes.js";
 export { engineSignHmac } from "./crypto/sign.js";
 export { engineVerifyHmac } from "./crypto/verify.js";
-export { encodeEnvelope, decodeEnvelope } from "./verification/envelope.js";
+export {
+  SIGNING_DOMAINS,
+  signatureInput,
+  signEd25519,
+  verifyEd25519,
+  signHmacDomain,
+  verifyHmacDomain,
+  findKeyInKeySets,
+  keyIsActiveAt
+} from "./crypto/signatures.js";
+export { encodeEnvelope, decodeEnvelope, signEnvelopeEd25519, envelopeSigningPayload } from "./verification/envelope.js";
 export { verifySnapshot } from "./verification/verifySnapshot.js";
 export { verifyAuditEvents } from "./verification/verifyAuditEvents.js";
 export { verifyEnvelope } from "./verification/verifyEnvelope.js";
-export { verifyAuthorization } from "./verification/verifyAuthorization.js";
+export { verifyAuthorization, signAuthorizationEd25519, authorizationSigningPayload } from "./verification/verifyAuthorization.js";
 export { PolicyEngine } from "./policy/PolicyEngine.js";
 export { HashChainedLog } from "./audit/HashChainedLog.js";

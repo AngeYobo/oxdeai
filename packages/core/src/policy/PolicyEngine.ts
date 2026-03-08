@@ -7,6 +7,7 @@ import type { ReasonCode, PolicyResult, PolicyModule } from "../types/policy.js"
 import { canonicalJson, intentHash, sha256HexFromJson } from "../crypto/hashes.js";
 import { engineSignHmac } from "../crypto/sign.js";
 import { engineVerifyHmac } from "../crypto/verify.js";
+import { SIGNING_DOMAINS, signEd25519, signHmacDomain } from "../crypto/signatures.js";
 
 import { HashChainedLog } from "../audit/HashChainedLog.js";
 import type { AuditEvent } from "../audit/AuditLog.js";
@@ -52,6 +53,9 @@ export type EngineOptions = {
   authorization_ttl_seconds?: number;
   authorization_issuer?: string;
   authorization_audience?: string;
+  authorization_signing_alg?: "Ed25519" | "HMAC-SHA256";
+  authorization_signing_kid?: string;
+  authorization_private_key_pem?: string;
   deny_mode?: "collect-all" | "fail-fast";
   policyId?: string;
   strictDeterminism?: boolean;
@@ -135,6 +139,14 @@ export class PolicyEngine {
 
   private authorizationAudience(): string {
     return this.opts.authorization_audience ?? "oxdeai.relying-party";
+  }
+
+  private authorizationSigningAlg(): "Ed25519" | "HMAC-SHA256" {
+    return this.opts.authorization_signing_alg ?? "HMAC-SHA256";
+  }
+
+  private authorizationSigningKid(): string {
+    return this.opts.authorization_signing_kid ?? (this.authorizationSigningAlg() === "Ed25519" ? "ed25519-default" : "hmac-default");
   }
 
   /**
@@ -414,6 +426,8 @@ export class PolicyEngine {
       const policy_id = policyId;
       const issuer = this.authorizationIssuer();
       const audience = this.authorizationAudience();
+      const alg = this.authorizationSigningAlg();
+      const kid = this.authorizationSigningKid();
 
       const authPayload = {
         intent_hash,
@@ -424,7 +438,34 @@ export class PolicyEngine {
       };
 
       const engine_signature = engineSignHmac(authPayload, this.opts.engine_secret);
-      const authorization_id = sha256HexFromJson({ ...authPayload, engine_signature });
+      const authorizationCorePayload = {
+        auth_id: "",
+        issuer,
+        audience,
+        intent_hash,
+        state_hash: state_snapshot_hash,
+        policy_id,
+        decision: "ALLOW" as const,
+        issued_at,
+        expiry: expires_at,
+        alg,
+        kid,
+        nonce: intent.nonce.toString(),
+        capability: intent.action_type
+      };
+
+      // Derive a stable auth_id before signature attachment.
+      const authorization_id = sha256HexFromJson({ ...authorizationCorePayload, engine_signature });
+      const authCore = { ...authorizationCorePayload, auth_id: authorization_id };
+      let signature: string;
+      if (alg === "Ed25519") {
+        if (!this.opts.authorization_private_key_pem) {
+          throw new Error("authorization_private_key_pem is required for Ed25519 signing");
+        }
+        signature = signEd25519(SIGNING_DOMAINS.AUTH_V1, authCore, this.opts.authorization_private_key_pem);
+      } else {
+        signature = signHmacDomain(SIGNING_DOMAINS.AUTH_V1, authCore, this.opts.engine_secret);
+      }
 
       const authorization: Authorization = {
         authorization_id,
@@ -439,9 +480,11 @@ export class PolicyEngine {
         decision: "ALLOW",
         issued_at,
         expiry: expires_at,
+        alg,
+        kid,
         nonce: intent.nonce.toString(),
         capability: intent.action_type,
-        signature: engine_signature,
+        signature,
         expires_at,
         engine_signature
       };

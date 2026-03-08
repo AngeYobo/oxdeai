@@ -3,9 +3,10 @@ import assert from "node:assert/strict";
 
 import { PolicyEngine } from "../policy/PolicyEngine.js";
 import { encodeCanonicalState } from "../snapshot/CanonicalCodec.js";
-import { encodeEnvelope, verifyEnvelope } from "../verification/index.js";
+import { encodeEnvelope, signEnvelopeEd25519, verifyEnvelope } from "../verification/index.js";
 import type { AuditEntry } from "../audit/AuditLog.js";
 import type { State } from "../types/state.js";
+import type { KeySet } from "../types/keyset.js";
 
 function baseState(): State {
   return {
@@ -85,6 +86,18 @@ function makeAuditEvents(policyId: string, withCheckpoint: boolean): AuditEntry[
   return events;
 }
 
+const TEST_ED25519_PRIVATE_KEY = `-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEIBx0hBPi6cIYPo/JZbavNXDDLlfV1vj+IyS+R4oq2Zvx
+-----END PRIVATE KEY-----`;
+const TEST_ED25519_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAWiMMGTYK7zzHwZXLzDpCshxAH6Lgx8gVsJaixePuY7g=
+-----END PUBLIC KEY-----`;
+const TEST_KEYSET: KeySet = {
+  issuer: "oxdeai.policy-engine",
+  version: "1",
+  keys: [{ kid: "2026-01", alg: "Ed25519", public_key: TEST_ED25519_PUBLIC_KEY }]
+};
+
 test("ok: valid snapshot + audit + checkpoint in strict mode", () => {
   const { policyId, bytes } = makeSnapshotBytes();
   const envelopeBytes = encodeEnvelope({
@@ -149,4 +162,44 @@ test("invalid: malformed envelope schema", () => {
   assert.equal(out.ok, false);
   assert.equal(out.status, "invalid");
   assert.ok(out.violations.some((v) => v.code === "ENVELOPE_MALFORMED"));
+});
+
+test("ok: signed envelope verifies with trusted keyset", () => {
+  const { policyId, bytes } = makeSnapshotBytes();
+  const signed = signEnvelopeEd25519(
+    {
+      formatVersion: 1,
+      snapshot: bytes,
+      events: makeAuditEvents(policyId, true)
+    },
+    { issuer: "oxdeai.policy-engine", kid: "2026-01", privateKeyPem: TEST_ED25519_PRIVATE_KEY }
+  );
+  const out = verifyEnvelope(encodeEnvelope(signed), {
+    mode: "strict",
+    expectedIssuer: "oxdeai.policy-engine",
+    trustedKeySets: TEST_KEYSET,
+    requireSignatureVerification: true
+  });
+  assert.equal(out.status, "ok");
+});
+
+test("invalid: signed envelope tampering fails signature verification", () => {
+  const { policyId, bytes } = makeSnapshotBytes();
+  const signed = signEnvelopeEd25519(
+    {
+      formatVersion: 1,
+      snapshot: bytes,
+      events: makeAuditEvents(policyId, true)
+    },
+    { issuer: "oxdeai.policy-engine", kid: "2026-01", privateKeyPem: TEST_ED25519_PRIVATE_KEY }
+  );
+  const tampered = { ...signed, events: [...signed.events, { ...signed.events[0] }] };
+  const out = verifyEnvelope(encodeEnvelope(tampered), {
+    mode: "strict",
+    expectedIssuer: "oxdeai.policy-engine",
+    trustedKeySets: TEST_KEYSET,
+    requireSignatureVerification: true
+  });
+  assert.equal(out.status, "invalid");
+  assert.ok(out.violations.some((v) => v.code === "ENVELOPE_SIGNATURE_INVALID"));
 });

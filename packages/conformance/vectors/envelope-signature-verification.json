@@ -1,0 +1,65 @@
+{
+  "version": "1.2.0",
+  "vectors": [
+    {
+      "id": "envelope-sig-001",
+      "mode": "valid",
+      "expected": {
+        "status": "ok",
+        "violations": []
+      }
+    },
+    {
+      "id": "envelope-sig-002",
+      "mode": "tampered-envelope",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "ENVELOPE_SIGNATURE_INVALID",
+            "message": "envelope signature verification failed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "envelope-sig-003",
+      "mode": "unknown-alg",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "ENVELOPE_MALFORMED",
+            "message": "invalid verification envelope: $.alg: must be Ed25519"
+          }
+        ]
+      }
+    },
+    {
+      "id": "envelope-sig-004",
+      "mode": "unknown-kid",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "ENVELOPE_KID_UNKNOWN",
+            "message": "envelope kid not found for issuer/alg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "envelope-sig-005",
+      "mode": "malformed-signature",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "ENVELOPE_SIGNATURE_INVALID",
+            "message": "envelope signature verification failed"
+          }
+        ]
+      }
+    }
+  ]
+}

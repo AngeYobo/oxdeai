@@ -3,7 +3,7 @@
   "$id": "https://oxdeai.org/schemas/v1/authorization.schema.json",
   "title": "OxDeAI Authorization",
   "description": "Authorization artifact emitted by the policy engine.",
-  "$comment": "Version: OxDeAI protocol v1.1.0. Signature profile remains implementation-defined in v1.x reference implementation.",
+  "$comment": "Version: OxDeAI protocol v1.2.0. Public-key path uses Ed25519 with alg/kid/signature; legacy compatibility fields may coexist.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -15,7 +15,10 @@
     "policy_id",
     "decision",
     "issued_at",
-    "expiry"
+    "expiry",
+    "alg",
+    "kid",
+    "signature"
   ],
   "properties": {
     "authorization_id": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
@@ -30,9 +33,11 @@
     "decision": { "type": "string", "enum": ["ALLOW", "DENY"] },
     "issued_at": { "type": "integer", "minimum": 0 },
     "expiry": { "type": "integer", "minimum": 0 },
+    "alg": { "type": "string", "enum": ["Ed25519", "HMAC-SHA256"] },
+    "kid": { "type": "string", "minLength": 1 },
     "nonce": { "type": "string" },
     "capability": { "type": "string" },
-    "signature": { "type": "string" },
+    "signature": { "type": "string", "minLength": 1 },
     "expires_at": { "type": "integer", "minimum": 0 },
     "engine_signature": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
   }

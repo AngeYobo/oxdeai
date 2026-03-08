@@ -2,8 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://oxdeai.org/schemas/v1/verification-envelope-v1.schema.json",
   "title": "OxDeAI VerificationEnvelopeV1",
-  "description": "Portable envelope carrying snapshot bytes (base64) and audit events.",
-  "$comment": "Version: OxDeAI protocol v1.0.2. Wire shape uses base64 snapshot and JSON events.",
+  "description": "Portable envelope carrying snapshot bytes (base64), audit events, and optional signature metadata.",
+  "$comment": "Version: OxDeAI protocol v1.2.0. Signed envelope profile uses issuer+alg+kid+signature.",
   "type": "object",
   "additionalProperties": false,
   "required": ["formatVersion", "snapshot", "events"],
@@ -18,6 +18,16 @@
       "items": {
         "$ref": "https://oxdeai.org/schemas/v1/audit-event.schema.json"
       }
+    },
+    "issuer": { "type": "string", "minLength": 1 },
+    "alg": { "type": "string", "enum": ["Ed25519"] },
+    "kid": { "type": "string", "minLength": 1 },
+    "signature": { "type": "string", "minLength": 1 }
+  },
+  "allOf": [
+    {
+      "if": { "required": ["signature"] },
+      "then": { "required": ["issuer", "alg", "kid", "signature"] }
     }
-  }
+  ]
 }

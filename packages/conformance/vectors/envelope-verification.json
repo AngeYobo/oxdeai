@@ -7,8 +7,8 @@
       "expected": {
         "status": "ok",
         "policyId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "stateHash": "bba76624cc41d3642c6e789c12050a61b1caa063ad51aa7558d78f408c994b68",
-        "auditHeadHash": "004d44ef83c4503e0117ae66c37c0a3684ad13c2b41b01c8a4e8ef2f73990a19",
+        "stateHash": "41f336cb4677d73b2c494e3a8aa6d89196cc603309742227faff06ac4da7333c",
+        "auditHeadHash": "210f6da534cd7eb92e4747d56604f57738f9af2e9f4cace24a489f9f00ecbe0c",
         "violations": []
       }
     },

@@ -18,7 +18,18 @@ export type VerificationViolationCode =
   | "AUTH_ISSUER_MISMATCH"
   | "AUTH_AUDIENCE_MISMATCH"
   | "AUTH_POLICY_ID_MISMATCH"
-  | "AUTH_REPLAY";
+  | "AUTH_REPLAY"
+  | "AUTH_ALG_UNSUPPORTED"
+  | "AUTH_KID_UNKNOWN"
+  | "AUTH_SIGNATURE_INVALID"
+  | "AUTH_TRUST_MISSING"
+  | "AUTH_KEY_INACTIVE"
+  | "ENVELOPE_SIGNATURE_MISSING"
+  | "ENVELOPE_SIGNATURE_INVALID"
+  | "ENVELOPE_ALG_UNSUPPORTED"
+  | "ENVELOPE_KID_UNKNOWN"
+  | "ENVELOPE_TRUST_MISSING"
+  | "ENVELOPE_KEY_INACTIVE";
 
 /** @public */
 export type VerificationViolation = {
@@ -47,6 +58,10 @@ export type VerifyAuditOptions = {
 
 /** @public */
 export type VerifyEnvelopeOptions = {
+  now?: number;
   expectedPolicyId?: string;
   mode?: "strict" | "best-effort";
+  expectedIssuer?: string;
+  trustedKeySets?: import("../types/keyset.js").KeySet | readonly import("../types/keyset.js").KeySet[];
+  requireSignatureVerification?: boolean;
 };

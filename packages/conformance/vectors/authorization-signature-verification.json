@@ -1,0 +1,121 @@
+{
+  "version": "1.2.0",
+  "vectors": [
+    {
+      "id": "authorization-sig-001",
+      "mode": "valid",
+      "expected": {
+        "status": "ok",
+        "violations": []
+      }
+    },
+    {
+      "id": "authorization-sig-002",
+      "mode": "invalid-signature",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "AUTH_SIGNATURE_INVALID",
+            "message": "signature verification failed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "authorization-sig-003",
+      "mode": "wrong-kid",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "AUTH_KID_UNKNOWN",
+            "message": "kid not found for issuer/alg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "authorization-sig-004",
+      "mode": "wrong-issuer",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "AUTH_ISSUER_MISMATCH",
+            "message": "issuer does not match expectedIssuer"
+          },
+          {
+            "code": "AUTH_KID_UNKNOWN",
+            "message": "kid not found for issuer/alg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "authorization-sig-005",
+      "mode": "wrong-audience",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "AUTH_AUDIENCE_MISMATCH",
+            "message": "audience does not match expectedAudience"
+          }
+        ]
+      }
+    },
+    {
+      "id": "authorization-sig-006",
+      "mode": "tampered-field",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "AUTH_SIGNATURE_INVALID",
+            "message": "signature verification failed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "authorization-sig-007",
+      "mode": "expired",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "AUTH_EXPIRED",
+            "message": "authorization has expired"
+          }
+        ]
+      }
+    },
+    {
+      "id": "authorization-sig-008",
+      "mode": "replay",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "AUTH_REPLAY",
+            "message": "auth_id has already been consumed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "authorization-sig-009",
+      "mode": "unknown-alg",
+      "expected": {
+        "status": "invalid",
+        "violations": [
+          {
+            "code": "AUTH_ALG_UNSUPPORTED",
+            "message": "unsupported signature algorithm"
+          }
+        ]
+      }
+    }
+  ]
+}
