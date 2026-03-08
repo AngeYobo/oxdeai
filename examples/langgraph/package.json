@@ -1,0 +1,19 @@
+{
+  "name": "@oxdeai/example-langgraph",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OxDeAI pre-execution economic boundary demo - LangGraph pattern",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "pnpm build && node dist/run.js",
+    "demo:langgraph": "pnpm -C examples/langgraph build && node examples/langgraph/dist/run.js"
+  },
+  "dependencies": {
+    "@langchain/langgraph": "^0.2.0",
+    "@oxdeai/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
