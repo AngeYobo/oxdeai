@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 type AdapterId = "openai-tools" | "langgraph";
 
@@ -17,6 +18,8 @@ type CheckResult = {
 };
 
 const ADAPTERS: readonly AdapterId[] = ["openai-tools", "langgraph"] as const;
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(SCRIPT_DIR, "..", "..");
 
 function usage(): string {
   return [
@@ -57,9 +60,8 @@ function parseAdapterArg(argv: string[]): AdapterId[] {
 }
 
 function runAdapter(adapter: AdapterId): CheckResult {
-  const cwd = resolve(process.cwd());
   const run = spawnSync("pnpm", ["-C", `examples/${adapter}`, "start"], {
-    cwd,
+    cwd: REPO_ROOT,
     encoding: "utf8"
   });
 
