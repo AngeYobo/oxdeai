@@ -13,6 +13,16 @@ OxDeAI provides fail-closed policy evaluation for autonomous actions under expli
 - `v1.3` Guard Adapter + Integration Surface: complete
 - Next: `v1.4` ecosystem adoption
 
+## Version Snapshot
+
+Protocol stack:
+- `@oxdeai/core`: `1.3.0`
+- `@oxdeai/sdk`: `1.3.1`
+- `@oxdeai/conformance`: `1.3.1`
+
+Tooling:
+- `@oxdeai/cli`: `0.2.2` (independent tooling line)
+
 ## Core Principles
 
 - Deterministic evaluation
@@ -75,7 +85,7 @@ pnpm install
 
 ## Protocol Stack Release v1.3.x
 
-This release introduces non-forgeable verification through Ed25519 signatures and KeySet-based issuer verification.
+This line completes the v1.3 integration surface on top of the v1.2 non-forgeable verification baseline.
 
 The OxDeAI protocol stack now provides:
 
@@ -83,6 +93,8 @@ The OxDeAI protocol stack now provides:
 - deterministic policy evaluation
 - tamper-evident audit chains
 - stateless verification envelopes
+- stable SDK guard adapter integration surface
+- reference OpenAI tools and LangGraph boundary demos
 
 The protocol is validated through the OxDeAI conformance suite.
 
