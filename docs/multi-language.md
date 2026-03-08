@@ -31,6 +31,9 @@ A compliant native implementation needs:
 
 This reduces risk and gives immediate interoperability.
 
+Go implementers can bootstrap with the harness scaffold:
+- `packages/conformance/go-harness`
+
 ## Language Mapping
 
 ### Rust
