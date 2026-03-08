@@ -2,236 +2,108 @@
 
 Last updated: 2026-03-08
 
-## Version Snapshot (from package.json)
+## Version Snapshot
 
+Protocol stack:
 - `@oxdeai/core`: `1.3.0`
 - `@oxdeai/sdk`: `1.3.1`
 - `@oxdeai/conformance`: `1.3.1`
-- `@oxdeai/cli`: `0.2.2`
-- `@oxdeai/tests`: `0.1.0`
-- `@oxdeai/example-openai-tools`: `1.0.0`
-- `@oxdeai/example-gpu-guard`: no `version` field
-- workspace root `oxdeai-core`: no `version` field
 
-## Validation Snapshot
+Tooling:
+- `@oxdeai/cli`: `0.2.2` (independent tooling line)
 
-Latest local validation (2026-03-08):
+## Current Validation Snapshot
 
-- [x] `pnpm build`
-- [x] `pnpm -C packages/conformance validate` (94 assertions passed)
-- [x] `pnpm -r test` (core/cli/sdk/tests passing)
-- [x] `pnpm -C examples/openai-tools start` (ALLOW, ALLOW, DENY; envelope `ok`)
-- [x] `pnpm -C examples/langgraph start` (ALLOW, ALLOW, DENY; envelope `ok`)
+- [x] `pnpm build` passes
+- [x] `pnpm -r test` passes
+- [x] `pnpm -C packages/conformance validate` passes (`94` assertions)
+- [x] `examples/openai-tools` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
+- [x] `examples/langgraph` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
 
-## Protocol Milestone Status
+## Architecture Doctrine
 
-- `v1.1` - Authorization Artifact: `DONE`
-- `v1.2` - Non-Forgeable Verification: `DONE`
-- `v1.3` - Guard Adapter + Integration Surface: `DONE`
-- `v1.4` - Ecosystem Adoption: `NEXT`
-- `v3.x` - Public Proof Infrastructure: `LATER`
+OxDeAI is optimized for:
+- easy embedding
+- framework-agnostic integration
+- authorization-boundary enforcement
 
-Working integration demonstrations:
+OxDeAI is not:
+- a replacement runtime
+- a full agent framework
+- an on-chain-first platform
 
-- [`examples/openai-tools`](./examples/openai-tools) - protocol reference demo
-- [`examples/langgraph`](./examples/langgraph) - framework integration demo
+## Milestones
 
-## Status Legend
-
-- `Done`: implemented and documented in repo.
-- `In Progress`: partial implementation exists; acceptance criteria not fully met.
-- `Not Started`: no substantive implementation in repo.
-
-## v1.1
-
-### AuthorizationV1 first-class
-
+### v1.1 - Authorization Artifact
 Status: `Done`
 
-Evidence:
+Delivered:
+- `AuthorizationV1` as a first-class protocol artifact
+- relying-party / PEP verification contract
+- first-class authorization semantics for pre-execution gating
 
-- [`packages/core/src/types/authorization.ts`](./packages/core/src/types/authorization.ts)
-- [`packages/core/src/policy/PolicyEngine.ts`](./packages/core/src/policy/PolicyEngine.ts)
-- [`SPEC.md`](./SPEC.md)
-
-Acceptance criteria:
-
-- [x] Authorization artifact emitted on `ALLOW`.
-- [x] Protocol fields defined and documented.
-- [x] Verification primitive exposed.
-
-### Relying-party contract
-
+### v1.2 - Non-Forgeable Verification
 Status: `Done`
 
-Evidence:
+Delivered:
+- Ed25519 signature support
+- required `alg` / `kid` / `signature` metadata path
+- public-key verification primitives
+- KeySet model for issuer/key selection and rotation windows
+- conformance validation coverage for signature and key-failure paths
 
-- [`SPEC.md`](./SPEC.md#9-relying-party-contract)
-- [`examples/openai-tools/src/pep.ts`](./examples/openai-tools/src/pep.ts)
-
-Acceptance criteria:
-
-- [x] Normative verification checklist present.
-- [x] Fail-closed execution rule documented.
-- [x] Single-use/replay rule documented.
-
-## v1.2
-
-### Non-forgeable verification
-
+### v1.3 - Guard Adapter + Integration Surface
 Status: `Done`
 
-Evidence:
+Delivered:
+- stable SDK guard/integration surface
+- OpenAI tools reference boundary demo
+- LangGraph integration demo
+- production PEP wiring guide
+- deterministic envelope verification across demos
 
-- [`packages/core/src/verification/verifyAuthorization.ts`](./packages/core/src/verification/verifyAuthorization.ts)
-- [`packages/core/src/verification/verifyEnvelope.ts`](./packages/core/src/verification/verifyEnvelope.ts)
-- [`packages/conformance/vectors/authorization-signature-verification.json`](./packages/conformance/vectors/authorization-signature-verification.json)
-- [`packages/conformance/vectors/envelope-signature-verification.json`](./packages/conformance/vectors/envelope-signature-verification.json)
+References:
+- [`examples/openai-tools`](./examples/openai-tools)
+- [`examples/langgraph`](./examples/langgraph)
+- [`docs/pep-production-guide.md`](./docs/pep-production-guide.md)
 
-Acceptance criteria:
+### v1.4 - Ecosystem Adoption
+Status: `Next`
 
-- [x] Signature validation integrated into authorization verifier.
-- [x] Envelope signature profile supported.
-- [x] Conformance vectors cover invalid signature/unknown kid/unknown alg paths.
+Focus:
+- more framework adapters
+- integration documentation
+- production-oriented demos
+- case-study style examples
 
-### Ed25519
+Examples of target integrations:
+- CrewAI
+- OpenAI Agents SDK
+- AutoGen
+- other runtime adapters
 
-Status: `Done`
+Note: OxDeAI remains a protocol/enforcement layer, not a framework.
 
-Evidence:
+### v2.x - Delegated Agent Authorization
+Status: `Planned`
 
-- [`packages/core/src/crypto/signatures.ts`](./packages/core/src/crypto/signatures.ts)
+Scope:
+- bounded delegation for multi-agent systems
+- parent agent can delegate reduced authority to child agents
+- delegated authority remains bounded by parent authorization constraints
 
-Acceptance criteria:
+Possible future artifact:
+- `DelegatedAuthorizationV1`
 
-- [x] Ed25519 signing and verification available.
-- [x] Deterministic signature input function exists.
+### v3.x - Verifiable Execution Infrastructure
+Status: `Planned`
 
-### alg / kid
+Scope:
+- deterministic execution receipts
+- binary Merkle batching of receipt hashes
+- proof-of-inclusion for individual receipts
+- optional on-chain proof anchoring / smart-contract verifier
 
-Status: `Done`
-
-Evidence:
-
-- [`packages/core/src/types/authorization.ts`](./packages/core/src/types/authorization.ts)
-- [`packages/core/schemas/authorization.schema.json`](./packages/core/schemas/authorization.schema.json)
-- [`SPEC.md`](./SPEC.md)
-
-Acceptance criteria:
-
-- [x] `alg` and `kid` represented in artifact model.
-- [x] Verifiers enforce supported alg and key resolution.
-
-### KeySet model
-
-Status: `Done`
-
-Evidence:
-
-- [`packages/core/src/types/keyset.ts`](./packages/core/src/types/keyset.ts)
-- [`packages/core/schemas/keyset.schema.json`](./packages/core/schemas/keyset.schema.json)
-- [`SPEC.md`](./SPEC.md#10-keyset-and-key-rotation-model)
-
-Acceptance criteria:
-
-- [x] KeySet type and schema exist.
-- [x] Verifier resolves keys by issuer+kid+alg.
-- [x] Key validity windows handled by verification logic.
-
-## v1.3
-
-### CLI + SDK guard adapter
-
-Status: `Done`
-
-Evidence:
-
-- SDK integration surface exists: [`packages/sdk/src/index.ts`](./packages/sdk/src/index.ts)
-- Stable guard API exists: [`packages/sdk/src/guard.ts`](./packages/sdk/src/guard.ts)
-- SDK guard tests exist: [`packages/sdk/src/guard.test.ts`](./packages/sdk/src/guard.test.ts)
-- CLI command surface stabilized: [`packages/cli/src/main.ts`](./packages/cli/src/main.ts)
-- Production PEP wiring guide: [`docs/pep-production-guide.md`](./docs/pep-production-guide.md)
-
-Exit criteria:
-
-- [x] Stable guard-adapter API in SDK for common PEP enforcement flow.
-- [x] CLI commands for guard setup/verification documented and tested.
-- [x] At least one integration guide for production PEP wiring.
-
-### Easy integrations
-
-Status: `Done`
-
-Evidence:
-
-- OpenAI tools integration example: [`examples/openai-tools`](./examples/openai-tools)
-- LangGraph integration demo implemented: [`examples/langgraph/src/run.ts`](./examples/langgraph/src/run.ts)
-- LangGraph proposal node: [`examples/langgraph/src/graph.ts`](./examples/langgraph/src/graph.ts)
-
-Exit criteria:
-
-- [x] LangGraph integration upgraded from placeholder to runnable example.
-- [x] One additional non-OpenAI integration example added.
-- [x] Quickstart path reduced to minimal steps with copy-paste snippets.
-
-## v1.4+
-
-### Ecosystem adoption
-
-Status: `Not Started`
-
-Exit criteria:
-
-- [ ] Public adopters list with verifiable usage references.
-- [ ] External implementation(s) passing conformance.
-
-### More wrappers
-
-Status: `In Progress`
-
-Evidence:
-
-- Wrapper-style examples present in `examples/`.
-
-Exit criteria:
-
-- [ ] Additional wrappers beyond current examples (at least two production-oriented targets).
-- [ ] Wrapper docs include threat and trust assumptions.
-
-### Case studies
-
-Status: `Not Started`
-
-Exit criteria:
-
-- [ ] At least two case studies with architecture, controls, and measured outcomes.
-
-## v2.x / v3.x
-
-### Merkle state commitments
-
-Status: `Not Started`
-
-Exit criteria:
-
-- [ ] Canonical Merkle commitment format defined.
-- [ ] Inclusion/exclusion proof verification API specified and tested.
-
-### Deterministic receipts
-
-Status: `Not Started`
-
-Exit criteria:
-
-- [ ] Receipt schema and canonical signing format defined.
-- [ ] Receipt verification vectors added to conformance.
-
-### Partial state proofs
-
-Status: `Not Started`
-
-Exit criteria:
-
-- [ ] Partial proof format defined.
-- [ ] Verification semantics and failure modes documented.
-- [ ] Conformance vectors for valid/invalid proofs added.
+Constraint:
+- authorization remains off-chain-first
+- on-chain integration is optional proof anchoring, not the core execution flow
