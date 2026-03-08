@@ -24,6 +24,40 @@ Implementations MUST use canonical encoding for signed and hashed payloads.
 Verification ordering and violation ordering MUST be deterministic.
 Policy-critical logic MUST NOT depend on ambient randomness.
 
+## Multi-Language Implementation Profile
+
+OxDeAI artifacts are language-agnostic protocol artifacts.
+Compliant implementations MAY be written in any language.
+
+### Normative Requirements
+
+- Implementations MUST use protocol-defined canonical JSON rules.
+- Implementations MUST reconstruct identical signing input bytes for signed artifacts.
+- Implementations MUST verify Ed25519 signatures over the canonical payload and domain format defined by this protocol.
+- Implementations MUST fail closed on:
+  - malformed payloads
+  - unsupported algorithms
+  - unknown key ids
+  - signature mismatch
+  - verification ambiguity
+
+### Reference Implementation and Compliance
+
+The TypeScript implementation is the reference implementation.
+Other implementations are compliant if they satisfy this specification and pass conformance vectors for the targeted version profile.
+
+### Implementer Checklist
+
+Compliant verifier behavior SHOULD include this sequence:
+
+1. Parse artifact and validate required fields.
+2. Canonicalize payload deterministically.
+3. Reconstruct signing input bytes exactly.
+4. Verify signature and key resolution (`alg`, `kid`, issuer trust context).
+5. Validate issuer/audience/policy binding constraints.
+6. Validate expiry and decision semantics (`ALLOW` when required).
+7. Fail closed on any malformed or ambiguous verification state.
+
 ## 4. Authorization Artifact (AuthorizationV1)
 
 ### Definition

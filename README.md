@@ -88,6 +88,17 @@ OxDeAI sits between agent runtimes and external systems as a deterministic autho
 - `Tool / External System`: executes only after authorization enforcement.
 - `Evidence path`: audit events + snapshot are packaged as a verification envelope and validated by `verifyEnvelope()`.
 
+## Multi-Language Use
+
+Rust, Go, and Python developers can verify OxDeAI artifacts today (`AuthorizationV1`, snapshots, audit chains, and verification envelopes).
+
+TypeScript is the current reference implementation.
+Native implementations are supported by the protocol spec and conformance vectors:
+
+- [`docs/multi-language.md`](./docs/multi-language.md)
+- [`docs/conformance-vectors.md`](./docs/conformance-vectors.md)
+- [`packages/conformance`](./packages/conformance)
+
 ## Quickstart
 
 Install dependencies:

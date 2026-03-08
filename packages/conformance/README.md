@@ -65,3 +65,15 @@ Vectors are frozen per protocol version.
 - Do not regenerate vectors for the same protocol version after behavior changes.
 - Any behavior-impacting change requires a new protocol/versioned vector release.
 - Regeneration is allowed only when intentionally producing a new version baseline.
+
+## Using OxDeAI Conformance from Other Languages
+
+Conformance vectors are the behavioral truth source for protocol compatibility.
+
+Rust, Go, and Python implementations should validate their verifier/engine behavior against these vectors.
+Passing conformance means the implementation is behaviorally aligned with the OxDeAI protocol profile for that version line.
+
+Related implementer docs:
+
+- [`docs/multi-language.md`](../../docs/multi-language.md)
+- [`docs/conformance-vectors.md`](../../docs/conformance-vectors.md)
