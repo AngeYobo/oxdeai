@@ -4,6 +4,7 @@ This guide describes a minimal production wiring pattern for a Policy Enforcemen
 
 Reference architecture:
 - [`docs/adapter-reference-architecture.md`](./adapter-reference-architecture.md)
+- diagram workflow: [`docs/diagrams/README.md`](./diagrams/README.md)
 
 ## Scope
 

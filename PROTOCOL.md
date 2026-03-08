@@ -37,14 +37,7 @@ If denied, execution MUST NOT proceed.
 
 ## 3) Artifact Flow
 
-```text
-Agent/Runtime
-  -> OxDeAI Policy Engine
-  -> Decision + AuthorizationV1 (ALLOW only)
-  -> External verifier (stateless)
-  -> Execution (only if allowed)
-  -> Snapshot + Audit -> Verification Envelope
-```
+![Agent authorization boundary](./docs/diagrams/agent-authorization-boundary.svg)
 
 Expanded flow:
 
@@ -54,6 +47,24 @@ Expanded flow:
 4. On `ALLOW`, runtime commits state/audit and executes side effect.
 5. Runtime can package artifacts into `VerificationEnvelopeV1`.
 6. Third parties verify envelope offline via stateless verifiers.
+
+Diagram source/editing policy:
+- [`docs/diagrams/README.md`](./docs/diagrams/README.md)
+
+## Architecture
+
+OxDeAI sits between agent runtimes and external systems as a deterministic authorization boundary.
+
+![PDP and PEP flow](./docs/diagrams/pdp-pep-flow.svg)
+
+- `PDP` evaluates policy deterministically over `intent,state`.
+- `AuthorizationV1` is emitted only on `ALLOW`.
+- `PEP` enforces authorization verification before execution.
+- External side effects must not execute on `DENY`.
+
+Verification artifacts are generated and validated through the envelope flow:
+
+![Verification envelope flow](./docs/diagrams/verification-envelope-flow.svg)
 
 ## 4) Protocol Artifacts (Overview)
 

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="380" viewBox="0 0 980 380" role="img" aria-label="Adapter sidecar architecture diagram">
+  <rect width="980" height="380" fill="#ffffff"/>
+  <text x="40" y="40" font-family="monospace" font-size="20" fill="#111">Adapter Sidecar Architecture</text>
+  <rect x="40" y="90" width="280" height="70" fill="#eef5ff" stroke="#1f4f8b"/>
+  <text x="60" y="132" font-family="monospace" font-size="14">Runtime/Framework Adapter</text>
+  <rect x="380" y="90" width="240" height="70" fill="#f2fff2" stroke="#1b6e1b"/>
+  <text x="445" y="132" font-family="monospace" font-size="14">OxDeAI Sidecar</text>
+  <rect x="680" y="90" width="240" height="70" fill="#fff5ea" stroke="#8f4f17"/>
+  <text x="700" y="132" font-family="monospace" font-size="14">External Systems</text>
+  <text x="40" y="320" font-family="monospace" font-size="12" fill="#666">Placeholder SVG. Replace with Excalidraw-rendered sidecar deployment view.</text>
+  <path d="M320 125 L380 125" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M620 125 L680 125" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+  </defs>
+</svg>

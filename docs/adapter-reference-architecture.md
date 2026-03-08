@@ -9,29 +9,12 @@ This document defines the reference integration shape for embedding OxDeAI under
 
 ## Canonical Flow
 
-```text
-Agent Runtime
-  ↓
-Adapter
-  ↓
-OxDeAI SDK guard
-  ↓
-PDP evaluate()
-  ↓
-AuthorizationV1
-  ↓
-PEP verifyAuthorization()
-  ↓
-Tool / external system
-  ↓
-Audit log
-  ↓
-Snapshot
-  ↓
-Verification Envelope
-  ↓
-verifyEnvelope()
-```
+![Agent authorization boundary](./diagrams/agent-authorization-boundary.svg)
+
+![Adapter sidecar architecture](./diagrams/adapter-sidecar-architecture.svg)
+
+Diagram source/editing policy:
+- [`docs/diagrams/README.md`](./diagrams/README.md)
 
 ## Component Roles
 

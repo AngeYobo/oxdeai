@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="360" viewBox="0 0 980 360" role="img" aria-label="PDP and PEP flow diagram">
+  <rect width="980" height="360" fill="#ffffff"/>
+  <text x="40" y="40" font-family="monospace" font-size="20" fill="#111">PDP/PEP Flow</text>
+  <rect x="40" y="80" width="260" height="60" fill="#eef5ff" stroke="#1f4f8b"/>
+  <text x="60" y="115" font-family="monospace" font-size="14">PDP evaluate(intent,state)</text>
+  <rect x="360" y="80" width="220" height="60" fill="#f2fff2" stroke="#1b6e1b"/>
+  <text x="380" y="115" font-family="monospace" font-size="14">AuthorizationV1</text>
+  <rect x="640" y="80" width="260" height="60" fill="#fff5ea" stroke="#8f4f17"/>
+  <text x="660" y="115" font-family="monospace" font-size="14">PEP verifyAuthorization</text>
+  <rect x="640" y="190" width="260" height="60" fill="#fff" stroke="#444"/>
+  <text x="670" y="225" font-family="monospace" font-size="14">Execute or Refuse</text>
+  <text x="40" y="310" font-family="monospace" font-size="12" fill="#666">Placeholder SVG. Replace with Excalidraw-rendered final flow.</text>
+  <path d="M300 110 L360 110" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M580 110 L640 110" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M770 140 L770 190" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+  </defs>
+</svg>

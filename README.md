@@ -55,6 +55,8 @@ Specifications and docs:
 - `SPEC.md`, `SECURITY.md`, `PROTOCOL.md`
 - production integration guide: [`docs/pep-production-guide.md`](./docs/pep-production-guide.md)
 - adapter integration model: [`docs/adapter-reference-architecture.md`](./docs/adapter-reference-architecture.md)
+- diagram workflow: [`docs/diagrams/README.md`](./docs/diagrams/README.md)
+- contributor guide: [`CONTRIBUTING.md`](./CONTRIBUTING.md)
 
 ## Examples
 
@@ -73,6 +75,18 @@ Specifications and docs:
 - Framework/runtime proposes actions.
 - OxDeAI PDP evaluates intent and emits authorization on `ALLOW`.
 - PEP verifies authorization and either executes or refuses.
+
+## Architecture Overview
+
+OxDeAI sits between agent runtimes and external systems as a deterministic authorization boundary.
+
+![Agent authorization boundary](./docs/diagrams/agent-authorization-boundary.svg)
+
+- `Agent Runtime`: proposes actions with intent and state context.
+- `OxDeAI PDP`: evaluates `intent,state` and emits `AuthorizationV1` only on `ALLOW`.
+- `PEP gate`: `verifyAuthorization` must pass before any side effect.
+- `Tool / External System`: executes only after authorization enforcement.
+- `Evidence path`: audit events + snapshot are packaged as a verification envelope and validated by `verifyEnvelope()`.
 
 ## Quickstart
 
