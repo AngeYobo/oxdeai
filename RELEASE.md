@@ -82,6 +82,7 @@ The following require a major release:
 - Coordinated protocol stack releases MUST use repo tags `vX.Y.Z`.
 - Tags MUST point to the exact commit used for publication.
 - Package-specific tags are discouraged for coordinated protocol releases.
+- Tooling-only releases SHOULD use package-scoped tags to avoid protocol-tag ambiguity (for example `cli-v0.2.0`).
 - If package-specific tags are introduced, mapping rules to protocol tags MUST be documented first.
 
 ## 7. Changelog Requirements
