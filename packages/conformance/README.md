@@ -77,3 +77,4 @@ Related implementer docs:
 
 - [`docs/multi-language.md`](../../docs/multi-language.md)
 - [`docs/conformance-vectors.md`](../../docs/conformance-vectors.md)
+- [`packages/conformance/go-harness`](./go-harness)
