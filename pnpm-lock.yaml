@@ -43,13 +43,13 @@ importers:
   packages/cli:
     dependencies:
       '@oxdeai/core':
-        specifier: workspace:*
+        specifier: ^1.3.0
         version: link:../core
 
   packages/conformance:
     dependencies:
       '@oxdeai/core':
-        specifier: workspace:*
+        specifier: ^1.3.0
         version: link:../core
     devDependencies:
       ts-node:
@@ -71,7 +71,7 @@ importers:
   packages/sdk:
     dependencies:
       '@oxdeai/core':
-        specifier: workspace:*
+        specifier: ^1.3.0
         version: link:../core
 
   tests:
