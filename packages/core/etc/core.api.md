@@ -29,6 +29,9 @@ export type AuthorizationLegacy = {
 };
 
 // @public (undocumented)
+export function authorizationSigningPayload(auth: AuthorizationV1): Omit<AuthorizationV1, "signature">;
+
+// @public (undocumented)
 export type AuthorizationV1 = {
     auth_id: string;
     issuer: string;
@@ -39,9 +42,11 @@ export type AuthorizationV1 = {
     decision: "ALLOW" | "DENY";
     issued_at: number;
     expiry: number;
+    alg: "Ed25519" | "HMAC-SHA256";
+    kid: string;
+    signature: string;
     nonce?: string;
     capability?: string;
-    signature?: string;
 };
 
 // @public (undocumented)
@@ -103,6 +108,14 @@ export function engineSignHmac(payload: unknown, secret: string): string;
 // @public (undocumented)
 export function engineVerifyHmac(payload: unknown, signatureHex: string, secret: string): boolean;
 
+// Warning: (ae-forgotten-export) The symbol "EnvelopeWire" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export function envelopeSigningPayload(envelope: VerificationEnvelopeV1): Omit<EnvelopeWire, "signature">;
+
+// @public (undocumented)
+export function findKeyInKeySets(keysets: readonly KeySet[], issuer: string, kid: string, alg: SignatureAlgorithm): KeySetKey | undefined;
+
 // @public (undocumented)
 export class HashChainedLog {
     // Warning: (ae-forgotten-export) The symbol "AuditEvent" needs to be exported by the entry point index.d.ts
@@ -129,6 +142,29 @@ export type Intent = (IntentBase & {
 
 // @public (undocumented)
 export function intentHash(intent: Intent): string;
+
+// @public (undocumented)
+export function keyIsActiveAt(key: KeySetKey, now: number): boolean;
+
+// @public (undocumented)
+export type KeySet = {
+    issuer: string;
+    version: string;
+    keys: KeySetKey[];
+};
+
+// @public (undocumented)
+export type KeySetKey = {
+    kid: string;
+    alg: SignatureAlgorithm;
+    public_key: string;
+    status?: KeyStatus;
+    not_before?: number;
+    not_after?: number;
+};
+
+// @public (undocumented)
+export type KeyStatus = "active" | "retired" | "revoked";
 
 // @public (undocumented)
 export type KillSwitchState = {
@@ -255,6 +291,39 @@ export type RecursionState = {
 export function sha256HexFromJson(value: unknown): string;
 
 // @public (undocumented)
+export type SignatureAlgorithm = "Ed25519" | "HMAC-SHA256";
+
+// Warning: (ae-forgotten-export) The symbol "SigningDomain" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export function signatureInput(domain: SigningDomain, payload: unknown): Uint8Array;
+
+// @public (undocumented)
+export function signAuthorizationEd25519(auth: Omit<AuthorizationV1, "signature" | "alg"> & {
+    alg?: "Ed25519";
+}, privateKeyPem: string): AuthorizationV1;
+
+// @public (undocumented)
+export function signEd25519(domain: SigningDomain, payload: unknown, privateKeyPem: string): string;
+
+// @public (undocumented)
+export function signEnvelopeEd25519(envelope: VerificationEnvelopeV1, opts: {
+    issuer: string;
+    kid: string;
+    privateKeyPem: string;
+}): VerificationEnvelopeV1;
+
+// @public (undocumented)
+export function signHmacDomain(domain: SigningDomain, payload: unknown, secret: string): string;
+
+// @public (undocumented)
+export const SIGNING_DOMAINS: {
+    readonly AUTH_V1: "OXDEAI_AUTH_V1";
+    readonly ENVELOPE_V1: "OXDEAI_ENVELOPE_V1";
+    readonly CHECKPOINT_V1: "OXDEAI_CHECKPOINT_V1";
+};
+
+// @public (undocumented)
 export type State = {
     policy_version: string;
     period_id: string;
@@ -343,7 +412,7 @@ export type VerificationViolation = {
 };
 
 // @public (undocumented)
-export type VerificationViolationCode = "MALFORMED_EVENT" | "POLICY_ID_MISSING" | "POLICY_ID_MISMATCH" | "MIXED_POLICY_ID" | "NON_MONOTONIC_TIMESTAMP" | "HASH_CHAIN_INVALID" | "NO_STATE_ANCHOR" | "SNAPSHOT_CORRUPT" | "ENVELOPE_MALFORMED" | "AUTH_DECISION_INVALID" | "AUTH_EXPIRED" | "AUTH_MISSING_FIELD" | "AUTH_ISSUER_MISMATCH" | "AUTH_AUDIENCE_MISMATCH" | "AUTH_POLICY_ID_MISMATCH" | "AUTH_REPLAY";
+export type VerificationViolationCode = "MALFORMED_EVENT" | "POLICY_ID_MISSING" | "POLICY_ID_MISMATCH" | "MIXED_POLICY_ID" | "NON_MONOTONIC_TIMESTAMP" | "HASH_CHAIN_INVALID" | "NO_STATE_ANCHOR" | "SNAPSHOT_CORRUPT" | "ENVELOPE_MALFORMED" | "AUTH_DECISION_INVALID" | "AUTH_EXPIRED" | "AUTH_MISSING_FIELD" | "AUTH_ISSUER_MISMATCH" | "AUTH_AUDIENCE_MISMATCH" | "AUTH_POLICY_ID_MISMATCH" | "AUTH_REPLAY" | "AUTH_ALG_UNSUPPORTED" | "AUTH_KID_UNKNOWN" | "AUTH_SIGNATURE_INVALID" | "AUTH_TRUST_MISSING" | "AUTH_KEY_INACTIVE" | "ENVELOPE_SIGNATURE_MISSING" | "ENVELOPE_SIGNATURE_INVALID" | "ENVELOPE_ALG_UNSUPPORTED" | "ENVELOPE_KID_UNKNOWN" | "ENVELOPE_TRUST_MISSING" | "ENVELOPE_KEY_INACTIVE";
 
 // @public (undocumented)
 export function verifyAuditEvents(events: readonly AuditEvent[], opts?: VerifyAuditOptions): VerificationResult;
@@ -361,13 +430,23 @@ export type VerifyAuditOptions = {
 export function verifyAuthorization(auth: AuthorizationV1, opts?: VerifyAuthorizationOptions): VerificationResult;
 
 // @public (undocumented)
+export function verifyEd25519(domain: SigningDomain, payload: unknown, signatureBase64: string, publicKeyPem: string): boolean;
+
+// @public (undocumented)
 export function verifyEnvelope(envelopeBytes: Uint8Array, opts?: VerifyEnvelopeOptions): VerificationResult;
 
 // @public (undocumented)
 export type VerifyEnvelopeOptions = {
+    now?: number;
     expectedPolicyId?: string;
     mode?: "strict" | "best-effort";
+    expectedIssuer?: string;
+    trustedKeySets?: KeySet | readonly KeySet[];
+    requireSignatureVerification?: boolean;
 };
+
+// @public (undocumented)
+export function verifyHmacDomain(domain: SigningDomain, payload: unknown, signatureHex: string, secret: string): boolean;
 
 // @public (undocumented)
 export function verifySnapshot(snapshotBytes: Uint8Array, opts?: {
