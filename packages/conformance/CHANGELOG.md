@@ -7,6 +7,22 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.3.0] - 2026-03-08
+
+### Changed
+
+- Protocol-stack release alignment to the v1.3 line with synchronized versioning.
+- Conformance package publication metadata updated to target `@oxdeai/core@^1.3.0`.
+
+### Notes
+
+- `@oxdeai/conformance@1.3.0` is released together with:
+  - `@oxdeai/core@1.3.0`
+  - `@oxdeai/sdk@1.3.0`
+- Validator behavior and vector semantics remain aligned with the existing deterministic protocol guarantees from `1.2.x`.
+
+---
+
 ## [1.2.0] - 2026-03-08
 
 ### Added

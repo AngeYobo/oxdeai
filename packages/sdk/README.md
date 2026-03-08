@@ -4,7 +4,7 @@ Developer-facing integration layer on top of `@oxdeai/core`.
 
 ## Status
 
-Current protocol stack line: **v1.2.x** (`@oxdeai/core`, `@oxdeai/sdk`, `@oxdeai/conformance`).
+Current protocol stack line: **v1.3.x** (`@oxdeai/core`, `@oxdeai/sdk`, `@oxdeai/conformance`).
 
 The SDK is an integration surface and does not redefine protocol semantics.
 

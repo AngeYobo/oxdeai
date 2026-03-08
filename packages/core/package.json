@@ -1,6 +1,6 @@
 {
   "name": "@oxdeai/core",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Deterministic policy engine for economic containment with canonical snapshots, audit chaining, and stateless verification.",
   "license": "Apache-2.0",
   "type": "module",
