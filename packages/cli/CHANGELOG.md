@@ -7,6 +7,19 @@ This project follows Semantic Versioning.
 
 ---
 
+## [0.2.2] - 2026-03-08
+
+### Changed
+
+- Corrected published dependency metadata to use `@oxdeai/core@^1.3.0` directly.
+- Removed ineffective workspace dependency publication workaround from `0.2.1`.
+
+### Notes
+
+- Metadata-only release. No runtime or CLI command behavior changes.
+
+---
+
 ## [0.2.1] - 2026-03-08
 
 ### Changed
