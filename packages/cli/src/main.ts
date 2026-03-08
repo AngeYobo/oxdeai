@@ -469,7 +469,7 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
       const payload = {
         ok: false,
         status: "unsupported",
-        message: "Replay verifier is a protocol-aware stub in @oxdeai/cli v0.1.x. Use verify --kind audit for deterministic offline chain checks."
+        message: "Replay verifier is a protocol-aware stub in @oxdeai/cli v0.2.x. Use verify --kind audit for deterministic offline chain checks."
       };
       writePayload(out, flags, payload, `${payload.status.toUpperCase()}: ${payload.message}`);
       return EXIT_CODE_OK;
