@@ -7,6 +7,27 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.3.0] - 2026-03-08
+
+### Added
+
+- Stable public guard API for callback-boundary enforcement (`createGuard`).
+- Guard-focused test coverage for allow/deny execution behavior and authorization enforcement.
+
+### Changed
+
+- SDK integration documentation updated for the v1.3 adoption layer.
+- Protocol-stack version alignment with:
+  - `@oxdeai/core@1.3.0`
+  - `@oxdeai/conformance@1.3.0`
+
+### Notes
+
+- `@oxdeai/cli` remains on a separate tooling version line.
+- No intentional protocol semantic break from `1.2.x`.
+
+---
+
 ## [1.2.0] - 2026-03-08
 
 ### Added

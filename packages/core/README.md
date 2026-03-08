@@ -12,9 +12,9 @@ Deterministic Economic Containment Engine for Autonomous Systems
 
 `@oxdeai/core` is a stable protocol library.
 
-Current protocol stack line: **v1.2.x**.
+Current protocol stack line: **v1.3.x**.
 
-Version 1.2.x preserves and extends the stateless verification surface:
+Version 1.3.x preserves the stateless verification surface:
 
 - verifySnapshot
 - verifyAuditEvents
@@ -23,7 +23,7 @@ Version 1.2.x preserves and extends the stateless verification surface:
 - VerificationResult schema
 - Verification Envelope format
 
-v1.2.x milestone additions:
+v1.2 baseline additions (preserved in v1.3.x):
 
 - non-forgeable verification (Ed25519)
 - `alg` / `kid` signature metadata

@@ -7,6 +7,23 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.3.0] - 2026-03-08
+
+### Changed
+
+- Synchronized protocol stack release metadata for the v1.3 line (`core`, `sdk`, `conformance`).
+- Release/process documentation alignment for coordinated protocol publication and provenance.
+
+### Notes
+
+- `@oxdeai/core@1.3.0` is released together with:
+  - `@oxdeai/sdk@1.3.0`
+  - `@oxdeai/conformance@1.3.0`
+- Tooling (`@oxdeai/cli`) remains on its own version line.
+- No intentional protocol semantic break from `1.2.x`.
+
+---
+
 ## [1.2.0] - 2026-03-08
 
 ### Added
