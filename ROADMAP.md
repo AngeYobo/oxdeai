@@ -98,8 +98,9 @@ Execution checklist:
   - deterministic behavior checks
   - authorization boundary enforcement checks
 - [ ] Publish at least 2 case-style integration writeups:
-  - architecture, controls, and failure mode prevented
-  - verification evidence (snapshot/audit/envelope outcomes)
+  - API cost containment
+  - infrastructure provisioning control
+  - each writeup includes architecture, controls, failure mode prevented, and verification evidence (snapshot/audit/envelope outcomes)
 
 Completion criteria:
 - [ ] At least 3 adapter integrations are reproducible from docs.

@@ -2,6 +2,9 @@
 
 This guide describes a minimal production wiring pattern for a Policy Enforcement Point (PEP) using OxDeAI.
 
+Reference architecture:
+- [`docs/adapter-reference-architecture.md`](./adapter-reference-architecture.md)
+
 ## Scope
 
 Applies to services that execute external side effects (tools, provisioning, payments, API calls) and must enforce OxDeAI authorization before execution.

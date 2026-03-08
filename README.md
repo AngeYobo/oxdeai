@@ -54,6 +54,7 @@ Examples:
 Specifications and docs:
 - `SPEC.md`, `SECURITY.md`, `PROTOCOL.md`
 - production integration guide: [`docs/pep-production-guide.md`](./docs/pep-production-guide.md)
+- adapter integration model: [`docs/adapter-reference-architecture.md`](./docs/adapter-reference-architecture.md)
 
 ## Examples
 
