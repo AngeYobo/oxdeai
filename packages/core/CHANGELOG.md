@@ -7,6 +7,30 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.2.0] - 2026-03-08
+
+### Added
+
+- Protocol milestone: non-forgeable verification with Ed25519 signatures.
+- Authorization signature fields and verification support for `alg` and `kid`.
+- Issuer-scoped KeySet model for trusted key resolution.
+- Public verifier API: `verifyAuthorization(...)`.
+- Canonical signing input and domain-separated signature verification paths.
+
+### Changed
+
+- `verifyEnvelope(...)` enhanced to validate signed envelope metadata in strict fail-closed flows.
+- Conformance alignment updated for signature-verification vectors and deterministic validation ordering.
+
+### Notes
+
+- `@oxdeai/core@1.2.0` is part of the synchronized protocol stack release with:
+  - `@oxdeai/sdk@1.2.0`
+  - `@oxdeai/conformance@1.2.0`
+- This is a protocol milestone release; tooling (`@oxdeai/cli`) remains on its own version line.
+
+---
+
 ## [1.0.3] - 2026-03-06
 
 ### Changed

@@ -131,7 +131,7 @@ A deterministic policy substrate that:
   * recursion depth limits
   * concurrency slots
   * replay protection
-* emits signed authorizations (HMAC)
+* emits signed authorizations (Ed25519 preferred, legacy HMAC compatibility)
 * produces hash-chained audit logs
 * supports pure evaluation (`evaluatePure`)
 * produces content-addressed `policyId`
@@ -499,13 +499,13 @@ Stateless verification layer for protocol artifacts.
 * conformance tests
 * reference integration demo (OpenAI tools boundary)
 
-### v1.1 — Authorization Artifact
+### v1.1 — Authorization Artifact (shipped)
 * formalize AuthorizationV1 as first-class protocol artifact
 * relying-party verification contract
 * verifyAuthorization() as explicit protocol primitive
 * spec updates for PDP / PEP separation
 
-### v1.2 — Non-Forgeable Verification
+### v1.2 — Non-Forgeable Verification (shipped)
 * Ed25519 support
 * kid / alg fields
 * public-key verification

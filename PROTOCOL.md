@@ -1,4 +1,4 @@
-# OxDeAI Protocol (v1.1.0)
+# OxDeAI Protocol (v1.2.0)
 
 OxDeAI is a deterministic economic containment protocol for autonomous systems.
 
@@ -57,13 +57,15 @@ Expanded flow:
 
 ## 4) Protocol Artifacts (Overview)
 
-OxDeAI v1.1.0 protocol surface centers on:
+OxDeAI v1.2.0 protocol surface centers on:
 
 - Intent (request + binding fields)
 - Canonical snapshot (`formatVersion: 1`)
 - AuthorizationV1 (`ALLOW` pre-execution artifact with issuer/audience/intent/state/policy binding)
+- non-forgeable authorization signatures (`alg`, `kid`, `signature`)
 - Hash-chained audit events
-- Verification envelope (`snapshot + events`)
+- Verification envelope (`snapshot + events`) with optional signature profile
+- KeySet metadata for offline key lookup and rotation windows
 - Unified verification result (`ok | invalid | inconclusive`)
 
 See detailed definitions in [`SPEC.md`](./SPEC.md).
@@ -86,10 +88,11 @@ Operational meaning:
 - `inconclusive`: not invalid, but insufficient strict anchor evidence
 
 Strict/best-effort behavior and deterministic violation ordering are specified in [`SPEC.md`](./SPEC.md).
-Relying-party execution gate requirements are specified in [`SPEC.md` §10](./SPEC.md#10-relying-party-pep-contract).
+Relying-party execution gate requirements are specified in [`SPEC.md` §9](./SPEC.md#9-relying-party-contract).
 
 `verifyAuthorization` is the pre-execution gate.
 `verifyEnvelope` remains the post-execution evidence verifier.
+Ed25519 + KeySet verification is the preferred non-shared-secret path.
 
 ## 6) Package Roles
 
@@ -130,7 +133,8 @@ This is what makes offline verification and cross-runtime conformance possible.
 
 ## 8) Versioning and Stability
 
-v1.0.x is protocol-stable for the shipped verification surface and envelope format.
+v1.2.0 is the current protocol line for non-forgeable verification (`alg`/`kid`/`signature` with Ed25519).
+Legacy v1.0.x compatibility paths MAY remain supported by implementations where explicitly documented.
 
 Incompatible changes to canonical artifacts, verification result semantics, or envelope format require a major protocol version.
 
@@ -141,7 +145,7 @@ See release policy:
 ## 9) Where to Go Next
 
 - Full protocol companion spec: [`SPEC.md`](./SPEC.md)
-- Relying-party execution gate contract: [`SPEC.md` §10](./SPEC.md#10-relying-party-pep-contract)
+- Relying-party execution gate contract: [`SPEC.md` §9](./SPEC.md#9-relying-party-contract)
 - Normative protocol text: [`protocol/protocol.md`](./protocol/protocol.md)
 - Threat model details: [`protocol/threat-model.md`](./protocol/threat-model.md)
 - Envelope profile details: [`protocol/envelope.md`](./protocol/envelope.md)
