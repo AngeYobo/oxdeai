@@ -15,6 +15,19 @@ The SDK is an integration surface and does not redefine protocol semantics.
 - Public guard API for callback-boundary enforcement (`createGuard`)
 - Runtime adapters (in-memory and file-based)
 
+## Architecture Overview
+
+![PDP and PEP flow](../../docs/diagrams/pdp-pep-flow.svg)
+
+OxDeAI SDK sits at the runtime integration boundary:
+
+- runtime/adapter proposes action input
+- PDP evaluates policy and emits `AuthorizationV1` on `ALLOW`
+- PEP callback gate executes only after authorization enforcement
+
+Diagram source/editing policy:
+- [`docs/diagrams/README.md`](../../docs/diagrams/README.md)
+
 ## Guard API (v1.3 adoption layer)
 
 The SDK exposes a framework-agnostic guard boundary:

@@ -50,6 +50,15 @@ An adapter must provide deterministic implementations for:
 
 Reference adapter: `@oxdeai/core` (implemented in `src/validate.ts`).
 
+## Verification Artifact Scope
+
+![Verification envelope flow](../../docs/diagrams/verification-envelope-flow.svg)
+
+Conformance checks deterministic behavior for artifacts and verifiers used in this flow (snapshot, audit, authorization, envelope, and verification status outputs).
+
+Diagram source/editing policy:
+- [`docs/diagrams/README.md`](../../docs/diagrams/README.md)
+
 ## Freeze Policy
 Vectors are frozen per protocol version.
 

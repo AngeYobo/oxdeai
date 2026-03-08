@@ -249,17 +249,10 @@ npm install @oxdeai/core
 
 ## Core Model
 
-```
-Agent / Runtime
-↓
-Structured Intent
-↓
-PolicyEngine (@oxdeai/core)
-    → ALLOW + Authorization
-    → DENY + Reasons
-↓
-Execution Layer (APIs / payments / infra provisioning)
-```
+![Agent authorization boundary](../../docs/diagrams/agent-authorization-boundary.svg)
+
+Diagram source/editing policy:
+- [`docs/diagrams/README.md`](../../docs/diagrams/README.md)
 
 ---
 
