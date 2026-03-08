@@ -1,6 +1,6 @@
 {
   "name": "@oxdeai/cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Protocol-focused CLI tooling for OxDeAI artifact build/verify/replay workflows",
   "type": "module",
   "bin": {
@@ -13,6 +13,11 @@
   ],
   "dependencies": {
     "@oxdeai/core": "workspace:*"
+  },
+  "publishConfig": {
+    "dependencies": {
+      "@oxdeai/core": "^1.3.0"
+    }
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
