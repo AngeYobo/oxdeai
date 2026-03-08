@@ -8,7 +8,7 @@ Conformance vectors and validator for the OxDeAI protocol.
 Passing validation means the implementation reproduces expected deterministic artifacts (hashes, statuses, and verification outputs) from frozen vectors.
 
 ## Version Coupling
-- `@oxdeai/conformance@1.0.2` targets protocol/core `1.0.2` behavior.
+- `@oxdeai/conformance@1.2.x` targets protocol/core `1.2.x` behavior.
 - Use matching major/minor protocol versions when validating.
 
 ## Included Vector Sets
@@ -18,8 +18,11 @@ Passing validation means the implementation reproduces expected deterministic ar
 - `audit-chain.json`
 - `audit-verification.json`
 - `envelope-verification.json`
+- `authorization-verification.json`
+- `authorization-signature-verification.json`
+- `envelope-signature-verification.json`
 
-Current validator assertion count: `50`.
+Current validator assertion count: `94`.
 
 ## Usage
 From repo root:
@@ -32,7 +35,7 @@ pnpm -C packages/conformance validate
 Expected success output includes:
 
 ```text
-Conformance passed: 40 assertions
+Conformance passed: 94 assertions
 ```
 
 ## Adapter Contract
