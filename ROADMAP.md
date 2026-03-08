@@ -84,6 +84,28 @@ Examples of target integrations:
 
 Note: OxDeAI remains a protocol/enforcement layer, not a framework.
 
+Execution checklist:
+- [ ] Ship 3 maintained adapter targets (`OpenAI Agents SDK`, `CrewAI`, `AutoGen`).
+- [ ] Define one shared adapter contract (proposed action input, authorization gate, execute/refuse output, audit emission).
+- [ ] Publish a consistent integration kit for each adapter:
+  - install
+  - minimal quickstart
+  - production PEP wiring notes
+- [ ] Provide cross-adapter reproducible demo scenario:
+  - `ALLOW`, `ALLOW`, `DENY`
+  - `verifyEnvelope() => ok`
+- [ ] Add adapter validation gates in CI/docs:
+  - deterministic behavior checks
+  - authorization boundary enforcement checks
+- [ ] Publish at least 2 case-style integration writeups:
+  - architecture, controls, and failure mode prevented
+  - verification evidence (snapshot/audit/envelope outcomes)
+
+Completion criteria:
+- [ ] At least 3 adapter integrations are reproducible from docs.
+- [ ] Adapter demos are conformance-aligned and produce deterministic verification outcomes.
+- [ ] Integration docs and case studies are sufficient for third-party adoption without source deep-dive.
+
 ### v2.x - Delegated Agent Authorization
 Status: `Planned`
 
