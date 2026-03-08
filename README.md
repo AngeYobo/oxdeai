@@ -13,6 +13,8 @@ OxDeAI provides fail-closed policy evaluation for autonomous actions under expli
 - `v1.3` Guard Adapter + Integration Surface: complete
 - Next: `v1.4` ecosystem adoption
 
+Planned phases (`v2.x` Delegated Agent Authorization, `v3.x` Verifiable Execution Infrastructure) are tracked in [`ROADMAP.md`](./ROADMAP.md).
+
 ## Version Snapshot
 
 Protocol stack:
