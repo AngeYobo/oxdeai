@@ -114,6 +114,22 @@ Implementations MUST NOT downgrade invalid artifacts to warnings for execution g
 
 ## 8. Vulnerability Reporting
 
+## 8. Test Fixture Key Material
+
+Production private keys MUST NOT be committed.
+
+Cryptographic test fixtures are permitted only in explicit fixture paths and MUST be labeled:
+
+- `TEST ONLY`
+- `DO NOT USE IN PRODUCTION`
+
+Deterministic fixtures SHOULD be minimized.
+Where deterministic fixtures are not required, tests SHOULD generate ephemeral keypairs at runtime.
+
+Repository scanners and reviewers SHOULD treat fixture-path key material as test scope only, while continuing strict detection for all non-fixture paths.
+
+## 9. Vulnerability Reporting
+
 Report vulnerabilities privately to:
 
 security@oxdeai.io

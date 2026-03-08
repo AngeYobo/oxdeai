@@ -14,6 +14,10 @@ import {
   verifySnapshot
 } from "@oxdeai/core";
 import type { AuthorizationV1, Intent, KeySet, State, VerificationResult } from "@oxdeai/core";
+import {
+  TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
+  TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
+} from "./fixtures/ed25519.test-only.fixture.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -68,12 +72,6 @@ type ConformanceAdapter = {
   }): VerificationResult;
 };
 
-const TEST_ED25519_PRIVATE_KEY = `-----BEGIN PRIVATE KEY-----
-MC4CAQAwBQYDK2VwBCIEIBx0hBPi6cIYPo/JZbavNXDDLlfV1vj+IyS+R4oq2Zvx
------END PRIVATE KEY-----`;
-const TEST_ED25519_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAWiMMGTYK7zzHwZXLzDpCshxAH6Lgx8gVsJaixePuY7g=
------END PUBLIC KEY-----`;
 const TEST_KEYSET: KeySet = {
   issuer: "oxdeai.policy-engine",
   version: "1",
@@ -81,7 +79,7 @@ const TEST_KEYSET: KeySet = {
     {
       kid: "2026-01",
       alg: "Ed25519",
-      public_key: TEST_ED25519_PUBLIC_KEY
+      public_key: TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
     }
   ]
 };
@@ -408,7 +406,7 @@ function makeSignedAuthorizationBase(now = 1730000000): AuthorizationV1 {
       expiry: now + 60,
       kid: "2026-01"
     },
-    TEST_ED25519_PRIVATE_KEY
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
   );
 }
 
@@ -443,7 +441,7 @@ function validateAuthorizationSignatureVectors(ctx: CheckCtx, adapter: Conforman
           ...unsigned,
           audience: "other-audience"
         },
-        TEST_ED25519_PRIVATE_KEY
+        TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
       );
       opts.expectedAudience = "merchant-gateway";
     } else if (mode === "tampered-field") {
@@ -456,7 +454,7 @@ function validateAuthorizationSignatureVectors(ctx: CheckCtx, adapter: Conforman
           issued_at: 100,
           expiry: 110
         },
-        TEST_ED25519_PRIVATE_KEY
+        TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
       );
       opts.now = 120;
     } else if (mode === "replay") {
@@ -640,7 +638,7 @@ function validateEnvelopeSignatureVectors(ctx: CheckCtx, adapter: ConformanceAda
       snapshot: bytes,
       events
     },
-    { issuer: "oxdeai.policy-engine", kid: "2026-01", privateKeyPem: TEST_ED25519_PRIVATE_KEY }
+    { issuer: "oxdeai.policy-engine", kid: "2026-01", privateKeyPem: TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION }
   );
 
   for (const v of file.vectors) {
