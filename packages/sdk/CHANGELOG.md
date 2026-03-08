@@ -7,6 +7,19 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.3.1] - 2026-03-08
+
+### Changed
+
+- Metadata-only packaging fix for npm consumers.
+- Published dependency metadata now uses `@oxdeai/core@^1.3.0` directly (no workspace protocol spec in package metadata).
+
+### Notes
+
+- No runtime or protocol-semantics changes from `1.3.0`.
+
+---
+
 ## [1.3.0] - 2026-03-08
 
 ### Added
