@@ -4,6 +4,10 @@ import { PolicyEngine, signAuthorizationEd25519, verifyAuthorization } from "@ox
 import type { KeySet } from "@oxdeai/core";
 import { makeIntent } from "../../helpers/intent.js";
 import { makeState } from "../../helpers/state.js";
+import {
+  TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
+  TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
+} from "../../fixtures/ed25519.test-only.fixture.js";
 
 function makeEngine(): PolicyEngine {
   return new PolicyEngine({
@@ -16,16 +20,10 @@ function makeEngine(): PolicyEngine {
   });
 }
 
-const TEST_ED25519_PRIVATE_KEY = `-----BEGIN PRIVATE KEY-----
-MC4CAQAwBQYDK2VwBCIEIBx0hBPi6cIYPo/JZbavNXDDLlfV1vj+IyS+R4oq2Zvx
------END PRIVATE KEY-----`;
-const TEST_ED25519_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAWiMMGTYK7zzHwZXLzDpCshxAH6Lgx8gVsJaixePuY7g=
------END PUBLIC KEY-----`;
 const TEST_KEYSET: KeySet = {
   issuer: "issuer-A",
   version: "1",
-  keys: [{ kid: "2026-01", alg: "Ed25519", public_key: TEST_ED25519_PUBLIC_KEY }]
+  keys: [{ kid: "2026-01", alg: "Ed25519", public_key: TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION }]
 };
 
 function allowOutput() {
@@ -99,7 +97,7 @@ test("verifyAuthorization success with Ed25519 keyset", () => {
       expiry: 1060,
       kid: "2026-01"
     },
-    TEST_ED25519_PRIVATE_KEY
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
   );
   const result = verifyAuthorization(auth, {
     now: 1010,
@@ -179,7 +177,7 @@ test("unknown kid => invalid", () => {
       expiry: 1060,
       kid: "2026-01"
     },
-    TEST_ED25519_PRIVATE_KEY
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
   );
   const result = verifyAuthorization({ ...auth, kid: "missing-kid" }, {
     now: 1010,
@@ -204,7 +202,7 @@ test("unknown alg => invalid", () => {
       expiry: 1060,
       kid: "2026-01"
     },
-    TEST_ED25519_PRIVATE_KEY
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
   );
   const result = verifyAuthorization({ ...auth, alg: "Unknown" as any }, {
     now: 1010,
@@ -229,7 +227,7 @@ test("signature invalid after mutation", () => {
       expiry: 1060,
       kid: "2026-01"
     },
-    TEST_ED25519_PRIVATE_KEY
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
   );
   const result = verifyAuthorization({ ...auth, state_hash: "c".repeat(64) }, {
     now: 1010,

@@ -2,17 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { signAuthorizationEd25519, verifyAuthorization } from "../verification/index.js";
 import type { KeySet } from "../types/keyset.js";
+import {
+  TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
+  TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
+} from "./fixtures/ed25519.test-only.fixture.js";
 
-const TEST_ED25519_PRIVATE_KEY = `-----BEGIN PRIVATE KEY-----
-MC4CAQAwBQYDK2VwBCIEIBx0hBPi6cIYPo/JZbavNXDDLlfV1vj+IyS+R4oq2Zvx
------END PRIVATE KEY-----`;
-const TEST_ED25519_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAWiMMGTYK7zzHwZXLzDpCshxAH6Lgx8gVsJaixePuY7g=
------END PUBLIC KEY-----`;
 const TEST_KEYSET: KeySet = {
   issuer: "issuer-A",
   version: "1",
-  keys: [{ kid: "2026-01", alg: "Ed25519", public_key: TEST_ED25519_PUBLIC_KEY }]
+  keys: [{ kid: "2026-01", alg: "Ed25519", public_key: TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION }]
 };
 
 function makeAuth() {
@@ -29,7 +27,7 @@ function makeAuth() {
       expiry: 1060,
       kid: "2026-01"
     },
-    TEST_ED25519_PRIVATE_KEY
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
   );
 }
 
