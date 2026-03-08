@@ -1,4 +1,4 @@
-# OxDeAI Schemas (v1.0.2)
+# OxDeAI Schemas (v1.2.0)
 
 This directory contains JSON Schemas for protocol artifacts shipped by `@oxdeai/core`.
 
@@ -13,7 +13,9 @@ All schemas use JSON Schema Draft 2020-12.
 - `audit-event.schema.json`: single `AuditEvent`.
 - `audit-log.schema.json`: ordered list of audit events.
 - `verification-envelope-v1.schema.json`: wire JSON shape used by `VerificationEnvelopeV1` codec.
+- `verification-envelope.schema.json`: alias of verification-envelope-v1 schema.
 - `verification-result.schema.json`: unified `VerificationResult` shape.
+- `keyset.schema.json`: trusted issuer key set used for kid/alg lookup and rotation windows.
 
 ## Notes on Numeric / BigInt Representation
 

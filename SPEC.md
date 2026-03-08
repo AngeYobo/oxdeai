@@ -1,118 +1,41 @@
-# OxDeAI Specification (v1.0.2)
+# OxDeAI Specification (v1.2.0)
 
-This document is a protocol-grade specification aligned to shipped OxDeAI v1.0.2 behavior.
+This document defines the protocol requirements for OxDeAI v1.2.0.
+Normative protocol text uses RFC 2119 terms: MUST, MUST NOT, SHOULD, SHOULD NOT, MAY.
 
-- Normative protocol text is in [`protocol/protocol.md`](./protocol/protocol.md).
-- This document is a complete implementation-facing companion for builders and auditors.
-- If this document conflicts with the normative protocol file, the normative protocol file wins.
+## 1. Scope
 
-## 1. Scope and Non-Goals
+OxDeAI defines deterministic pre-execution authorization and post-execution evidence verification.
+A conformant implementation MUST produce deterministic outputs for equivalent inputs.
 
-### 1.1 Scope
+## 2. Core Artifacts
 
-OxDeAI defines deterministic, pre-execution economic containment for autonomous systems.
+- Intent
+- CanonicalState snapshot
+- AuthorizationV1
+- Audit events (hash chained)
+- VerificationEnvelopeV1
+- VerificationResult
+- KeySet
 
-A compliant implementation MUST evaluate `(intent, state)` and produce deterministic policy artifacts:
+## 3. Determinism Requirements
 
-- decision (`ALLOW` or `DENY`)
-- authorization (only on `ALLOW`)
-- state transition
-- append-only audit events
-- stateless verification outputs
+Implementations MUST use canonical encoding for signed and hashed payloads.
+Verification ordering and violation ordering MUST be deterministic.
+Policy-critical logic MUST NOT depend on ambient randomness.
 
-### 1.2 Non-Goals
+## 4. Authorization Artifact (AuthorizationV1)
 
-OxDeAI does not attempt to solve:
+### Definition
 
-- general observability/monitoring platforms
-- semantic safety or content safety of model outputs
-- identity, transport, or settlement network security by itself
+`AuthorizationV1` is a portable authorization artifact issued by the OxDeAI Policy Decision Point (PDP) to permit a specific action under a specific policy state.
+It is consumed by a relying party, also referred to as a Policy Enforcement Point (PEP), and MUST be verified before execution.
 
-## 2. Terminology Glossary
+`AuthorizationV1` is a first-class protocol artifact. It represents a decision bound to identity, audience, intent, state, policy context, and time.
 
-- Intent: Requested action plus policy-relevant fields.
-- State: Economic policy state used during evaluation.
-- PolicyEngine: Deterministic evaluator over `(intent, state)`.
-- CanonicalState: Canonical snapshot object used for portable state exchange.
-- Snapshot bytes: Canonical UTF-8 bytes of `CanonicalState`.
-- Authorization: Allow artifact bound to intent hash, state hash, policy version, and expiry.
-- AuditEvent: One event in the append-only audit stream.
-- Audit head hash: Deterministic chain tip computed from ordered events.
-- STATE_CHECKPOINT: Audit event carrying `stateHash` for strict anchoring.
-- VerificationEnvelopeV1: Portable artifact containing snapshot and audit events.
-- VerificationResult: Unified verifier output (`ok | invalid | inconclusive`).
+### Mandatory Fields (v1.2)
 
-## 3. Artifact Model
-
-## 3.1 Intent
-
-Intent fields are defined by the public `Intent` type in `@oxdeai/core`.
-For hash binding, implementations MUST follow the binding projection behavior of the shipped runtime:
-
-- `signature` MUST be excluded from `intent_hash`.
-- unknown non-binding fields MUST NOT affect `intent_hash`.
-- canonical JSON MUST be used before hashing.
-
-Minimal example:
-
-```json
-{
-  "intent_id": "intent-1",
-  "agent_id": "agent-1",
-  "action_type": "PROVISION",
-  "amount": "320",
-  "target": "us-east-1",
-  "timestamp": 1772718102,
-  "metadata_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-  "nonce": "1",
-  "signature": "placeholder"
-}
-```
-
-## 3.2 Policy State and CanonicalState
-
-Runtime policy state contains module slices (budget, velocity, replay, concurrency, recursion, kill switch, allowlists, tool limits).
-Portable snapshots are represented as:
-
-- `formatVersion: 1`
-- `engineVersion: string`
-- `policyId: string`
-- `modules: Record<string, unknown>`
-
-Minimal `CanonicalState` example:
-
-```json
-{
-  "formatVersion": 1,
-  "engineVersion": "1.0.2",
-  "policyId": "6586c13bd8fa4e9de87d4c84ca8efdb7677e0a397609bd9ded7ee9ef048274de",
-  "modules": {
-    "BudgetModule": {
-      "budget_limit": { "agent-1": "1000000" },
-      "spent_in_period": { "agent-1": "320" }
-    }
-  }
-}
-```
-
-## 3.3 Canonical Snapshot Encoding (`formatVersion = 1`)
-
-Snapshot bytes MUST be canonical UTF-8 JSON bytes of `CanonicalState`.
-
-Canonical JSON requirements:
-
-- object keys sorted lexicographically
-- arrays preserved in given order
-- `undefined` normalized to `null` where applicable
-- bigint-like values represented as base-10 strings in canonical JSON paths
-- non-finite numbers rejected
-
-## 3.4 Authorization Artifact (AuthorizationV1)
-
-AuthorizationV1 is the first-class pre-execution artifact emitted by the PDP on `ALLOW`.
-It is consumed by a PEP / relying party before any side effect is executed.
-
-AuthorizationV1 fields:
+An `AuthorizationV1` artifact MUST include all of the following fields:
 
 - `auth_id`
 - `issuer`
@@ -120,314 +43,550 @@ AuthorizationV1 fields:
 - `intent_hash`
 - `state_hash`
 - `policy_id`
-- `decision` (`ALLOW | DENY`, but execution requires `ALLOW`)
+- `decision`
 - `issued_at`
 - `expiry`
-- optional `nonce`
-- optional `capability`
-- optional `signature`
+- `alg`
+- `kid`
+- `signature`
 
-Reference implementation compatibility note:
+Optional extension fields MAY include:
 
-- `@oxdeai/core` keeps legacy v1.0.x authorization fields for backward compatibility.
-- Public-key non-forgeable signatures are future work (v1.2+). Current signature profile remains implementation-defined.
+- `nonce`
+- `capability`
 
-Minimal AuthorizationV1 example:
+Implementations MAY carry additional metadata only if such metadata does not change the semantics of mandatory fields.
+
+### Field Semantics
+
+- `auth_id`: Unique authorization identifier for this artifact instance.
+- `issuer`: Identifier of the authorization issuer and trust domain.
+- `audience`: Identifier of the relying party for which this authorization is valid.
+- `intent_hash`: Canonical hash of the intended action to be executed.
+- `state_hash`: Hash of the policy state snapshot against which authorization was granted.
+- `policy_id`: Identifier of the policy configuration used for evaluation.
+- `decision`: Authorization outcome (`ALLOW` or `DENY`).
+- `issued_at`: Issuance time as Unix timestamp (seconds).
+- `expiry`: Expiration time as Unix timestamp (seconds).
+- `alg`: Signature algorithm identifier.
+- `kid`: Key identifier used to select the verification key.
+- `signature`: Cryptographic signature over the canonical authorization payload.
+
+### Security Properties
+
+`AuthorizationV1` has the following protocol properties:
+
+- Single-use: `auth_id` MUST be treated as consumable exactly once by the relying party.
+- Issuer-bound: validity is scoped to a trusted `issuer`.
+- Audience-bound: validity is scoped to the designated `audience`.
+- Intent-bound: validity is scoped to the exact `intent_hash`.
+- State-bound: validity is scoped to the exact `state_hash`.
+- Short-lived: validity is bounded by `issued_at` and `expiry`; expired artifacts are invalid.
+
+These properties are mandatory protocol constraints, not operational recommendations.
+
+### Normative Relying-Party Obligations
+
+Before execution, a relying party MUST verify all of the following:
+
+1. `decision == "ALLOW"`.
+2. The authorization has not expired (`expiry` is in the future under verifier time policy).
+3. `issuer` is trusted for the current trust context.
+4. `audience` matches the current relying-party identity.
+5. `intent_hash` matches the exact action about to be executed.
+6. `state_hash` binding is respected by the execution context.
+7. `policy_id` matches the expected policy context.
+8. `auth_id` has not already been consumed.
+9. `alg` is supported and permitted by local algorithm policy.
+10. `kid` resolves to a trusted verification key for the expected issuer.
+11. `signature` validates against the canonical payload and resolved key.
+
+If any verification step fails, execution MUST NOT occur.
+If verification state is ambiguous (for example, unresolved trust state, inconsistent key material, or parse ambiguity), verification MUST fail closed.
+A reused `auth_id` MUST be rejected.
+
+### Non-Forgeable Verification (v1.2)
+
+In v1.2, `AuthorizationV1` MUST support public-key verification via `alg`, `kid`, and `signature`.
+
+For signed verification:
+
+- The signature MUST be computed over canonical payload bytes.
+- The `signature` field itself MUST NOT be included in the signed payload.
+- Different artifact classes MUST use distinct signing domains to prevent cross-artifact signature confusion.
+- Unsupported algorithms MUST fail closed.
+
+Verifiers MUST NOT accept unsigned substitutions for artifacts that require signature validation under local policy.
+
+### Compatibility
+
+Older pre-v1.2 authorization paths MAY exist for backward compatibility.
+When legacy paths are supported, they SHOULD be explicitly mode-scoped and MUST NOT be confused with public-key verification mode.
+Public-key verifiable `AuthorizationV1` is the preferred v1.2 form.
+
+### Minimal Artifact Example
 
 ```json
 {
-  "auth_id": "19e9022f6bc34e77489c3c480629ae41a68f17c8b42685c482ae060755b800ef",
-  "issuer": "oxdeai.policy-engine",
-  "audience": "merchant-gateway",
-  "intent_hash": "0378394eb990e096126013b090ac3271c9368074477f58d46f03ba18e1aa7510",
-  "state_hash": "8e0d8542b8c9b02fdd9862d720f4755ff3ae04bd51fae5fb58dae7089ddf1beb",
-  "policy_id": "6586c13bd8fa4e9de87d4c84ca8efdb7677e0a397609bd9ded7ee9ef048274de",
+  "auth_id": "auth_01JY7K8Z4V3QH6N2M9P0R1S2T3",
+  "issuer": "oxdeai.pdp.prod.eu-1",
+  "audience": "payments.api.eu-1",
+  "intent_hash": "9f3e5c6ad7a4a2f8a2d93f0f31c65a88f95d7dbef4c9f9e30d5f0f6ce7f4a1b2",
+  "state_hash": "4e2b7f1a3d8c6e90b5f3a9d7c1e2f4a6b8d0c2e4f6a8b0c1d3e5f7a9b1c3d5e7",
+  "policy_id": "policy_prod_payments_v42",
   "decision": "ALLOW",
-  "issued_at": 1772718162,
-  "expiry": 1772718222
+  "issued_at": 1770001200,
+  "expiry": 1770001260,
+  "alg": "Ed25519",
+  "kid": "2026-01-main",
+  "signature": "Wm9NQjN4d0M1N1dXQ0x4eFZ4Qm5hV2xQbUQ3SzdqQ0x0QnI0U2pQeQ=="
 }
 ```
 
-Authorization verification rules:
+## 5. Non-Forgeable Verification (v1.2)
 
-- `decision` MUST equal `ALLOW`
-- `expiry` MUST be in the future at verification time
-- `intent_hash`, `state_hash`, `policy_id`, `issuer`, `audience`, `auth_id` MUST be present
-- expected issuer / audience / policy bindings MUST match when configured
-- consumed `auth_id` MUST be rejected (single-use)
+### 5.1 Algorithm Profile
 
-PDP / PEP architecture requirements:
+`Ed25519` is the preferred public-key verification algorithm for v1.2 artifacts.
+New v1.2 signed artifacts MUST include `alg`, `kid`, and `signature`.
 
-- PDP issues AuthorizationV1 bound to evaluated intent and state.
-- PEP enforces bindings and denies execution on any verification failure.
-- PEP MUST treat `auth_id` as single-use and maintain consumed-id state.
+### 5.2 Signed Payload Rules
 
-## 3.5 Audit Events and Chain Rules
+The signed payload MUST use canonical encoding.
+The `signature` field MUST NOT be included in its own signing payload.
+Any mutation of signed fields MUST invalidate signature verification.
 
-Audit events are typed JSON objects (`INTENT_RECEIVED`, `DECISION`, `AUTH_EMITTED`, `EXECUTION_ATTESTED`, `STATE_CHECKPOINT`).
+### 5.3 Verifier Fail-Closed Requirements
 
-Event normalization for hashing MUST include:
+Verifiers MUST fail closed on:
 
-- `policyId: event.policyId ?? null`
-- canonical JSON encoding
+- unknown or unsupported `alg`
+- unknown `kid`
+- malformed `signature`
+- missing required signed fields
+- issuer mismatch
+- audience mismatch
+- policy mismatch when configured
+- expiry failure
 
-Reference chain in the engine log (`HashChainedLog`) uses:
+A verifier MUST NOT accept ambiguous trust state.
 
-- initial previous hash `"GENESIS"`
-- `next = sha256(prev + "\n" + canonicalEventBytes)`
+### 5.4 Legacy Compatibility Path
 
-`verifyAuditEvents` computes a deterministic `auditHeadHash` by replaying the provided event list and applying its shipped chain routine.
-Timestamps MUST be non-decreasing.
+Legacy shared-secret artifacts MAY be supported for backward compatibility.
+If supported, verifier mode MUST be explicit and documented as legacy.
+Public-key verification SHOULD be used for third-party verification.
 
-Minimal audit excerpt:
+## 6. Domain Separation
 
-```json
-[
-  {
-    "type": "INTENT_RECEIVED",
-    "intent_hash": "0378394eb990e096126013b090ac3271c9368074477f58d46f03ba18e1aa7510",
-    "agent_id": "agent-1",
-    "timestamp": 1772718102,
-    "policyId": "6586c13bd8fa4e9de87d4c84ca8efdb7677e0a397609bd9ded7ee9ef048274de"
-  },
-  {
-    "type": "STATE_CHECKPOINT",
-    "stateHash": "30a1b0957089e6cc9e43afd0a71ad9a02389afc59657dafb66d5768c62987c75",
-    "timestamp": 1772718102,
-    "policyId": "6586c13bd8fa4e9de87d4c84ca8efdb7677e0a397609bd9ded7ee9ef048274de"
-  }
-]
+Signatures for different artifact classes MUST use distinct signing domains.
+At minimum, implementations MUST support distinct domains:
+
+- `OXDEAI_AUTH_V1`
+- `OXDEAI_ENVELOPE_V1`
+- `OXDEAI_CHECKPOINT_V1`
+
+A signer MUST compute signature input as:
+
+`domain_separator || canonical_payload_bytes`
+
+Artifact classes MUST NOT share signing domains.
+This prevents cross-artifact signature confusion.
+
+## 7. Canonical Signing Format
+
+### 1. Purpose
+
+OxDeAI requires a deterministic, language-independent canonical signing format for all signed artifacts.
+For identical artifact content, compliant implementations MUST produce identical signing input bytes.
+Cross-language signature interoperability depends on this property.
+
+### 2. Signed Artifact Classes
+
+The following artifact classes are signed in v1.2:
+
+- `AuthorizationV1`
+- `VerificationEnvelopeV1`
+
+Checkpoint artifacts MAY be signed when that profile is enabled.
+
+Each signed artifact class MUST use a distinct signing domain.
+
+### 3. Canonical Payload Rules
+
+Before signing, an artifact payload MUST be converted to the protocol canonical JSON representation.
+
+Canonical payload requirements:
+
+- Object keys MUST be sorted deterministically.
+- Source-code field order or runtime object insertion order MUST NOT affect output.
+- Insignificant whitespace MUST NOT be included.
+- Payload text MUST be UTF-8 encoded.
+- Numeric and bigint values MUST use the protocol canonical representation.
+- Implementations MUST NOT use language-native object/binary serializers as signing format.
+- Implementations MUST NOT sign pretty-printed JSON.
+- Implementations MUST NOT sign runtime-dependent binary encodings unless explicitly defined by this protocol.
+
+### 4. Domain Separation
+
+The following domain strings are mandatory:
+
+- `OXDEAI_AUTH_V1`
+- `OXDEAI_ENVELOPE_V1`
+
+If checkpoint signing is used, `OXDEAI_CHECKPOINT_V1` MUST be used for that class.
+
+Signatures for different artifact classes MUST use different domain strings.
+A verifier MUST reject a signature when the domain does not match the artifact class.
+Domain separation prevents cross-artifact signature confusion.
+
+### 5. Signing Input Construction
+
+Signing input bytes are constructed as:
+
+`SIGNING_INPUT = DOMAIN_UTF8 || 0x0A || CANONICAL_PAYLOAD_UTF8`
+
+Where:
+
+- `DOMAIN_UTF8` is the UTF-8 encoding of the domain string.
+- `0x0A` is one byte with value newline.
+- `CANONICAL_PAYLOAD_UTF8` is the UTF-8 encoding of the canonical JSON payload.
+
+Compliant implementations MUST use exactly this construction.
+
+### 6. Signature Exclusion Rule
+
+The `signature` field MUST NOT be included in the canonical payload that is signed.
+
+All required artifact fields other than `signature` MUST be included in the signed payload.
+For v1.2 `AuthorizationV1`, this includes `alg` and `kid`.
+
+Transport-specific metadata not defined by this protocol MUST NOT be included in the signed payload.
+
+### 7. Encoding Requirements
+
+- Canonical payload bytes MUST be UTF-8.
+- Signing input bytes MUST be byte-for-byte reproducible across implementations.
+- Implementations MUST NOT depend on locale, platform, or runtime defaults.
+- Implementations MUST preserve exact protocol field values.
+
+If signatures are represented as base64 or hex for transport, that encoding is a representation layer only and is not part of signing input construction.
+
+### 8. Verification Requirements
+
+A verifier MUST:
+
+1. Determine artifact class and required signing domain.
+2. Reconstruct canonical payload using the same canonical JSON rules.
+3. Reconstruct signing input using the same domain and separator.
+4. Verify signature against that exact byte sequence.
+
+Verification MUST fail if:
+
+- canonical payload cannot be reconstructed deterministically
+- required signed fields are missing
+- artifact class/domain is unsupported
+- reconstructed bytes differ from signer-intended canonical form
+
+### 9. Failure Handling
+
+The following conditions MUST fail closed:
+
+- malformed canonical payload
+- unknown artifact type or domain
+- unknown or unsupported algorithm
+- ambiguous serialization state
+
+Verification ambiguity MUST NOT be treated as success.
+
+### 10. Minimal Example
+
+Example artifact class: `AuthorizationV1`
+
+Domain string:
+
+```text
+OXDEAI_AUTH_V1
 ```
 
-## 3.6 Verification Envelope
+Example canonical JSON payload (excluding `signature`):
 
-`VerificationEnvelopeV1` logical structure:
+```json
+{"alg":"Ed25519","audience":"payments.api.eu-1","auth_id":"auth_01JY7K8Z4V3QH6N2M9P0R1S2T3","decision":"ALLOW","expiry":1770001260,"intent_hash":"9f3e5c6ad7a4a2f8a2d93f0f31c65a88f95d7dbef4c9f9e30d5f0f6ce7f4a1b2","issued_at":1770001200,"issuer":"oxdeai.pdp.prod.eu-1","kid":"2026-01-main","policy_id":"policy_prod_payments_v42","state_hash":"4e2b7f1a3d8c6e90b5f3a9d7c1e2f4a6b8d0c2e4f6a8b0c1d3e5f7a9b1c3d5e7"}
+```
 
-- `formatVersion: 1`
-- `snapshot: Uint8Array` (canonical snapshot bytes)
-- `events: AuditEntry[]`
+Conceptual signing input construction:
 
-Wire encoding in v1.0.2 uses canonical JSON with:
+```text
+UTF8("OXDEAI_AUTH_V1") || 0x0A || UTF8(<canonical-json-payload-above>)
+```
 
-- `formatVersion: 1`
-- `snapshot: "<base64>"`
-- `events: [...]`
+## 8. Verification Envelope Signing
 
-Minimal wire JSON example:
+VerificationEnvelopeV1 MAY carry signature metadata (`issuer`, `alg`, `kid`, `signature`).
+If signature metadata is present, verifiers MUST validate it under the same fail-closed rules.
+If a verifier runs in signature-required mode, missing envelope signature MUST fail closed.
+
+## 9. Relying Party Contract
+
+### 1. Definition
+
+A **Relying Party** (Policy Enforcement Point, **PEP**) is the system that receives an authorization artifact and decides whether an external action may execute.
+Examples include tool wrappers, compute provisioning services, payment gateways, API execution layers, and orchestration runtimes.
+
+The relying party is the enforcement boundary for OxDeAI authorization decisions.
+It MUST enforce this contract before action execution.
+
+### 2. Verification Requirements
+
+Before executing any action, a relying party MUST verify:
+
+1. `decision` equals `ALLOW`.
+2. The authorization has not expired.
+3. `issuer` is trusted.
+4. `audience` matches the current relying party identity.
+5. `policy_id` matches the expected policy context.
+6. `intent_hash` matches the exact action about to execute.
+7. `state_hash` binding is respected by the execution context.
+8. `auth_id` has not already been consumed.
+9. `alg` is supported by verifier policy.
+10. `kid` resolves to a trusted verification key.
+11. `signature` is valid for the canonical signed payload.
+
+If any verification step fails, the relying party MUST reject the action.
+
+### 3. Authorization Consumption
+
+`AuthorizationV1` MUST be treated as single-use.
+
+After successful execution, the relying party MUST record `auth_id` as consumed in durable or equivalently reliable replay state.
+Any subsequent attempt to reuse the same `auth_id` MUST be rejected.
+
+Single-use consumption is required to prevent replay and reduce time-of-check/time-of-use (TOCTOU) abuse.
+
+### 4. Execution Preconditions
+
+Execution MUST NOT occur unless all of the following are true:
+
+- Authorization verification succeeds.
+- Authorization is not expired at decision time.
+- Verified `intent_hash` matches the intended action.
+- Verified `audience` matches the current relying party.
+
+Authorization MUST be verified immediately before execution.
+
+### 5. Failure Handling
+
+The relying party MUST treat each of the following as authorization failure:
+
+- malformed authorization artifact
+- unknown issuer
+- unknown `kid`
+- unsupported `alg`
+- invalid signature
+- expired authorization
+- reused `auth_id`
+- intent mismatch
+- audience mismatch
+
+Authorization ambiguity MUST result in denial (fail closed).
+
+### 6. Security Considerations
+
+This contract enforces:
+
+- replay protection via single-use `auth_id`
+- intent binding via `intent_hash`
+- state binding via `state_hash`
+- trust boundaries via `issuer` and `audience`
+- forgery resistance via signature verification
+- reduced reuse window via short TTL (`issued_at`/`expiry`)
+
+These checks collectively mitigate replay attacks, authorization forgery, and TOCTOU drift between verification and execution.
+
+### 7. Minimal Verification Flow
+
+```text
+1. Receive AuthorizationV1 artifact.
+2. Resolve verification key from (issuer, kid, alg) and verify signature.
+3. Verify issuer trust and audience equality.
+4. Verify decision == ALLOW and expiry is in the future.
+5. Compute requested action intent hash and compare to intent_hash.
+6. Verify policy_id and state_hash bindings for current context.
+7. Check auth_id is not consumed.
+8. Execute action.
+9. Mark auth_id as consumed.
+```
+
+## 10. KeySet and Key Rotation Model
+
+### 1. Purpose
+
+OxDeAI signed-artifact verification depends on deterministic resolution of a trusted public key from the tuple:
+
+- `issuer`
+- `kid`
+- `alg`
+
+The KeySet model defines a deterministic representation of trusted verification keys.
+This model is required for non-forgeable verification in v1.2.
+
+### 2. KeySet Definition
+
+A **KeySet** is a structured representation of verification keys for exactly one issuer.
+
+A KeySet object MUST contain:
+
+- `issuer`
+- `version`
+- `keys`
+
+Field meanings:
+
+- `issuer`: identifier of the entity that issues signed artifacts.
+- `version`: version or revision identifier of the KeySet.
+- `keys`: collection of verification keys associated with that issuer.
+
+A KeySet MUST correspond to exactly one issuer.
+A verifier MUST NOT treat a KeySet as valid for any other issuer.
+
+### 3. Key Entry Definition
+
+Each KeySet key entry MUST contain:
+
+- `kid`
+- `alg`
+- `public_key`
+
+A key entry MAY also contain:
+
+- `status`
+- `not_before`
+- `not_after`
+
+Field meanings:
+
+- `kid`: key identifier.
+- `alg`: signature algorithm identifier.
+- `public_key`: public verification key material.
+- `status`: optional lifecycle state (for example, active, retired, revoked).
+- `not_before`: optional lower bound on key validity time.
+- `not_after`: optional upper bound on key validity time.
+
+Within a KeySet, `kid` MUST be unique.
+`alg` MUST identify the verification algorithm unambiguously.
+`public_key` MUST be encoded in the format required by the active protocol profile.
+
+### 4. Key Selection Rules
+
+When verifying a signed artifact, a verifier MUST:
+
+1. Identify the artifact `issuer`.
+2. Locate a trusted KeySet for that issuer.
+3. Select a key entry whose `kid` equals the artifact `kid`.
+4. Confirm the key entry `alg` equals the artifact `alg`.
+5. Verify the signature using the selected `public_key`.
+
+Verification MUST fail if:
+
+- no trusted KeySet exists for the issuer
+- no matching `kid` exists
+- `alg` does not match
+
+These conditions are fail-closed requirements.
+
+### 5. Issuer Trust Model
+
+Issuer trust is an external security decision made by the verifier environment.
+
+A verifier MUST trust issuers explicitly.
+Untrusted issuers MUST NOT be accepted.
+Issuer equality comparison MUST be exact.
+A trusted key from one issuer MUST NOT be reused for another issuer.
+
+The core protocol does not require online issuer-trust discovery.
+Offline or preconfigured issuer trust is valid in v1.2.
+
+### 6. Key Rotation Rules
+
+Issuers SHOULD support key rotation without unnecessarily invalidating still-valid artifacts.
+Multiple active keys MAY exist simultaneously for one issuer.
+`kid` MUST distinguish rotated keys.
+Newly issued artifacts SHOULD reference the currently active key via `kid`.
+Verifiers MUST use the `kid` carried in the artifact and MUST NOT guess a latest key.
+
+Rotation MUST NOT rely on implicit key ordering.
+
+### 7. Validity Windows
+
+Key validity windows are optional key-entry constraints.
+
+- If `not_before` is present, a verifier MUST reject use of that key before that instant.
+- If `not_after` is present, a verifier MUST reject use of that key after that instant.
+- If windows are absent, the key has no protocol-defined time bound.
+
+Key validity windows are distinct from artifact `expiry`.
+Artifact expiry and key validity MUST be evaluated independently.
+
+### 8. Failure Handling
+
+Verification MUST fail closed when:
+
+- issuer is unknown
+- `kid` is unknown
+- `alg` is unsupported
+- key entry is malformed
+- key validity windows fail
+- multiple ambiguous matching keys exist
+- `public_key` cannot be decoded
+- trust state is ambiguous
+
+Ambiguity MUST NOT be treated as success.
+
+### 9. Minimal Example
 
 ```json
 {
-  "formatVersion": 1,
-  "snapshot": "eyJmb3JtYXRWZXJzaW9uIjoxLCJlbmdpbmVWZXJzaW9uIjoiMS4wLjIiLCJwb2xpY3lJZCI6Ii4uLiIsIm1vZHVsZXMiOnt9fQ==",
-  "events": []
+  "issuer": "oxdeai.pdp.prod.eu-1",
+  "version": "2026-01",
+  "keys": [
+    {
+      "kid": "2026-01-main",
+      "alg": "Ed25519",
+      "public_key": "MCowBQYDK2VwAyEAq7n1h7vJmV1b8v1z9fP0vQ8sQv1w8mR7Q3v0cV0YQ6k=",
+      "not_before": 1767225600,
+      "not_after": 1798761600
+    }
+  ]
 }
 ```
 
-## 4. Determinism Requirements
+## 11. Replay and TOCTOU Resistance
 
-Compliant implementations MUST satisfy:
+OxDeAI mitigates replay and check/use drift by combining:
 
-- same input intent/state/config => same decision and artifacts
-- canonical serialization for all hashed artifacts
-- deterministic ordering of module and verification outputs
-- no hidden entropy in policy-critical logic
+- single-use `auth_id`
+- short TTL (`issued_at`/`expiry`)
+- intent binding (`intent_hash`)
+- state binding (`state_hash`)
+- issuer and audience binding
 
-Strict no-entropy rule:
+Relying parties MUST enforce single-use state for `auth_id`.
+Relying parties SHOULD minimize check-to-execute latency.
+If execution context changes after verification, execution SHOULD be re-verified.
 
-- policy-critical paths MUST NOT depend on randomness
-- policy-critical paths MUST NOT depend on ambient wall clock where deterministic input is required
-- verification functions MUST be pure (no I/O, clocks, randomness, env reads)
+## 12. Compatibility and Upgrade Notes
 
-## 5. Verification Surface
+v1.2 adds non-forgeable public-key verification as the preferred path.
 
-## 5.1 Functions
+Compatibility requirements:
 
-Stateless verification API:
+- Implementations MAY support legacy artifacts.
+- If legacy mode is supported, verifiers MUST distinguish legacy mode from public-key mode.
+- Public-key mode SHOULD be default for third-party verification.
+- Future versions MAY strengthen envelope-signing and key-distribution requirements.
 
-- `verifySnapshot(snapshotBytes, opts?)`
-- `verifyAuditEvents(events, opts?)`
-- `verifyEnvelope(envelopeBytes, opts?)`
+## 13. Conformance Requirement
 
-## 5.2 `VerificationResult`
-
-All three verifiers return:
-
-- `ok: boolean`
-- `status: "ok" | "invalid" | "inconclusive"`
-- `violations: VerificationViolation[]`
-- optional `policyId`, `stateHash`, `auditHeadHash`
-
-## 5.3 Status Semantics
-
-- `ok`: artifact verifies under selected mode.
-- `invalid`: malformed or inconsistent artifact(s).
-- `inconclusive`: valid enough to parse/replay but insufficient strict anchoring evidence.
-
-## 5.4 Deterministic Violation Ordering
-
-Violations MUST be sorted deterministically by:
-
-1. `code` (lexicographic)
-2. `index` (ascending, default 0 when absent)
-
-## 5.5 Strict vs Best-Effort
-
-`verifyAuditEvents` and `verifyEnvelope` accept mode:
-
-- `strict` (default): missing state anchor causes `inconclusive`
-- `best-effort`: missing state anchor does not block `ok` if no invalid violations exist
-
-## 6. Replay Verification and State Anchors
-
-`STATE_CHECKPOINT` with `stateHash` is the strict replay anchor in v1.0.2 verifier behavior.
-
-Rules:
-
-- strict mode MUST return `inconclusive` when no valid state checkpoint is present
-- strict mode MUST NOT silently upgrade unanchored traces to `ok`
-- best-effort MAY return `ok` without anchors when no invalid violations exist
-
-## 7. Security Model and Threat Analysis
-
-## 7.1 Covered Threats
-
-- replay/duplicate intent processing (nonce/state replay modules)
-- tampered audit order/content (hash chain replay)
-- policy identity mismatch (`policyId` checks)
-- non-monotonic event time ordering
-
-## 7.2 Forgery Risk in v1.0.2
-
-Authorization proof is symmetric-key HMAC in the reference profile.
-This means verification trust is scoped to parties sharing key custody policy.
-Cross-party non-forgeable public verification is not a v1.0.2 guarantee.
-
-## 7.3 Operational Guidance (Non-Protocol)
-
-- store signing keys in KMS/HSM-backed controls
-- rotate keys with overlap windows
-- keep key-to-environment/tenant isolation strict
-- treat `invalid` and (in strict environments) `inconclusive` as fail-closed outcomes
-
-## 8. Backward Compatibility and Evolution
-
-## 8.1 `formatVersion` Rules
-
-- `formatVersion = 1` is stable for v1.0.x.
-- any incompatible wire/schema change MUST use a new formatVersion and major protocol release.
-
-## 8.2 `policyId` Expectations
-
-`policyId` binds artifacts to a policy configuration profile.
-When policy logic/config changes in a way that changes policy identity, outputs SHOULD reflect a new `policyId`.
-
-## 8.3 Violation Code Evolution
-
-Existing violation code semantics MUST remain stable in `1.0.x`.
-Adding new codes MAY be done in backward-compatible releases if:
-
-- existing codes are unchanged
-- deterministic ordering rules remain unchanged
-- consumers can still parse known codes safely
-
-Removing or repurposing existing codes is a breaking change.
-
-## 9. Conformance
-
-Conformance vectors in `@oxdeai/conformance` are the executable behavioral contract for v1.0.2 profile.
-
-Current assertion categories include:
-
-- intent hashing invariants
-- authorization payload/signature outputs
-- snapshot encoding and state hash outputs
-- audit chain recomputation invariants
-- envelope verification status/field propagation/violations
-
-A conformant implementation MUST reproduce expected outputs for the published vector set for its targeted protocol version.
-
-## 10. Relying Party (PEP) Contract
-
-This section defines how an external Policy Enforcement Point (PEP), tool gateway, or provider MUST gate execution.
-
-Two verification paths are distinct:
-
-- Authorization pre-exec verification (capability-token style gate)
-- Envelope post-exec verification (audit-grade verification evidence)
-
-## 10.1 Authorization Pre-Execution Verification
-
-Before executing any side effect, a relying party MUST verify AuthorizationV1 against the intended execution input.
-
-### 10.1.1 Relying Party Contract (Normative)
-
-A relying party MUST verify all of the following before execution:
-
-1. Decision binding  
-`authorization.decision` MUST equal `ALLOW`.
-
-2. Expiry binding  
-`now` MUST be strictly less than `authorization.expiry`.
-
-3. Issuer binding  
-`authorization.issuer` MUST match a trusted issuer configured by the relying party.
-
-4. Audience binding  
-`authorization.audience` MUST match the relying party identity.
-
-5. Policy binding  
-`authorization.policy_id` MUST match the expected policy context.
-
-6. Intent binding  
-Recomputed intent hash from execution input MUST equal `authorization.intent_hash`.
-
-7. State binding  
-Execution MUST be authorized only for the state snapshot identified by `authorization.state_hash`.
-
-8. Non-consumption / replay protection  
-`authorization.auth_id` MUST be rejected if already consumed.
-
-If any required check fails, execution MUST be denied (fail closed).
-
-## 10.2 Envelope Post-Execution Verification
-
-Envelope verification is not a pre-execution capability check by itself.  
-It is an audit-grade integrity proof over snapshot + audit stream.
-
-A relying party/auditor verifying envelope evidence MUST:
-
-1. Run `verifyEnvelope(envelopeBytes, opts?)`.
-2. Require `status == "ok"` for strict pass outcomes.
-3. Treat `status == "invalid"` as failed evidence.
-4. Treat `status == "inconclusive"` as non-pass under strict compliance policy.
-
-Required consistency checks (performed by verifier surface):
-
-- snapshot integrity (`verifySnapshot`)
-- audit integrity and ordering (`verifyAuditEvents`)
-- policy identity consistency between snapshot and audit (`policyId` checks)
-- deterministic violation ordering in output
-
-## 10.3 Strict State-Anchor Constraints
-
-When strict mode is selected:
-
-- missing `STATE_CHECKPOINT` anchor MUST produce `inconclusive`
-- relying parties requiring strict evidence MUST reject `inconclusive` for final settlement/compliance acceptance
-
-Best-effort mode MAY be used for diagnostics, but MUST NOT be treated as strict proof in systems that require anchored replay evidence.
-
-## 11. Future Work (Explicitly Non-v1.0.2)
-
-- Non-forgeable verification profile (public-key signatures) targeted for v1.2.
-- Design note: see [`docs/NON_FORGEABLE_VERIFICATION.md`](./docs/NON_FORGEABLE_VERIFICATION.md).
-- Extended multi-party verification metadata profiles.
-- Additional cross-runtime conformance vectors.
-
-## Appendix A. Implementation Notes
-
-- Reference implementation: `@oxdeai/core` (TypeScript).
-- Companion packages:
-  - `@oxdeai/sdk` (integration helpers)
-  - `@oxdeai/conformance` (vectors + validator)
-- Production users SHOULD pin compatible package versions and validate against frozen vectors.
+A conformant implementation MUST reproduce expected conformance vectors for its targeted profile.
+Violation ordering in `VerificationResult` MUST be deterministic.
