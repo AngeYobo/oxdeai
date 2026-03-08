@@ -10,7 +10,7 @@ OxDeAI provides fail-closed policy evaluation for autonomous actions under expli
 
 - `v1.1` Authorization Artifact: complete
 - `v1.2` Non-Forgeable Verification: complete
-- `v1.3` Guard Adapter + Integration Surface: substantially complete
+- `v1.3` Guard Adapter + Integration Surface: complete
 - Next: `v1.4` ecosystem adoption
 
 ## Core Principles
@@ -41,6 +41,7 @@ Examples:
 
 Specifications and docs:
 - `SPEC.md`, `SECURITY.md`, `PROTOCOL.md`
+- production integration guide: [`docs/pep-production-guide.md`](./docs/pep-production-guide.md)
 
 ## Examples
 
@@ -72,7 +73,7 @@ pnpm install
 - [Release checklist](./docs/release-checklist.md)
 - [Release policy](./RELEASE.md)
 
-## Protocol Stack Release v1.2.0
+## Protocol Stack Release v1.3.x
 
 This release introduces non-forgeable verification through Ed25519 signatures and KeySet-based issuer verification.
 
@@ -95,7 +96,7 @@ Latest local validation (2026-03-08):
 - `pnpm -C examples/openai-tools start` pass (`ALLOW`, `ALLOW`, `DENY`, envelope `ok`)
 - `pnpm -C examples/langgraph start` pass (`ALLOW`, `ALLOW`, `DENY`, envelope `ok`)
 
-## Protocol Flow (v1.2.x)
+## Protocol Flow (v1.3.x)
 
 - OxDeAI issues `AuthorizationV1` artifacts on `ALLOW`.
 - External relying parties verify `AuthorizationV1` before execution.

@@ -1,6 +1,11 @@
-# OxDeAI Protocol v1.0.2
+# OxDeAI Protocol (Legacy v1.0.2 Profile)
 
-This document is the normative protocol specification for OxDeAI v1.0.2.
+This document preserves the v1.0.2 protocol profile for archival/reference compatibility.
+
+For current protocol lines, use:
+
+- [`SPEC.md`](../SPEC.md) (current normative sections)
+- [`PROTOCOL.md`](../PROTOCOL.md) (current front-door protocol overview)
 
 ## 1. Conformance Language
 

@@ -1,6 +1,6 @@
 # OxDeAI Demo - LangGraph Integration Boundary
 
-This example mirrors [`examples/openai-tools`](/home/ange/OxDeAI-core/examples/openai-tools) as closely as possible.
+This example mirrors [`examples/openai-tools`](./examples/openai-tools) as closely as possible.
 
 The key difference is proposal source:
 

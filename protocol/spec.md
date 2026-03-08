@@ -2,7 +2,8 @@
 
 This document is an implementation and integration companion to the OxDeAI protocol specification.
 
-- **Normative source of truth:** `PROTOCOL.md` / `protocol/protocol.md`
+- **Normative source of truth (current):** `SPEC.md` and `PROTOCOL.md`
+- `protocol/protocol.md` is retained as a legacy v1.0.2 profile reference.
 - This file is **non-normative** and explains rationale, patterns, and practical guidance.
 - If any statement here conflicts with the protocol spec, **the protocol spec wins**.
 

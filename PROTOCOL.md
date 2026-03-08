@@ -1,4 +1,4 @@
-# OxDeAI Protocol (v1.2.0)
+# OxDeAI Protocol (v1.3.x)
 
 OxDeAI is a deterministic economic containment protocol for autonomous systems.
 
@@ -57,7 +57,7 @@ Expanded flow:
 
 ## 4) Protocol Artifacts (Overview)
 
-OxDeAI v1.2.0 protocol surface centers on:
+OxDeAI v1.3.x protocol surface centers on:
 
 - Intent (request + binding fields)
 - Canonical snapshot (`formatVersion: 1`)
@@ -121,6 +121,11 @@ Passing conformance means implementation outputs match frozen protocol artifacts
 Integration convenience layer on top of `@oxdeai/core`.
 It does not redefine protocol semantics.
 
+## `@oxdeai/cli`
+
+Operational tooling layer for local artifact workflows (`build`, `verify`, `replay`).
+It is versioned independently from the protocol stack and does not redefine protocol semantics.
+
 ## 7) Deterministic Boundary
 
 Protocol-critical paths are deterministic:
@@ -133,7 +138,7 @@ This is what makes offline verification and cross-runtime conformance possible.
 
 ## 8) Versioning and Stability
 
-v1.2.0 is the current protocol line for non-forgeable verification (`alg`/`kid`/`signature` with Ed25519).
+v1.3.x is the current protocol line for the guard/integration surface on top of the v1.2 non-forgeable verification baseline (`alg`/`kid`/`signature` with Ed25519).
 Legacy v1.0.x compatibility paths MAY remain supported by implementations where explicitly documented.
 
 Incompatible changes to canonical artifacts, verification result semantics, or envelope format require a major protocol version.
@@ -146,7 +151,8 @@ See release policy:
 
 - Full protocol companion spec: [`SPEC.md`](./SPEC.md)
 - Relying-party execution gate contract: [`SPEC.md` §9](./SPEC.md#9-relying-party-contract)
-- Normative protocol text: [`protocol/protocol.md`](./protocol/protocol.md)
+- Production PEP wiring guide: [`docs/pep-production-guide.md`](./docs/pep-production-guide.md)
+- Legacy v1.0.2 normative profile (archival): [`protocol/protocol.md`](./protocol/protocol.md)
 - Threat model details: [`protocol/threat-model.md`](./protocol/threat-model.md)
 - Envelope profile details: [`protocol/envelope.md`](./protocol/envelope.md)
-- Future v1.2 non-forgeable verification design: [`docs/NON_FORGEABLE_VERIFICATION.md`](./docs/NON_FORGEABLE_VERIFICATION.md)
+- Non-forgeable verification design notes: [`docs/NON_FORGEABLE_VERIFICATION.md`](./docs/NON_FORGEABLE_VERIFICATION.md)

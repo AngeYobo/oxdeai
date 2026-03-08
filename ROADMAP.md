@@ -4,10 +4,10 @@ Last updated: 2026-03-08
 
 ## Version Snapshot (from package.json)
 
-- `@oxdeai/core`: `1.2.0`
-- `@oxdeai/sdk`: `1.2.0`
-- `@oxdeai/conformance`: `1.2.0`
-- `@oxdeai/cli`: `0.2.0`
+- `@oxdeai/core`: `1.3.0`
+- `@oxdeai/sdk`: `1.3.1`
+- `@oxdeai/conformance`: `1.3.1`
+- `@oxdeai/cli`: `0.2.2`
 - `@oxdeai/tests`: `0.1.0`
 - `@oxdeai/example-openai-tools`: `1.0.0`
 - `@oxdeai/example-gpu-guard`: no `version` field
@@ -25,16 +25,16 @@ Latest local validation (2026-03-08):
 
 ## Protocol Milestone Status
 
-- `v1.1` — Authorization Artifact: `DONE`
-- `v1.2` — Non-Forgeable Verification: `DONE`
-- `v1.3` — Guard Adapter + Integration Surface: `SUBSTANTIALLY COMPLETE`
-- `v1.4` — Ecosystem Adoption: `NEXT`
-- `v3.x` — Public Proof Infrastructure: `LATER`
+- `v1.1` - Authorization Artifact: `DONE`
+- `v1.2` - Non-Forgeable Verification: `DONE`
+- `v1.3` - Guard Adapter + Integration Surface: `DONE`
+- `v1.4` - Ecosystem Adoption: `NEXT`
+- `v3.x` - Public Proof Infrastructure: `LATER`
 
 Working integration demonstrations:
 
-- [`examples/openai-tools`](./examples/openai-tools) — protocol reference demo
-- [`examples/langgraph`](./examples/langgraph) — framework integration demo
+- [`examples/openai-tools`](./examples/openai-tools) - protocol reference demo
+- [`examples/langgraph`](./examples/langgraph) - framework integration demo
 
 ## Status Legend
 
@@ -142,7 +142,7 @@ Acceptance criteria:
 
 ### CLI + SDK guard adapter
 
-Status: `Substantially Complete`
+Status: `Done`
 
 Evidence:
 
@@ -150,16 +150,17 @@ Evidence:
 - Stable guard API exists: [`packages/sdk/src/guard.ts`](./packages/sdk/src/guard.ts)
 - SDK guard tests exist: [`packages/sdk/src/guard.test.ts`](./packages/sdk/src/guard.test.ts)
 - CLI command surface stabilized: [`packages/cli/src/main.ts`](./packages/cli/src/main.ts)
+- Production PEP wiring guide: [`docs/pep-production-guide.md`](./docs/pep-production-guide.md)
 
 Exit criteria:
 
 - [x] Stable guard-adapter API in SDK for common PEP enforcement flow.
 - [x] CLI commands for guard setup/verification documented and tested.
-- [ ] At least one integration guide for production PEP wiring.
+- [x] At least one integration guide for production PEP wiring.
 
 ### Easy integrations
 
-Status: `Substantially Complete`
+Status: `Done`
 
 Evidence:
 
@@ -170,8 +171,8 @@ Evidence:
 Exit criteria:
 
 - [x] LangGraph integration upgraded from placeholder to runnable example.
-- [ ] One additional non-OpenAI integration example added.
-- [ ] Quickstart path reduced to minimal steps with copy-paste snippets.
+- [x] One additional non-OpenAI integration example added.
+- [x] Quickstart path reduced to minimal steps with copy-paste snippets.
 
 ## v1.4+
 
