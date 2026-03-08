@@ -1,29 +1,70 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="980" height="380" viewBox="0 0 980 380" role="img" aria-label="Adapter sidecar architecture diagram">
-  <rect width="980" height="380" fill="#ffffff"/>
-  <text x="40" y="38" font-family="monospace" font-size="20" fill="#111">Adapter Sidecar Architecture</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="820" viewBox="0 0 1440 820" role="img" aria-label="OxDeAI as an Agent Authorization Sidecar">
+  <rect width="1440" height="820" fill="#ffffff"/>
 
-  <rect x="40" y="94" width="290" height="72" rx="6" fill="#eef5ff" stroke="#1f4f8b"/>
-  <text x="62" y="126" font-family="monospace" font-size="14" fill="#111">Runtime / Framework Adapter</text>
-  <text x="62" y="146" font-family="monospace" font-size="12" fill="#444">Translates runtime actions to OxDeAI intents</text>
+  <text x="50" y="56" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="700" fill="#111827">OxDeAI as an Agent Authorization Sidecar</text>
+  <text x="50" y="90" font-family="Inter, Arial, sans-serif" font-size="18" fill="#374151">OxDeAI integrates beside agent runtimes and tool wrappers, acting as a reusable authorization sidecar.</text>
 
-  <rect x="380" y="94" width="250" height="72" rx="6" fill="#f2fff2" stroke="#1b6e1b"/>
-  <text x="452" y="126" font-family="monospace" font-size="14" fill="#111">OxDeAI Sidecar</text>
-  <text x="412" y="146" font-family="monospace" font-size="12" fill="#444">PDP/PEP boundary + policy state</text>
+  <!-- Left -->
+  <rect x="60" y="180" width="320" height="190" rx="12" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+  <text x="90" y="228" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="600" fill="#0f172a">Agent Runtime</text>
+  <text x="90" y="268" font-family="Inter, Arial, sans-serif" font-size="16" fill="#334155">LangGraph / CrewAI / OpenAI</text>
+  <text x="90" y="294" font-family="Inter, Arial, sans-serif" font-size="16" fill="#334155">Agents SDK / AutoGen</text>
 
-  <rect x="680" y="94" width="250" height="72" rx="6" fill="#fff5ea" stroke="#8f4f17"/>
-  <text x="702" y="126" font-family="monospace" font-size="14" fill="#111">Tool / External Systems</text>
-  <text x="702" y="146" font-family="monospace" font-size="12" fill="#444">APIs, payments, provisioning</text>
+  <!-- Center-left -->
+  <rect x="430" y="208" width="290" height="132" rx="10" fill="#ffffff" stroke="#475569" stroke-width="2"/>
+  <text x="462" y="254" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="600" fill="#0f172a">Runtime Adapter</text>
+  <text x="462" y="288" font-family="Inter, Arial, sans-serif" font-size="15" fill="#334155">construct intent + call SDK guard</text>
 
-  <rect x="40" y="220" width="890" height="100" rx="6" fill="#fafafa" stroke="#999"/>
-  <text x="60" y="252" font-family="monospace" font-size="14" fill="#111">Audit Events + Snapshot -> Verification Envelope -> verifyEnvelope()</text>
-  <text x="60" y="276" font-family="monospace" font-size="12" fill="#444">Portable, deterministic evidence for offline verification.</text>
+  <!-- Center highlighted sidecar -->
+  <rect x="770" y="150" width="330" height="300" rx="14" fill="#eefbf3" stroke="#166534" stroke-width="4"/>
+  <text x="810" y="196" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700" fill="#14532d">OxDeAI Sidecar</text>
 
-  <path d="M330 130 L380 130" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
-  <path d="M630 130 L680 130" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="820" y="220" width="230" height="56" rx="8" fill="#ffffff" stroke="#166534" stroke-width="2"/>
+  <text x="920" y="255" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="24" fill="#14532d" font-weight="600">PDP</text>
 
+  <rect x="820" y="288" width="230" height="56" rx="8" fill="#ffffff" stroke="#166534" stroke-width="2"/>
+  <text x="935" y="323" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="24" fill="#14532d" font-weight="600">AuthorizationV1</text>
+
+  <rect x="820" y="356" width="230" height="56" rx="8" fill="#ffffff" stroke="#166534" stroke-width="2"/>
+  <text x="935" y="391" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="24" fill="#14532d" font-weight="600">SDK Guard</text>
+
+  <text x="782" y="474" font-family="Inter, Arial, sans-serif" font-size="16" fill="#166534">framework-agnostic authorization boundary</text>
+
+  <!-- Center-right -->
+  <rect x="1150" y="208" width="250" height="132" rx="10" fill="#fff7ed" stroke="#9a3412" stroke-width="2"/>
+  <text x="1174" y="252" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="600" fill="#7c2d12">PEP / Tool Wrapper</text>
+  <text x="1174" y="286" font-family="Inter, Arial, sans-serif" font-size="15" fill="#7c2d12">enforce before side effects</text>
+  <text x="1174" y="314" font-family="Inter, Arial, sans-serif" font-size="15" fill="#7c2d12">no authorization = no execution</text>
+
+  <!-- Right -->
+  <rect x="1150" y="390" width="250" height="116" rx="10" fill="#ffffff" stroke="#334155" stroke-width="2"/>
+  <text x="1178" y="434" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="600" fill="#0f172a">External Service</text>
+  <text x="1178" y="466" font-family="Inter, Arial, sans-serif" font-size="16" fill="#334155">tool / API / infra / payment</text>
+
+  <!-- Bottom evidence lane -->
+  <rect x="760" y="620" width="180" height="68" rx="8" fill="#ffffff" stroke="#475569" stroke-width="2"/>
+  <text x="850" y="662" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="21" fill="#0f172a">Audit Events</text>
+
+  <rect x="960" y="620" width="140" height="68" rx="8" fill="#ffffff" stroke="#475569" stroke-width="2"/>
+  <text x="1030" y="662" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="21" fill="#0f172a">Snapshot</text>
+
+  <rect x="1120" y="620" width="280" height="68" rx="8" fill="#eef2ff" stroke="#4338ca" stroke-width="2"/>
+  <text x="1260" y="662" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="21" fill="#312e81">Verification Envelope</text>
+
+  <!-- Arrow defs -->
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
     </marker>
   </defs>
+
+  <!-- Required arrows -->
+  <line x1="380" y1="274" x2="430" y2="274" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="720" y1="274" x2="770" y2="274" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="1100" y1="274" x2="1150" y2="274" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="1275" y1="340" x2="1275" y2="390" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <line x1="1275" y1="340" x2="850" y2="620" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="940" y1="654" x2="960" y2="654" stroke="#334155" stroke-width="2.5"/>
+  <line x1="1100" y1="654" x2="1120" y2="654" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
 </svg>

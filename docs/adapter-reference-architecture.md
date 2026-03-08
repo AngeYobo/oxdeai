@@ -7,11 +7,12 @@ This document defines the reference integration shape for embedding OxDeAI under
 - **PDP (Policy Decision Point)**: deterministic policy evaluation over `(intent, state)`.
 - **PEP (Policy Enforcement Point)**: execution boundary that verifies authorization and either executes or refuses side effects.
 
-## Canonical Flow
-
-![Agent authorization boundary](./diagrams/agent-authorization-boundary.svg)
+## Adapter Sidecar Architecture
 
 ![Adapter sidecar architecture](./diagrams/adapter-sidecar-architecture.svg)
+
+Related boundary view:
+- [`Agent authorization boundary`](./diagrams/agent-authorization-boundary.svg)
 
 Diagram source/editing policy:
 - [`docs/diagrams/README.md`](./diagrams/README.md)
