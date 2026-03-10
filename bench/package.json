@@ -1,0 +1,14 @@
+{
+  "name": "oxdeai-bench",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@oxdeai/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0"
+  },
+  "scripts": {
+    "run": "tsx runner.ts"
+  }
+}

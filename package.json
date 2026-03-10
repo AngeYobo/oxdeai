@@ -6,7 +6,8 @@
     "build:core": "pnpm --filter @oxdeai/core build",
     "typecheck": "pnpm build:core && pnpm -r typecheck",
     "test": "pnpm build:core && pnpm -r test",
-    "build": "pnpm -r build"
+    "build": "pnpm -r build",
+    "run:bench": "pnpm --filter oxdeai-bench run run"
   },
   "devDependencies": {
     "@types/node": "^22.19.11",

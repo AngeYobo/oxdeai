@@ -8,3 +8,5 @@ dist/
 
 packages/cli/.oxdeai/
 .vscode/
+
+bench/outputs/
