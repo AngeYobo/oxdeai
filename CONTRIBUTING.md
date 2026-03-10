@@ -41,6 +41,7 @@ Common contribution categories:
    - `pnpm -C packages/conformance validate`
    - `pnpm -C examples/openai-tools start`
    - `pnpm -C examples/langgraph start`
+   - `pnpm -C examples/openclaw start`
 5. Open a PR with:
    - problem statement
    - scope of change
