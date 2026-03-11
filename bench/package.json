@@ -6,9 +6,12 @@
     "@oxdeai/core": "workspace:*"
   },
   "devDependencies": {
+    "chart.js": "^4.4.7",
+    "chartjs-node-canvas": "^5.0.0",
     "tsx": "^4.0.0"
   },
   "scripts": {
+    "graphs": "node --import tsx generate-graphs.ts",
     "run": "tsx runner.ts"
   }
 }

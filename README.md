@@ -160,6 +160,30 @@ Latest local validation (2026-03-08):
 - `pnpm -C examples/autogen start` pass (`ALLOW`, `ALLOW`, `DENY`, envelope `ok`)
 - `pnpm -C examples/openclaw start` pass (`ALLOW`, `ALLOW`, `DENY`, envelope `ok`)
 
+## Benchmarking
+
+OxDeAI includes a reproducible benchmark suite for measuring authorization latency and overhead.
+
+The benchmark evaluates:
+
+- policy evaluation (`evaluate`)
+- envelope verification (`verifyEnvelope`)
+- baseline vs protected execution paths
+
+Initial local benchmark runs show the OxDeAI protected execution path adding approximately `20-25` microseconds `p50` in single-worker mode on the tested machine.
+
+These measurements depend on:
+
+- hardware
+- runtime
+- workload
+
+`verifyAuthorization` is also benchmarked in the suite, but it is treated as a secondary diagnostic signal because its runtime is often near the noise floor on modern CPUs.
+
+The benchmark suite is designed to provide transparent and reproducible measurements rather than fixed performance guarantees.
+
+Full benchmark methodology and reproducible benchmark instructions are documented in [`bench/README.md`](./bench/README.md).
+
 ## Protocol Flow (v1.3.x)
 
 - OxDeAI issues `AuthorizationV1` artifacts on `ALLOW`.

@@ -1,19 +1,21 @@
-import { makeAuthorization } from "../fixtures";
+import { createFixtureSet } from "../fixtures";
 import { verifyAuthorization } from "@oxdeai/core";
 
 export const name = "verifyAuthorization";
 
-export function create(): () => void {
-  const auth = makeAuthorization();
+export function create(seed: number): () => unknown {
+  const fixture = createFixtureSet(seed).complex;
+  const auth = fixture.auth;
   const opts = {
-    now: Math.floor(Date.now() / 1000),
+    now: 1_700_000_000,
     expectedIssuer: "bench-issuer",
     expectedAudience: "bench-rp",
-    expectedPolicyId: "a".repeat(64),
+    expectedPolicyId: fixture.policy.id,
     consumedAuthIds: [] as string[]
   };
 
   return () => {
-    verifyAuthorization(auth, opts);
+    const out = verifyAuthorization(auth, opts);
+    return out.status;
   };
 }

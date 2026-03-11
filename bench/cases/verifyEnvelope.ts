@@ -1,18 +1,18 @@
-import { makeEnvelopeData } from "../fixtures";
+import { createFixtureSet } from "../fixtures";
 import { verifyEnvelope } from "@oxdeai/core";
 
 export const name = "verifyEnvelope";
 
-export function create(strict = false): () => void {
-  const envelope = makeEnvelopeData();
+export function create(seed: number, mode: "strict" | "best-effort"): () => unknown {
+  const fixture = createFixtureSet(seed).complex;
 
   return () => {
-    verifyEnvelope(envelope.bytes, {
-      mode: strict ? "strict" : "best-effort",
-      expectedPolicyId: envelope.policyId,
-      trustedKeySets: envelope.trustedKeySet,
-      requireSignatureVerification: true,
-      now: Math.floor(Date.now() / 1000)
+    const out = verifyEnvelope(fixture.envelopeBytes, {
+      mode,
+      expectedPolicyId: fixture.policy.id,
+      requireSignatureVerification: false,
+      now: 1_700_000_000,
     });
+    return out.status;
   };
 }
