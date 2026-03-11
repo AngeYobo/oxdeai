@@ -11,7 +11,9 @@ export function create(seed: number): () => unknown {
     expectedIssuer: "bench-issuer",
     expectedAudience: "bench-rp",
     expectedPolicyId: fixture.policy.id,
-    consumedAuthIds: [] as string[]
+    consumedAuthIds: [] as string[],
+    requireSignatureVerification: true,
+    legacyHmacSecret: "bench-hmac-secret",
   };
 
   return () => {

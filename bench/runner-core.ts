@@ -178,7 +178,15 @@ async function main() {
       return runTool(actionType, target, amount);
     };
   } else if (scenario === "protectedPath") {
-    const authOpts = { now: 1700000000, expectedIssuer: "bench-issuer", expectedAudience: "bench-rp", expectedPolicyId: policyId, consumedAuthIds: [] };
+    const authOpts = {
+      now: 1700000000,
+      expectedIssuer: "bench-issuer",
+      expectedAudience: "bench-rp",
+      expectedPolicyId: policyId,
+      consumedAuthIds: [],
+      requireSignatureVerification: true,
+      legacyHmacSecret: "bench-hmac-secret",
+    };
     work = () => {
       const decision = engine.evaluatePure(intent, makeState());
       if (decision.decision !== "ALLOW") return 0;
@@ -191,7 +199,15 @@ async function main() {
   } else if (scenario === "evaluate") {
     work = () => engine.evaluatePure(intent, makeState());
   } else if (scenario === "verifyAuthorization") {
-    const opts = { now: 1700000000, expectedIssuer: "bench-issuer", expectedAudience: "bench-rp", expectedPolicyId: policyId, consumedAuthIds: [] };
+    const opts = {
+      now: 1700000000,
+      expectedIssuer: "bench-issuer",
+      expectedAudience: "bench-rp",
+      expectedPolicyId: policyId,
+      consumedAuthIds: [],
+      requireSignatureVerification: true,
+      legacyHmacSecret: "bench-hmac-secret",
+    };
     work = () => core.verifyAuthorization(auth, opts);
   } else {
     work = () => core.verifyEnvelope(envelope, { mode, expectedPolicyId: policyId, requireSignatureVerification: false, now: 1700000000 });

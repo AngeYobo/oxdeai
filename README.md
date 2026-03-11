@@ -170,7 +170,12 @@ The benchmark evaluates:
 - envelope verification (`verifyEnvelope`)
 - baseline vs protected execution paths
 
-Initial local benchmark runs show the OxDeAI protected execution path adding approximately `20-25` microseconds `p50` in single-worker mode on the tested machine.
+In the latest full-suite local run (`bench/outputs/run-2026-03-11-12-25-55.json`), the protected execution path added approximately:
+
+- `+14.8 us p50` and `+21.8 us mean` in `best-effort` mode
+- `+16.6 us p50` and `+25.2 us mean` in `strict` mode
+
+on a single worker versus `baselinePath` on the tested machine.
 
 These measurements depend on:
 
@@ -188,7 +193,9 @@ This highlights bounded inline overhead rather than isolated microbenchmarks.
 
 The benchmark suite is designed to provide transparent and reproducible measurements rather than fixed performance guarantees.
 
-Full benchmark methodology and reproducible benchmark instructions are documented in [`bench/README.md`](./bench/README.md).
+For this machine and runtime, the practical takeaway is that OxDeAI adds tens of microseconds of inline latency while providing deterministic fail-closed execution control.
+
+Full benchmark methodology and reproducible benchmark instructions are documented in [`bench/README.md`](./bench/README.md). A run-specific write-up is available in [`bench/BENCHMARK_SUMMARY.md`](./bench/BENCHMARK_SUMMARY.md), and a developer-facing benchmark announcement is available in [`docs/benchmark-announcement.md`](./docs/benchmark-announcement.md).
 
 ## Protocol Flow (v1.3.x)
 
