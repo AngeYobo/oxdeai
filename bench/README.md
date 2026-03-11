@@ -2,15 +2,26 @@
 
 ## Executive Summary
 
-Initial local benchmark runs on the tested machine indicate:
+Latest full-suite local benchmark run:
 
-- `evaluate` and `verifyEnvelope` remain in the low sub-millisecond range.
+- source: `bench/outputs/run-2026-03-11-12-25-55.json`
+- machine: Intel Core i5-7400, 4 logical cores, Node.js v22.9.0, Linux on WSL2
+- config: `--scenario=all --runs=5 --iterations=100000 --warmup=10000 --concurrency=1,4 --envelopeMode=both`
+
+Key results from that run indicate:
+
+- `evaluate` p50 was `23.8 us` on 1 worker.
+- `verifyEnvelope` p50 was `15.5 us` on 1 worker in both `best-effort` and `strict` modes.
 - `baselinePath` and `protectedPath` provide the most useful adoption comparison.
 - the key metric is absolute overhead (`protectedPath - baselinePath`) in microseconds.
+- `protectedPath - baselinePath` was `+14.8 us p50` / `+21.8 us mean` in `best-effort` mode on 1 worker.
+- `protectedPath - baselinePath` was `+16.6 us p50` / `+25.2 us mean` in `strict` mode on 1 worker.
 
-In current local runs, protected execution commonly adds on the order of tens of microseconds at `p50` in single-worker mode.
+Protected execution therefore adds on the order of tens of microseconds at `p50` in single-worker mode on the tested machine.
 
 Results depend on hardware, runtime, and execution environment; the suite is designed to be reproducible rather than universal.
+
+A fuller run-specific summary is available in [`BENCHMARK_SUMMARY.md`](./BENCHMARK_SUMMARY.md).
 
 ## Overview
 
@@ -87,6 +98,8 @@ which provides nanosecond resolution.
 
 Samples are stored in nanoseconds and reported in milliseconds.
 
+For documentation and interpretation, the project also reports the main results in microseconds because the protected-path overhead is small enough that microsecond-scale absolute deltas are the most useful engineering view.
+
 ### Multiple runs
 
 Each scenario can be executed multiple times (`--runs=N`) to reduce variance.
@@ -120,6 +133,11 @@ Measures pure policy evaluation latency.
 ### verifyAuthorization
 
 Measures the cost of verifying a cryptographic authorization artifact.
+
+The benchmark fixture uses the reference shared-secret trust profile emitted by the bench
+`PolicyEngine`, so `verifyAuthorization()` is run with `requireSignatureVerification: true`
+and the benchmark HMAC secret. This avoids measuring the non-cryptographic fast path where
+only field/binding checks are evaluated.
 
 ### verifyEnvelope
 
@@ -213,6 +231,13 @@ The most meaningful metric is the absolute latency overhead between:
 Percentage overhead may be misleading when the baseline path is extremely small.
 
 Therefore absolute microsecond overhead should be considered the primary metric.
+
+For the latest full-suite run on the tested host, the single-worker protected-path overhead was approximately:
+
+- `+14.8 us p50` and `+21.8 us mean` in `best-effort`
+- `+16.6 us p50` and `+25.2 us mean` in `strict`
+
+This is the main performance result to communicate externally.
 
 ## Result Interpretation
 

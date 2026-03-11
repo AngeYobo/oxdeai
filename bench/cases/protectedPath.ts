@@ -39,6 +39,8 @@ export function create(seed: number, envelopeMode: "strict" | "best-effort"): ()
     expectedAudience: "bench-rp",
     expectedPolicyId: fx.policyId,
     consumedAuthIds: [] as string[],
+    requireSignatureVerification: true,
+    legacyHmacSecret: "bench-hmac-secret",
   };
 
   return () => {
