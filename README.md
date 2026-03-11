@@ -1,10 +1,27 @@
 # OxDeAI-core
 
-Deterministic economic authorization protocol for autonomous systems.
+Deterministic execution authorization protocol for autonomous systems.
 
 OxDeAI-core hosts OxDeAI protocol specifications and the TypeScript reference stack.
 
-OxDeAI provides fail-closed policy evaluation for autonomous actions under explicit economic constraints (budget, caps, velocity, allowlists), with cryptographic authorization and tamper-evident audit evidence.
+OxDeAI enforces economic and operational constraints before an agent executes an external action, with deterministic policy evaluation, cryptographic authorization, and tamper-evident audit evidence.
+
+## Why OxDeAI Exists
+
+Most AI guardrail systems focus on prompts or model outputs. OxDeAI focuses on the execution authorization boundary.
+
+Agent runtimes can trigger:
+
+- API calls
+- infrastructure provisioning
+- payments
+- external tool execution
+
+The critical security question is deterministic:
+
+> Is this action allowed to execute under the current economic policy state?
+
+Instead of monitoring behavior after execution, OxDeAI enforces pre-execution authorization. The engine evaluates `(intent, state)` and emits a cryptographically verifiable authorization artifact before any external action occurs.
 
 ## Current Milestone
 
@@ -108,6 +125,16 @@ OxDeAI sits between agent runtimes and external systems as a deterministic autho
 - `Tool / External System`: executes only after authorization enforcement.
 - `Evidence path`: audit events + snapshot are packaged as a verification envelope and validated by `verifyEnvelope()`.
 
+## Ecosystem Positioning
+
+Agent safety stacks are emerging in three layers:
+
+1. Prompt and output guardrails
+2. Runtime monitoring and observability
+3. Execution authorization
+
+OxDeAI operates at layer 3. It provides a deterministic authorization boundary for agent actions before external effects occur.
+
 ## Multi-Language Use
 
 Rust, Go, and Python developers can verify OxDeAI artifacts today (`AuthorizationV1`, snapshots, audit chains, and verification envelopes).
@@ -193,7 +220,7 @@ This highlights bounded inline overhead rather than isolated microbenchmarks.
 
 The benchmark suite is designed to provide transparent and reproducible measurements rather than fixed performance guarantees.
 
-For this machine and runtime, the practical takeaway is that OxDeAI adds tens of microseconds of inline latency while providing deterministic fail-closed execution control.
+For this machine and runtime, the practical takeaway is that OxDeAI adds tens of microseconds of inline latency while introducing a deterministic authorization boundary for agent actions.
 
 Full benchmark methodology and reproducible benchmark instructions are documented in [`bench/README.md`](./bench/README.md). A run-specific write-up is available in [`bench/BENCHMARK_SUMMARY.md`](./bench/BENCHMARK_SUMMARY.md), and a developer-facing benchmark announcement is available in [`docs/benchmark-announcement.md`](./docs/benchmark-announcement.md).
 
