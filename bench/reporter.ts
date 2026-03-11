@@ -89,3 +89,75 @@ export function writeJsonOutputs(outputDir: string, payload: unknown): { latestP
   fs.writeFileSync(timestampedPath, body, "utf8");
   return { latestPath, timestampedPath };
 }
+
+export function writeMarkdownSummary(
+  outputDir: string,
+  opts: {
+    machine: ReturnType<typeof collectEnvironment>;
+    config: Record<string, unknown>;
+    runs: ScenarioRun[];
+    deltas: Array<{
+      workers: number;
+      baselineLabel: string;
+      protectedLabel: string;
+      absoluteMs: { p50: number; p95: number; p99: number; mean: number };
+    }>;
+  }
+): string {
+  fs.mkdirSync(outputDir, { recursive: true });
+  const summaryPath = path.join(outputDir, "summary.md");
+  const selected = opts.runs.filter(
+    (r) =>
+      r.label === "evaluate" ||
+      r.label.startsWith("verifyEnvelope") ||
+      r.label === "baselinePath" ||
+      r.label.startsWith("protectedPath")
+  );
+  const lines: string[] = [];
+  lines.push("# OxDeAI Benchmark Summary");
+  lines.push("");
+  lines.push("## Machine");
+  lines.push("");
+  lines.push(`- CPU: ${opts.machine.cpuModel}`);
+  lines.push(`- Logical cores: ${opts.machine.cpuCores}`);
+  lines.push(`- Node: ${opts.machine.nodeVersion}`);
+  lines.push(`- OS: ${opts.machine.os}`);
+  lines.push(`- Architecture: ${opts.machine.architecture}`);
+  lines.push(`- WSL: ${opts.machine.isWSL ? "yes" : "no"}`);
+  lines.push(`- Timestamp: ${opts.machine.timestamp}`);
+  lines.push("");
+  lines.push("## Config");
+  lines.push("");
+  lines.push("```json");
+  lines.push(JSON.stringify(opts.config, null, 2));
+  lines.push("```");
+  lines.push("");
+  lines.push("## Key Scenarios");
+  lines.push("");
+  lines.push("| Scenario | Workers | p50 (µs) | p95 (µs) | p99 (µs) | mean (µs) | ops/sec | status |");
+  lines.push("|---|---:|---:|---:|---:|---:|---:|---|");
+  for (const run of selected) {
+    lines.push(
+      `| ${run.label} | ${run.workers} | ${(nsToMs(run.stats.p50) * 1000).toFixed(2)} | ${(nsToMs(run.stats.p95) * 1000).toFixed(2)} | ${(nsToMs(run.stats.p99) * 1000).toFixed(2)} | ${(nsToMs(run.stats.mean) * 1000).toFixed(2)} | ${run.stats.opsPerSec.toFixed(0)} | ${run.status}${run.outlierDetected ? " + OUTLIER_DETECTED" : ""} |`
+    );
+  }
+  lines.push("");
+  lines.push("## Absolute Overhead (protectedPath - baselinePath)");
+  lines.push("");
+  lines.push("| Workers | Path | Δp50 (µs) | Δp95 (µs) | Δp99 (µs) | Δmean (µs) |");
+  lines.push("|---:|---|---:|---:|---:|---:|");
+  for (const d of opts.deltas) {
+    lines.push(
+      `| ${d.workers} | ${d.protectedLabel} vs ${d.baselineLabel} | ${(d.absoluteMs.p50 * 1000).toFixed(2)} | ${(d.absoluteMs.p95 * 1000).toFixed(2)} | ${(d.absoluteMs.p99 * 1000).toFixed(2)} | ${(d.absoluteMs.mean * 1000).toFixed(2)} |`
+    );
+  }
+  lines.push("");
+  lines.push("## Interpretation");
+  lines.push("");
+  lines.push("- Focus on absolute overhead (microseconds), not only percentage overhead.");
+  lines.push("- `verifyAuthorization` is measured but treated as secondary due to noise-floor effects.");
+  lines.push("- Results depend on hardware/runtime; compare p50/p95/p99 across similar environments.");
+
+  fs.writeFileSync(summaryPath, `${lines.join("\n")}\n`, "utf8");
+  return summaryPath;
+}

@@ -180,6 +180,12 @@ These measurements depend on:
 
 `verifyAuthorization` is also benchmarked in the suite, but it is treated as a secondary diagnostic signal because its runtime is often near the noise floor on modern CPUs.
 
+The benchmark emphasizes incremental authorization cost:
+
+`protectedPath - baselinePath`
+
+This highlights bounded inline overhead rather than isolated microbenchmarks.
+
 The benchmark suite is designed to provide transparent and reproducible measurements rather than fixed performance guarantees.
 
 Full benchmark methodology and reproducible benchmark instructions are documented in [`bench/README.md`](./bench/README.md).

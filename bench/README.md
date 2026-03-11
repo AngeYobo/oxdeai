@@ -1,5 +1,17 @@
 # OxDeAI Benchmark Suite
 
+## Executive Summary
+
+Initial local benchmark runs on the tested machine indicate:
+
+- `evaluate` and `verifyEnvelope` remain in the low sub-millisecond range.
+- `baselinePath` and `protectedPath` provide the most useful adoption comparison.
+- the key metric is absolute overhead (`protectedPath - baselinePath`) in microseconds.
+
+In current local runs, protected execution commonly adds on the order of tens of microseconds at `p50` in single-worker mode.
+
+Results depend on hardware, runtime, and execution environment; the suite is designed to be reproducible rather than universal.
+
 ## Overview
 
 The OxDeAI benchmark suite measures the performance characteristics of the OxDeAI authorization primitives.
@@ -42,6 +54,14 @@ The most important measurement is:
 which represents the incremental authorization overhead.
 
 `verifyAuthorization` remains part of the suite for completeness, but it is not emphasized as a primary result because its latency is extremely small and often dominated by runtime noise.
+
+## Why This Matters
+
+Agent runtimes already spend time on orchestration, serialization, and tool execution overhead. OxDeAI should be evaluated as incremental boundary cost, not as isolated micro-function speed.
+
+This suite measures the additional latency introduced by running the protected execution path versus a baseline runtime path.
+
+OxDeAI is designed to add a small, bounded pre-execution authorization cost in exchange for deterministic fail-closed control.
 
 ## Benchmark Methodology
 
@@ -205,6 +225,15 @@ Primary interpretation should focus on:
 The benchmark is designed to emphasize absolute latency overhead in microseconds, not percentage overhead.
 
 When baseline latency is very small, percentage deltas can become unstable and visually misleading even when absolute overhead remains bounded.
+
+## How To Compare Across Machines
+
+For cross-machine comparisons:
+
+- compare absolute overhead first (microseconds), not only `ops/sec`
+- compare `p50` / `p95` / `p99`, not only mean latency
+- expect more jitter on laptops, WSL, VMs, and shared hosts
+- use repeated single-worker runs for cleaner local interpretation (for example `--stabilityMode --runs=5`)
 
 ## Limitations
 
