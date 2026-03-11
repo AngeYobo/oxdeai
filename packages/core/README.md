@@ -1,6 +1,6 @@
 # @oxdeai/core
 
-Deterministic Economic Containment Engine for Autonomous Systems
+Deterministic Execution Authorization Layer for Autonomous Systems
 
 [![npm version](https://img.shields.io/npm/v/@oxdeai/core.svg)](https://www.npmjs.com/package/@oxdeai/core)
 [![Snyk](https://snyk.io/test/github/AngeYobo/oxdeai-core/badge.svg)](https://snyk.io/test/github/AngeYobo/oxdeai-core)
@@ -41,7 +41,7 @@ Future protocol releases maintain backward compatibility for frozen verification
 ---
 
 
-`@oxdeai/core` is a TypeScript policy engine that enforces hard economic invariants *before* an agent executes an action.
+`@oxdeai/core` is the TypeScript execution authorization layer for agent actions. It enforces hard economic invariants *before* an agent executes an action.
 
 It answers a narrow question:
 
@@ -57,11 +57,13 @@ No post-fact monitoring.
 
 Just deterministic pre-execution containment.
 
+OxDeAI sits at the execution boundary of agent runtimes and external systems.
+
 ---
 
 ## Overview
 
-`@oxdeai/core` is a deterministic economic containment engine for autonomous systems.
+`@oxdeai/core` is a deterministic execution authorization layer for autonomous systems.
 
 It enforces economic invariants before an action executes and emits deterministic artifacts that can be verified independently.
 
