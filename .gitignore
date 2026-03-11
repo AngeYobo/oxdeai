@@ -10,3 +10,7 @@ packages/cli/.oxdeai/
 .vscode/
 
 bench/outputs/
+
+bench/bench/
+bench/results/
+bench/outputs/graphs/
