@@ -1,7 +1,7 @@
 {
   "name": "@oxdeai/core",
-  "version": "1.3.0",
-  "description": "Deterministic policy engine for economic containment with canonical snapshots, audit chaining, and stateless verification.",
+  "version": "1.3.1",
+  "description": "Deterministic execution authorization engine for AI agents. Enforces economic and operational constraints before tool execution.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "dist/index.js",
@@ -37,25 +37,26 @@
     "url": "git+https://github.com/AngeYobo/oxdeai-core.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/AngeYobo/oxdeai-core/tree/main/packages/core",
+  "homepage": "https://github.com/AngeYobo/oxdeai-core",
   "bugs": {
     "url": "https://github.com/AngeYobo/oxdeai-core/issues"
   },
   "keywords": [
-    "deterministic-policy",
-    "agent-economics",
-    "verification-protocol",
     "ai-agents",
-    "economic-containment",
-    "agent-economy",
+    "agent-security",
+    "agent-authorization",
     "policy-engine",
-    "economic-guardrails",
-    "deterministic",
+    "deterministic-policy",
+    "agent-runtime",
+    "execution-authorization",
+    "economic-containment",
+    "agent-economics",
     "autonomous-systems",
-    "risk-engine",
+    "authorization-protocol",
+    "verification-protocol",
+    "agent-safety",
     "machine-to-machine",
-    "web3",
-    "settlement-layer"
+    "deterministic"
   ],
   "files": [
     "dist",
