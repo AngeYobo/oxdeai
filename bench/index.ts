@@ -9,7 +9,7 @@ import * as verifyAuthorizationCase from "./cases/verifyAuthorization.js";
 import * as verifyEnvelopeCase from "./cases/verifyEnvelope.js";
 import * as baselinePathCase from "./cases/baselinePath.js";
 import * as protectedPathCase from "./cases/protectedPath.js";
-import { collectEnvironment, printReportHeader, reportDelta, reportRun, writeJsonOutputs } from "./reporter.js";
+import { collectEnvironment, printReportHeader, reportDelta, reportRun, writeJsonOutputs, writeMarkdownSummary } from "./reporter.js";
 import { nsToMs } from "./metrics.js";
 import type { ScenarioRun } from "./runner-core.js";
 
@@ -185,6 +185,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
 
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const outputDir = path.isAbsolute(config.outputDir) ? config.outputDir : path.join(repoRoot, config.outputDir);
+  const machine = collectEnvironment();
   const runResults = allRuns.map(toJsonRun);
   const aggregatedResults: Record<string, unknown> = {};
   for (const run of runResults) {
@@ -202,7 +203,7 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     };
   }
   const payload = {
-    machine: collectEnvironment(),
+    machine,
     timestamp: new Date().toISOString(),
     config,
     runResults,
@@ -212,8 +213,20 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     overheadDelta: deltas,
   };
   const files = writeJsonOutputs(outputDir, payload);
+  const summaryPath = writeMarkdownSummary(outputDir, {
+    machine,
+    config: config as unknown as Record<string, unknown>,
+    runs: allRuns,
+    deltas: deltas as Array<{
+      workers: number;
+      baselineLabel: string;
+      protectedLabel: string;
+      absoluteMs: { p50: number; p95: number; p99: number; mean: number };
+    }>,
+  });
   console.log(`\nJSON written: ${files.latestPath}`);
   console.log(`JSON written: ${files.timestampedPath}`);
+  console.log(`Markdown summary written: ${summaryPath}`);
   return 0;
 }
 
