@@ -74,6 +74,33 @@ test("init writes state and clears audit", async () => {
   assert.equal(cap.err.length, 0);
 });
 
+test("help and version behave like a normal CLI", async () => {
+  const cap = ioCapture();
+
+  assert.equal(await runCli(["--help"], cap.io), 0);
+  assert.match(cap.out[0] ?? "", /oxdeai CLI/);
+
+  cap.out.length = 0;
+  assert.equal(await runCli(["help", "verify"], cap.io), 0);
+  assert.match(cap.out[0] ?? "", /oxdeai verify --kind/);
+
+  cap.out.length = 0;
+  assert.equal(await runCli(["verify", "--help"], cap.io), 0);
+  assert.match(cap.out[0] ?? "", /oxdeai verify --kind/);
+
+  cap.out.length = 0;
+  assert.equal(await runCli(["--version"], cap.io), 0);
+  assert.match(cap.out[0] ?? "", /^\d+\.\d+\.\d+$/);
+});
+
+test("unknown top-level flag returns usage error", async () => {
+  const cap = ioCapture();
+  const code = await runCli(["--wat"], cap.io);
+  assert.equal(code, 2);
+  assert.match(cap.err[0] ?? "", /Unknown flag/);
+  assert.match(cap.err[1] ?? "", /oxdeai CLI/);
+});
+
 test("launch allow path mutates state and appends audit", async () => {
   const { policyFile, stateFile, auditFile } = await setup();
   const cap = ioCapture();
@@ -240,6 +267,20 @@ test("build emits snapshot verification payload and optional file", async () => 
   assert.ok(bytes.length > 0);
 });
 
+test("build supports positional snapshot target", async () => {
+  const { policyFile, stateFile, auditFile, dir } = await setup();
+  const cap = ioCapture();
+  await runCli(["init", "--file", policyFile, "--state", stateFile, "--audit", auditFile], cap.io);
+
+  const snapshotOut = join(dir, "snapshot-positional.bin");
+  const code = await runCli(["build", "snapshot", "--state", stateFile, "--out", snapshotOut, "--json"], cap.io);
+  assert.equal(code, 0);
+  const latest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(latest.status, "ok");
+  const bytes = await readFile(snapshotOut);
+  assert.ok(bytes.length > 0);
+});
+
 test("verify supports --kind audit from file and replay command is clear stub", async () => {
   const { policyFile, stateFile, auditFile } = await setup();
   const cap = ioCapture();
@@ -255,6 +296,33 @@ test("verify supports --kind audit from file and replay command is clear stub", 
   assert.equal(replayCode, 0);
   const replayLatest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
   assert.equal(replayLatest.status, "unsupported");
+});
+
+test("verify supports positional aliases and default files", async () => {
+  const { policyFile, stateFile, auditFile, dir } = await setup();
+  const cap = ioCapture(1_770_000_333);
+  await runCli(["init", "--file", policyFile, "--state", stateFile, "--audit", auditFile], cap.io);
+  await runCli(["launch", "PROVISION", "100", "us-east-1", "--agent", "agent-1", "--nonce", "21", "--state", stateFile, "--audit", auditFile], cap.io);
+
+  const snapshotPath = join(dir, "snapshot.bin");
+  await runCli(["build", "--state", stateFile, "--out", snapshotPath, "--json"], cap.io);
+  const envelopePath = join(dir, "envelope.bin");
+  await runCli(["make-envelope", "--out", envelopePath, "--state", stateFile, "--audit", auditFile, "--json"], cap.io);
+
+  const snapshotCode = await runCli(["verify", "snap", "--file", snapshotPath, "--json"], cap.io);
+  assert.equal(snapshotCode, 0);
+  const snapshotLatest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(snapshotLatest.status, "ok");
+
+  const auditCode = await runCli(["verify", "audit", "--file", auditFile, "--mode", "strict", "--json"], cap.io);
+  assert.equal(auditCode, 3);
+  const auditLatest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(auditLatest.status, "inconclusive");
+
+  const envCode = await runCli(["verify", "envelope", "--file", envelopePath, "--json"], cap.io);
+  assert.equal(envCode, 3);
+  const envLatest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(envLatest.status, "inconclusive");
 });
 
 test("verify supports --kind authorization from file", async () => {
