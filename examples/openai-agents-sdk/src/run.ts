@@ -1,3 +1,4 @@
+import { pathToFileURL } from "node:url";
 import {
   encodeCanonicalState,
   encodeEnvelope,
@@ -9,8 +10,8 @@ import { AGENT_ID, engine, makeState, POLICY_ID } from "./policy.js";
 import { guardedProvision } from "./pep.js";
 import { proposeCallsViaOpenAIAgents } from "./agents.js";
 
-async function main(): Promise<void> {
-  const log = (msg: string) => console.log(msg);
+export async function runDemo(log: (msg: string) => void = (msg) => console.log(msg)): Promise<void> {
+  const decisions: string[] = [];
 
   log("╔══════════════════════════════════════════════════════════════════╗");
   log("║  OxDeAI — OpenAI Agents SDK Boundary Demo                       ║");
@@ -34,12 +35,14 @@ async function main(): Promise<void> {
     const result = guardedProvision(call.asset, call.region, state, timestamp, log);
 
     if (result.allowed) {
+      decisions.push("ALLOW");
       allowedCount++;
       state = result.nextState;
       const spent = state.budget.spent_in_period[AGENT_ID] ?? 0n;
       const limit = state.budget.budget_limit[AGENT_ID] ?? 0n;
       log(`   budget after: ${spent}/${limit} minor units spent`);
     } else {
+      decisions.push("DENY");
       deniedCount++;
     }
     callIndex++;
@@ -105,10 +108,19 @@ async function main(): Promise<void> {
     throw new Error(`Envelope verification failed: ${vr.status}`);
   }
 
+  log("\n── Cross-adapter demo scenario ──────────────────────────────────────");
+  decisions.forEach((decision, index) => {
+    log(`   decision ${index + 1}: ${decision}`);
+  });
+  log(`   verifyEnvelope() => ${vr.status}`);
+
   log("\n✓ Verification passed.");
 }
 
-main().catch((err) => {
-  console.error("\n✗ Demo failed:", err);
-  process.exit(1);
-});
+const entrypoint = process.argv[1];
+if (entrypoint && import.meta.url === pathToFileURL(entrypoint).href) {
+  runDemo().catch((err) => {
+    console.error("\n✗ Demo failed:", err);
+    process.exit(1);
+  });
+}
