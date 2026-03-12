@@ -1,6 +1,9 @@
+#!/usr/bin/env node
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+import { realpathSync } from "node:fs";
 import { dirname } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
   PolicyEngine,
@@ -16,6 +19,8 @@ import type { ActionType, AuthorizationV1, Intent, KeySet, State, VerificationRe
 import { appendAuditEvents, normalizeStateBigInts, readAuditEvents, readStateFile, resetAuditFile, writeStateFile } from "./store.js";
 
 type Flags = {
+  help?: boolean;
+  version?: boolean;
   json?: boolean;
   state?: string;
   audit?: string;
@@ -48,11 +53,23 @@ const EXIT_CODE_OK = 0;
 const EXIT_CODE_INVALID = 1;
 const EXIT_CODE_USAGE = 2;
 const EXIT_CODE_INCONCLUSIVE = 3;
+const require = createRequire(import.meta.url);
+const CLI_VERSION = (require("../package.json") as { version: string }).version;
+const VERIFY_KIND_ALIAS = {
+  snap: "snapshot",
+  snapshot: "snapshot",
+  audit: "audit",
+  envelope: "envelope",
+  auth: "authorization",
+  authorization: "authorization"
+} as const;
 
 function usage(): string {
   return `oxdeai CLI
 
 Usage:
+  oxdeai --help
+  oxdeai --version
   oxdeai build [--state <state.json>] [--out <snapshot.bin>] [--json]
   oxdeai verify --kind <snapshot|audit|envelope|authorization> [--file <path>|-] [--mode <strict|best-effort>] [--expected-policy-id <hex>] [--expected-issuer <id>] [--expected-audience <id>] [--consumed-auth-id <id>] [--trusted-keyset <keyset.json>] [--require-signature] [--legacy-hmac-secret <secret>] [--json]
   oxdeai replay [--json]
@@ -63,7 +80,60 @@ Usage:
   oxdeai verify-audit [--audit <audit.ndjson>] [--json]
   oxdeai snapshot-hash [--state <state.json>] [--json]
   oxdeai audit [--audit <audit.ndjson>] [--json]
-  oxdeai state [--state <state.json>] [--json]`;
+  oxdeai state [--state <state.json>] [--json]
+
+Defaults:
+  --state .oxdeai/state.json
+  --audit .oxdeai/audit.ndjson
+
+Use "oxdeai help <command>" for command-specific help.`;
+}
+
+function commandUsage(cmd: string): string {
+  switch (cmd) {
+    case "build":
+      return `Usage:
+  oxdeai build [--state <state.json>] [--out <snapshot.bin>] [--expected-policy-id <hex>] [--json]
+  oxdeai build snapshot [--state <state.json>] [--out <snapshot.bin>] [--expected-policy-id <hex>] [--json]
+
+Builds a canonical snapshot payload from state.
+Default state path: .oxdeai/state.json`;
+    case "verify":
+      return `Usage:
+  oxdeai verify --kind <snapshot|audit|envelope|authorization> [--file <path>|-] [options]
+  oxdeai verify <snapshot|snap|audit|envelope|auth|authorization> [--file <path>] [options]
+
+Examples:
+  oxdeai verify snap
+  oxdeai verify audit
+  oxdeai verify envelope
+  oxdeai verify --kind snapshot --file .oxdeai/snapshot.bin --json
+  oxdeai verify --kind audit --file .oxdeai/audit.ndjson --mode strict --json
+  oxdeai verify --kind envelope --file .oxdeai/envelope.bin --trusted-keyset keyset.json --require-signature --json
+  oxdeai verify --kind authorization --file authorization.json --expected-issuer oxdeai://issuer --expected-audience rp://tool-gateway --json`;
+    case "replay":
+      return "Usage: oxdeai replay [--json]\n\nReplay is a protocol-aware stub in @oxdeai/cli v0.2.x. Use verify --kind audit for deterministic offline chain checks.";
+    case "init":
+      return `Usage: oxdeai init --file <policy.json> [--state <state.json>] [--audit <audit.ndjson>] [--json]
+
+Initializes local state and clears the audit log.`;
+    case "launch":
+      return `Usage: oxdeai launch <actionType> <amount> <target> --agent <id> --nonce <n> [--asset <asset>] [--state <state.json>] [--audit <audit.ndjson>] [--json]`;
+    case "make-envelope":
+      return "Usage: oxdeai make-envelope --out <file> [--state <state.json>] [--audit <audit.ndjson>] [--json]";
+    case "verify-envelope":
+      return "Usage: oxdeai verify-envelope <file> [--json]";
+    case "verify-audit":
+      return "Usage: oxdeai verify-audit [--audit <audit.ndjson>] [--json]";
+    case "snapshot-hash":
+      return "Usage: oxdeai snapshot-hash [--state <state.json>] [--json]";
+    case "audit":
+      return "Usage: oxdeai audit [--audit <audit.ndjson>] [--json]";
+    case "state":
+      return "Usage: oxdeai state [--state <state.json>] [--json]";
+    default:
+      return usage();
+  }
 }
 
 function parseFlags(argv: string[]): { args: string[]; flags: Flags } {
@@ -80,6 +150,14 @@ function parseFlags(argv: string[]): { args: string[]; flags: Flags } {
 
     if (a === "--json") {
       flags.json = true;
+      continue;
+    }
+    if (a === "--help" || a === "-h") {
+      flags.help = true;
+      continue;
+    }
+    if (a === "--version" || a === "-v") {
+      flags.version = true;
       continue;
     }
 
@@ -279,6 +357,28 @@ function parseJsonObjectBytes<T>(bytes: Uint8Array, label: string): T {
   return parsed as T;
 }
 
+function resolveVerifyKind(input: string | undefined): Flags["kind"] | undefined {
+  if (!input) return undefined;
+  return VERIFY_KIND_ALIAS[input as keyof typeof VERIFY_KIND_ALIAS];
+}
+
+function defaultVerifyFile(kind: Flags["kind"]): string | undefined {
+  switch (kind) {
+    case "snapshot":
+      return ".oxdeai/snapshot.bin";
+    case "audit":
+      return DEFAULT_AUDIT_PATH;
+    case "envelope":
+      return ".oxdeai/envelope.bin";
+    default:
+      return undefined;
+  }
+}
+
+function isBuildTarget(input: string | undefined): boolean {
+  return input === undefined || input === "snapshot" || input === "snap";
+}
+
 function verificationExitCode(result: VerificationResult): number {
   if (result.status === "ok") return EXIT_CODE_OK;
   if (result.status === "inconclusive") return EXIT_CODE_INCONCLUSIVE;
@@ -378,9 +478,35 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
 
   const { args, flags } = parsed;
   const cmd = args[0];
+  const requestedHelp = flags.help || cmd === "help";
+
+  if (flags.version && !cmd) {
+    out(CLI_VERSION);
+    return EXIT_CODE_OK;
+  }
+
   if (!cmd) {
+    if (requestedHelp) {
+      out(usage());
+      return EXIT_CODE_OK;
+    }
     err(usage());
     return EXIT_CODE_USAGE;
+  }
+
+  if (cmd === "help") {
+    out(commandUsage(args[1] ?? ""));
+    return EXIT_CODE_OK;
+  }
+
+  if (flags.version) {
+    out(CLI_VERSION);
+    return EXIT_CODE_OK;
+  }
+
+  if (requestedHelp) {
+    out(commandUsage(cmd));
+    return EXIT_CODE_OK;
   }
 
   const statePath = flags.state ?? DEFAULT_STATE_PATH;
@@ -388,6 +514,10 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
 
   try {
     if (cmd === "build") {
+      const target = args[1];
+      if (!isBuildTarget(target)) {
+        throw new Error(`Unknown build target: ${target}`);
+      }
       const state = await readStateFile(statePath);
       const engine = buildEngine(state);
       const snapshot = engine.exportState(state);
@@ -413,20 +543,24 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
     }
 
     if (cmd === "verify") {
-      if (!flags.kind) throw new Error("Usage: verify --kind <snapshot|audit|envelope|authorization> [--file <path>|-]");
+      const positionalKind = resolveVerifyKind(args[1]);
+      const kind = flags.kind ?? positionalKind;
+      if (!kind) throw new Error("Usage: verify --kind <snapshot|audit|envelope|authorization> [--file <path>|-]");
+
+      const file = flags.file ?? defaultVerifyFile(kind);
       const mode = flags.mode ?? "strict";
-      const fromFile = flags.file && flags.file !== "-";
+      const fromFile = file && file !== "-";
       const bytes = fromFile
-        ? Uint8Array.from(await readFile(flags.file as string))
+        ? Uint8Array.from(await readFile(file))
         : await readStdinBytes();
 
-      if (flags.kind === "snapshot") {
+      if (kind === "snapshot") {
         const res = verifySnapshot(bytes, flags.expectedPolicyId ? { expectedPolicyId: flags.expectedPolicyId } : undefined);
-        writePayload(out, flags, res, verificationSummary(flags.kind, res));
+        writePayload(out, flags, res, verificationSummary(kind, res));
         return verificationExitCode(res);
       }
 
-      if (flags.kind === "envelope") {
+      if (kind === "envelope") {
         const trustedKeySets = await readTrustedKeySet(flags.trustedKeyset);
         const res = verifyEnvelope(bytes, {
           mode,
@@ -435,11 +569,11 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
           trustedKeySets,
           requireSignatureVerification: flags.requireSignatureVerification
         });
-        writePayload(out, flags, res, verificationSummary(flags.kind, res));
+        writePayload(out, flags, res, verificationSummary(kind, res));
         return verificationExitCode(res);
       }
 
-      if (flags.kind === "authorization") {
+      if (kind === "authorization") {
         const trustedKeySets = await readTrustedKeySet(flags.trustedKeyset);
         const auth = parseJsonObjectBytes<AuthorizationV1>(bytes, "authorization");
         const res = verifyAuthorization(auth, {
@@ -452,7 +586,7 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
           requireSignatureVerification: flags.requireSignatureVerification,
           legacyHmacSecret: flags.legacyHmacSecret
         });
-        writePayload(out, flags, res, verificationSummary(flags.kind, res));
+        writePayload(out, flags, res, verificationSummary(kind, res));
         return verificationExitCode(res);
       }
 
@@ -461,7 +595,7 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
         mode,
         expectedPolicyId: flags.expectedPolicyId
       });
-      writePayload(out, flags, res, verificationSummary(flags.kind, res));
+      writePayload(out, flags, res, verificationSummary(kind, res));
       return verificationExitCode(res);
     }
 
@@ -598,10 +732,12 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
       return EXIT_CODE_OK;
     }
 
+    err(`Unknown command: ${cmd}`);
     err(usage());
     return EXIT_CODE_USAGE;
   } catch (e) {
     err((e as Error).message);
+    if (cmd) err(commandUsage(cmd));
     return EXIT_CODE_INVALID;
   }
 }
@@ -611,6 +747,17 @@ async function main(): Promise<void> {
   process.exit(code);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+function isDirectExecution(): boolean {
+  const argv1 = process.argv[1];
+  if (!argv1) return false;
+
+  try {
+    return realpathSync(argv1) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return import.meta.url === pathToFileURL(argv1).href;
+  }
+}
+
+if (isDirectExecution()) {
   void main();
 }
