@@ -2,11 +2,13 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { realpathSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
   PolicyEngine,
+  decodeCanonicalState,
+  decodeEnvelope,
   encodeCanonicalState,
   encodeEnvelope,
   verifyAuditEvents,
@@ -48,6 +50,8 @@ type Io = {
 
 const DEFAULT_STATE_PATH = ".oxdeai/state.json";
 const DEFAULT_AUDIT_PATH = ".oxdeai/audit.ndjson";
+const DEFAULT_SNAPSHOT_PATH = ".oxdeai/snapshot.bin";
+const DEFAULT_ENVELOPE_PATH = ".oxdeai/envelope.bin";
 const ACTION_TYPES = new Set<ActionType>(["PAYMENT", "PURCHASE", "PROVISION", "ONCHAIN_TX"]);
 const EXIT_CODE_OK = 0;
 const EXIT_CODE_INVALID = 1;
@@ -72,9 +76,17 @@ Usage:
   oxdeai --version
   oxdeai build [--state <state.json>] [--out <snapshot.bin>] [--json]
   oxdeai verify --kind <snapshot|audit|envelope|authorization> [--file <path>|-] [--mode <strict|best-effort>] [--expected-policy-id <hex>] [--expected-issuer <id>] [--expected-audience <id>] [--consumed-auth-id <id>] [--trusted-keyset <keyset.json>] [--require-signature] [--legacy-hmac-secret <secret>] [--json]
+  oxdeai inspect <snapshot|audit|envelope|auth|authorization> [--file <path>] [--json]
+  oxdeai verify all [--state <state.json>] [--audit <audit.ndjson>] [--json]
+  oxdeai doctor [--json]
+  oxdeai paths [--json]
+  oxdeai auth create <actionType> <amount> <target> --agent <id> --nonce <n> --out <authorization.json> [--asset <asset>] [--state <state.json>] [--json]
+  oxdeai auth inspect [--file <authorization.json>] [--json]
+  oxdeai examples init [--state <state.json>] [--audit <audit.ndjson>] [--json]
   oxdeai replay [--json]
   oxdeai init --file <policy.json> [--state <state.json>] [--audit <audit.ndjson>] [--json]
   oxdeai launch <actionType> <amount> <target> --agent <id> --nonce <n> [--asset <asset>] [--state <state.json>] [--audit <audit.ndjson>] [--json]
+  oxdeai launch dry-run <actionType> <amount> <target> --agent <id> --nonce <n> [--asset <asset>] [--state <state.json>] [--json]
   oxdeai make-envelope --out <file> [--state <state.json>] [--audit <audit.ndjson>] [--json]
   oxdeai verify-envelope <file> [--json]
   oxdeai verify-audit [--audit <audit.ndjson>] [--json]
@@ -102,6 +114,7 @@ Default state path: .oxdeai/state.json`;
       return `Usage:
   oxdeai verify --kind <snapshot|audit|envelope|authorization> [--file <path>|-] [options]
   oxdeai verify <snapshot|snap|audit|envelope|auth|authorization> [--file <path>] [options]
+  oxdeai verify all [--state <state.json>] [--audit <audit.ndjson>] [--json]
 
 Examples:
   oxdeai verify snap
@@ -113,12 +126,32 @@ Examples:
   oxdeai verify --kind authorization --file authorization.json --expected-issuer oxdeai://issuer --expected-audience rp://tool-gateway --json`;
     case "replay":
       return "Usage: oxdeai replay [--json]\n\nReplay is a protocol-aware stub in @oxdeai/cli v0.2.x. Use verify --kind audit for deterministic offline chain checks.";
+    case "inspect":
+      return `Usage: oxdeai inspect <snapshot|audit|envelope|auth|authorization> [--file <path>] [--json]
+
+Examples:
+  oxdeai inspect snapshot --file .oxdeai/snapshot.bin
+  oxdeai inspect audit --file .oxdeai/audit.ndjson
+  oxdeai inspect envelope --file .oxdeai/envelope.bin
+  oxdeai inspect auth --file authorization.json`;
+    case "doctor":
+      return "Usage: oxdeai doctor [--json]";
+    case "paths":
+      return "Usage: oxdeai paths [--json]";
+    case "auth":
+      return `Usage:
+  oxdeai auth create <actionType> <amount> <target> --agent <id> --nonce <n> --out <authorization.json> [--asset <asset>] [--state <state.json>] [--json]
+  oxdeai auth inspect [--file <authorization.json>] [--json]`;
+    case "examples":
+      return "Usage: oxdeai examples init [--state <state.json>] [--audit <audit.ndjson>] [--json]";
     case "init":
       return `Usage: oxdeai init --file <policy.json> [--state <state.json>] [--audit <audit.ndjson>] [--json]
 
 Initializes local state and clears the audit log.`;
     case "launch":
-      return `Usage: oxdeai launch <actionType> <amount> <target> --agent <id> --nonce <n> [--asset <asset>] [--state <state.json>] [--audit <audit.ndjson>] [--json]`;
+      return `Usage:
+  oxdeai launch <actionType> <amount> <target> --agent <id> --nonce <n> [--asset <asset>] [--state <state.json>] [--audit <audit.ndjson>] [--json]
+  oxdeai launch dry-run <actionType> <amount> <target> --agent <id> --nonce <n> [--asset <asset>] [--state <state.json>] [--json]`;
     case "make-envelope":
       return "Usage: oxdeai make-envelope --out <file> [--state <state.json>] [--audit <audit.ndjson>] [--json]";
     case "verify-envelope":
@@ -365,11 +398,11 @@ function resolveVerifyKind(input: string | undefined): Flags["kind"] | undefined
 function defaultVerifyFile(kind: Flags["kind"]): string | undefined {
   switch (kind) {
     case "snapshot":
-      return ".oxdeai/snapshot.bin";
+      return DEFAULT_SNAPSHOT_PATH;
     case "audit":
       return DEFAULT_AUDIT_PATH;
     case "envelope":
-      return ".oxdeai/envelope.bin";
+      return DEFAULT_ENVELOPE_PATH;
     default:
       return undefined;
   }
@@ -377,6 +410,58 @@ function defaultVerifyFile(kind: Flags["kind"]): string | undefined {
 
 function isBuildTarget(input: string | undefined): boolean {
   return input === undefined || input === "snapshot" || input === "snap";
+}
+
+function sampleState(): State {
+  return {
+    policy_version: "v1",
+    period_id: "2026-03",
+    kill_switch: { global: false, agents: {} },
+    allowlists: {
+      action_types: ["PROVISION"],
+      assets: ["a100"],
+      targets: ["us-east-1"]
+    },
+    budget: {
+      budget_limit: { "agent-1": 1_000_000n },
+      spent_in_period: { "agent-1": 0n }
+    },
+    max_amount_per_action: { "agent-1": 1_000_000n },
+    velocity: { config: { window_seconds: 60, max_actions: 10 }, counters: {} },
+    replay: { window_seconds: 3600, max_nonces_per_agent: 256, nonces: {} },
+    concurrency: { max_concurrent: { "agent-1": 4 }, active: {}, active_auths: {} },
+    recursion: { max_depth: { "agent-1": 5 } },
+    tool_limits: { window_seconds: 60, max_calls: { "agent-1": 100 }, max_calls_by_tool: {}, calls: {} }
+  };
+}
+
+function basePaths(flags: Flags) {
+  const state = flags.state ?? DEFAULT_STATE_PATH;
+  const audit = flags.audit ?? DEFAULT_AUDIT_PATH;
+  const baseDir = dirname(state);
+  return {
+    state,
+    audit,
+    snapshot: flags.state ? join(baseDir, "snapshot.bin") : DEFAULT_SNAPSHOT_PATH,
+    envelope: flags.state ? join(baseDir, "envelope.bin") : DEFAULT_ENVELOPE_PATH
+  };
+}
+
+type VerificationMap = Record<"snapshot" | "audit" | "envelope", VerificationResult>;
+
+function aggregateVerificationExit(results: VerificationMap): number {
+  const ordered = [results.snapshot, results.audit, results.envelope];
+  if (ordered.some((r) => r.status === "invalid")) return EXIT_CODE_INVALID;
+  if (ordered.some((r) => r.status === "inconclusive")) return EXIT_CODE_INCONCLUSIVE;
+  return EXIT_CODE_OK;
+}
+
+function inspectSummary(kind: string, payload: Record<string, unknown>): string {
+  const lines = [`${kind}:`];
+  for (const [k, v] of Object.entries(payload)) {
+    lines.push(`${k}: ${typeof v === "object" ? toJson(v) : String(v)}`);
+  }
+  return lines.join("\n");
 }
 
 function verificationExitCode(result: VerificationResult): number {
@@ -513,6 +598,113 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
   const auditPath = flags.audit ?? DEFAULT_AUDIT_PATH;
 
   try {
+    if (cmd === "paths") {
+      writePayload(out, flags, basePaths(flags));
+      return EXIT_CODE_OK;
+    }
+
+    if (cmd === "doctor") {
+      const paths = basePaths(flags);
+      const checks = await Promise.all(
+        Object.entries(paths).map(async ([label, file]) => {
+          try {
+            await readFile(file);
+            return { kind: label, path: file, exists: true };
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+              return { kind: label, path: file, exists: false };
+            }
+            throw error;
+          }
+        })
+      );
+      const payload = {
+        ok: true,
+        node: process.version,
+        cwd: process.cwd(),
+        linkedBin: process.argv[1] ?? null,
+        defaults: paths,
+        checks
+      };
+      writePayload(out, flags, payload);
+      return EXIT_CODE_OK;
+    }
+
+    if (cmd === "examples") {
+      if (args[1] !== "init") throw new Error(`Unknown examples command: ${args[1] ?? ""}`);
+      const state = sampleState();
+      await writeStateFile(statePath, state);
+      await resetAuditFile(auditPath);
+      writePayload(out, flags, { ok: true, state: statePath, audit: auditPath }, `OK\nstate: ${statePath}\naudit: ${auditPath}`);
+      return EXIT_CODE_OK;
+    }
+
+    if (cmd === "inspect") {
+      const rawKind = resolveVerifyKind(args[1]) ?? (args[1] === "envelope" || args[1] === "audit" ? (args[1] as Flags["kind"]) : undefined);
+      const kind = rawKind;
+      if (!kind) throw new Error("Usage: inspect <snapshot|audit|envelope|auth|authorization> [--file <path>]");
+      const file = flags.file ?? defaultVerifyFile(kind);
+      if (!file) throw new Error(`${kind} inspection requires --file <path>`);
+      const bytes = Uint8Array.from(await readFile(file));
+
+      if (kind === "snapshot") {
+        const snapshot = decodeCanonicalState(bytes);
+        const payload = {
+          formatVersion: snapshot.formatVersion,
+          engineVersion: snapshot.engineVersion,
+          policyId: snapshot.policyId,
+          moduleKeys: Object.keys(snapshot.modules).sort(),
+          moduleCount: Object.keys(snapshot.modules).length
+        };
+        writePayload(out, flags, payload, inspectSummary("snapshot", payload));
+        return EXIT_CODE_OK;
+      }
+
+      if (kind === "envelope") {
+        const envelope = decodeEnvelope(bytes);
+        const snapshot = decodeCanonicalState(envelope.snapshot);
+        const payload = {
+          formatVersion: envelope.formatVersion,
+          eventCount: envelope.events.length,
+          eventTypes: Array.from(new Set(envelope.events.map((e) => (e as any).type ?? "unknown"))).sort(),
+          policyId: snapshot.policyId,
+          issuer: envelope.issuer ?? null,
+          alg: envelope.alg ?? null,
+          kid: envelope.kid ?? null,
+          signed: Boolean(envelope.signature)
+        };
+        writePayload(out, flags, payload, inspectSummary("envelope", payload));
+        return EXIT_CODE_OK;
+      }
+
+      if (kind === "authorization") {
+        const auth = parseJsonObjectBytes<AuthorizationV1>(bytes, "authorization");
+        const payload = {
+          authorizationId: (auth as any).authorization_id ?? auth.auth_id,
+          issuer: auth.issuer,
+          audience: auth.audience,
+          policyId: auth.policy_id,
+          stateHash: auth.state_hash,
+          decision: auth.decision,
+          alg: auth.alg,
+          kid: auth.kid,
+          expiresAt: (auth as any).expires_at ?? auth.expiry
+        };
+        writePayload(out, flags, payload, inspectSummary("authorization", payload));
+        return EXIT_CODE_OK;
+      }
+
+      const events = parseAuditInputBytes(bytes);
+      const payload = {
+        eventCount: events.length,
+        eventTypes: Array.from(new Set(events.map((e: any) => e?.type ?? "unknown"))).sort(),
+        firstTimestamp: (events[0] as any)?.timestamp ?? null,
+        lastTimestamp: (events[events.length - 1] as any)?.timestamp ?? null
+      };
+      writePayload(out, flags, payload, inspectSummary("audit", payload));
+      return EXIT_CODE_OK;
+    }
+
     if (cmd === "build") {
       const target = args[1];
       if (!isBuildTarget(target)) {
@@ -543,6 +735,26 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
     }
 
     if (cmd === "verify") {
+      if (args[1] === "all") {
+        const paths = basePaths(flags);
+        const snapshotBytes = Uint8Array.from(await readFile(paths.snapshot));
+        const auditBytes = Uint8Array.from(await readFile(paths.audit));
+        const envelopeBytes = Uint8Array.from(await readFile(paths.envelope));
+        const snapshot = verifySnapshot(snapshotBytes, flags.expectedPolicyId ? { expectedPolicyId: flags.expectedPolicyId } : undefined);
+        const audit = verifyAuditEvents(parseAuditInputBytes(auditBytes) as Parameters<typeof verifyAuditEvents>[0], {
+          mode: flags.mode ?? "strict",
+          expectedPolicyId: flags.expectedPolicyId
+        });
+        const envelope = verifyEnvelope(envelopeBytes, {
+          mode: flags.mode ?? "strict",
+          expectedPolicyId: flags.expectedPolicyId,
+          expectedIssuer: flags.expectedIssuer,
+          requireSignatureVerification: flags.requireSignatureVerification
+        });
+        const payload = { snapshot, audit, envelope, paths };
+        writePayload(out, flags, payload);
+        return aggregateVerificationExit({ snapshot, audit, envelope });
+      }
       const positionalKind = resolveVerifyKind(args[1]);
       const kind = flags.kind ?? positionalKind;
       if (!kind) throw new Error("Usage: verify --kind <snapshot|audit|envelope|authorization> [--file <path>|-]");
@@ -609,6 +821,64 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
         message: "Replay verifier is a protocol-aware stub in @oxdeai/cli v0.2.x. Use verify --kind audit for deterministic offline chain checks."
       };
       writePayload(out, flags, payload, `${payload.status.toUpperCase()}: ${payload.message}`);
+      return EXIT_CODE_OK;
+    }
+
+    if (cmd === "auth") {
+      const sub = args[1];
+      if (sub === "inspect") {
+        const file = flags.file;
+        if (!file) throw new Error("auth inspect requires --file <authorization.json>");
+        const bytes = Uint8Array.from(await readFile(file));
+        const auth = parseJsonObjectBytes<AuthorizationV1>(bytes, "authorization");
+        const payload = {
+          authorizationId: (auth as any).authorization_id ?? auth.auth_id,
+          issuer: auth.issuer,
+          audience: auth.audience,
+          policyId: auth.policy_id,
+          stateHash: auth.state_hash,
+          decision: auth.decision,
+          alg: auth.alg,
+          kid: auth.kid,
+          expiresAt: (auth as any).expires_at ?? auth.expiry
+        };
+        writePayload(out, flags, payload, inspectSummary("authorization", payload));
+        return EXIT_CODE_OK;
+      }
+      if (sub !== "create") throw new Error(`Unknown auth command: ${sub ?? ""}`);
+      const action = args[2] as ActionType | undefined;
+      const amountRaw = args[3];
+      const target = args[4];
+      if (!action || !amountRaw || !target) throw new Error("Usage: auth create <actionType> <amount> <target> --agent <id> --nonce <n> --out <authorization.json>");
+      if (!ACTION_TYPES.has(action)) throw new Error(`Invalid actionType: ${action}`);
+      if (!flags.agent) throw new Error("Missing --agent <id>");
+      if (!flags.nonce) throw new Error("Missing --nonce <n>");
+      if (!flags.out) throw new Error("Missing --out <authorization.json>");
+      const state = await readStateFile(statePath);
+      const engine = buildEngine(state);
+      const intent: Intent = {
+        intent_id: `intent:${flags.agent}:${flags.nonce}`,
+        type: "EXECUTE",
+        agent_id: flags.agent,
+        action_type: action,
+        amount: parseBigIntArg(amountRaw),
+        asset: flags.asset,
+        target,
+        timestamp: now(),
+        metadata_hash: "0x" + "0".repeat(64),
+        nonce: parseBigIntArg(flags.nonce),
+        signature: "cli-signature-placeholder"
+      };
+      const outEval = engine.evaluatePure(intent, state, { mode: "fail-fast" });
+      if (outEval.decision !== "ALLOW") {
+        const payload = { decision: "DENY" as const, reasons: outEval.reasons };
+        writePayload(out, flags, payload, `DENY: ${toJson(payload.reasons)}`);
+        return EXIT_CODE_OK;
+      }
+      await mkdir(dirname(flags.out), { recursive: true });
+      await writeFile(flags.out, `${toJson(outEval.authorization)}\n`, "utf8");
+      const payload = { ok: true, out: flags.out, authorization_id: outEval.authorization.authorization_id };
+      writePayload(out, flags, payload, `ALLOW: ${outEval.authorization.authorization_id}\nout: ${flags.out}`);
       return EXIT_CODE_OK;
     }
 
@@ -693,9 +963,11 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
     }
 
     if (cmd === "launch") {
-      const action = args[1] as ActionType | undefined;
-      const amountRaw = args[2];
-      const target = args[3];
+      const dryRun = args[1] === "dry-run";
+      const offset = dryRun ? 2 : 1;
+      const action = args[offset] as ActionType | undefined;
+      const amountRaw = args[offset + 1];
+      const target = args[offset + 2];
       if (!action || !amountRaw || !target) throw new Error("Usage: launch <actionType> <amount> <target> --agent <id> --nonce <n>");
       if (!ACTION_TYPES.has(action)) throw new Error(`Invalid actionType: ${action}`);
       if (!flags.agent) throw new Error("Missing --agent <id>");
@@ -721,16 +993,21 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
 
       const outEval = engine.evaluatePure(intent, state, { mode: "fail-fast" });
       const emitted = engine.audit.snapshot();
-      await appendAuditEvents(auditPath, emitted);
 
       if (outEval.decision === "ALLOW") {
-        await writeStateFile(statePath, outEval.nextState);
-        const payload = { decision: "ALLOW" as const, authorization_id: outEval.authorization.authorization_id, reasons: [] as string[] };
+        if (!dryRun) {
+          await appendAuditEvents(auditPath, emitted);
+          await writeStateFile(statePath, outEval.nextState);
+        }
+        const payload = { decision: "ALLOW" as const, authorization_id: outEval.authorization.authorization_id, reasons: [] as string[], dryRun };
         writePayload(out, flags, payload, `ALLOW: ${payload.authorization_id}`);
         return EXIT_CODE_OK;
       }
 
-      const payload = { decision: "DENY" as const, reasons: outEval.reasons };
+      if (!dryRun) {
+        await appendAuditEvents(auditPath, emitted);
+      }
+      const payload = { decision: "DENY" as const, reasons: outEval.reasons, dryRun };
       writePayload(out, flags, payload, `DENY: ${toJson(payload.reasons)}`);
       return EXIT_CODE_OK;
     }

@@ -401,3 +401,65 @@ test("verify auth without file returns actionable guidance", async () => {
   assert.equal(code, 1);
   assert.match(cap.err[0] ?? "", /authorization verification requires --file/);
 });
+
+test("paths, doctor, and examples init support local setup flows", async () => {
+  const { dir } = await setup();
+  const cap = ioCapture();
+  const stateFile = join(dir, "example-state.json");
+  const auditFile = join(dir, "example-audit.ndjson");
+
+  assert.equal(await runCli(["paths", "--json"], cap.io), 0);
+  const paths = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(typeof paths.state, "string");
+
+  assert.equal(await runCli(["examples", "init", "--state", stateFile, "--audit", auditFile, "--json"], cap.io), 0);
+  const doctorCode = await runCli(["doctor", "--state", stateFile, "--audit", auditFile, "--json"], cap.io);
+  assert.equal(doctorCode, 0);
+  const doctor = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(Array.isArray(doctor.checks), true);
+  assert.equal(doctor.checks.every((c: any) => typeof c.exists === "boolean"), true);
+});
+
+test("inspect, verify all, auth create, and launch dry-run work together", async () => {
+  const { policyFile, stateFile, auditFile, dir } = await setup();
+  const cap = ioCapture(1_770_000_700);
+  await runCli(["init", "--file", policyFile, "--state", stateFile, "--audit", auditFile], cap.io);
+
+  const launchCode = await runCli(
+    ["launch", "dry-run", "PROVISION", "100", "us-east-1", "--agent", "agent-1", "--nonce", "31", "--state", stateFile, "--json"],
+    cap.io
+  );
+  assert.equal(launchCode, 0);
+  const launchLatest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(launchLatest.dryRun, true);
+
+  const authPath = join(dir, "authorization.json");
+  const createCode = await runCli(
+    ["auth", "create", "PROVISION", "100", "us-east-1", "--agent", "agent-1", "--nonce", "32", "--state", stateFile, "--out", authPath, "--json"],
+    cap.io
+  );
+  assert.equal(createCode, 0);
+
+  const snapshotPath = join(dir, "snapshot.bin");
+  await runCli(["build", "snapshot", "--state", stateFile, "--out", snapshotPath, "--json"], cap.io);
+  const envelopePath = join(dir, "envelope.bin");
+  await runCli(["make-envelope", "--out", envelopePath, "--state", stateFile, "--audit", auditFile, "--json"], cap.io);
+
+  assert.equal(await runCli(["inspect", "snapshot", "--file", snapshotPath, "--json"], cap.io), 0);
+  assert.equal(await runCli(["inspect", "audit", "--file", auditFile, "--json"], cap.io), 0);
+  assert.equal(await runCli(["inspect", "envelope", "--file", envelopePath, "--json"], cap.io), 0);
+  assert.equal(await runCli(["auth", "inspect", "--file", authPath, "--json"], cap.io), 0);
+
+  const verifyAllCode = await runCli(
+    ["verify", "all", "--state", stateFile, "--audit", auditFile, "--json"],
+    {
+      ...cap.io,
+      out: cap.io.out
+    }
+  );
+  assert.equal(verifyAllCode, 1);
+  const verifyAll = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(typeof verifyAll.snapshot.status, "string");
+  assert.equal(typeof verifyAll.audit.status, "string");
+  assert.equal(typeof verifyAll.envelope.status, "string");
+});

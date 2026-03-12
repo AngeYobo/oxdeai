@@ -7,6 +7,7 @@
     "typecheck": "pnpm build:core && pnpm -r typecheck",
     "test": "pnpm build:core && pnpm -r test",
     "build": "pnpm -r build",
+    "validate:adapters": "node scripts/validate-adapters.mjs",
     "oxdeai": "pnpm -C packages/cli start --",
     "cli": "pnpm -C packages/cli start --",
     "run:bench": "pnpm --filter oxdeai-bench run run"
