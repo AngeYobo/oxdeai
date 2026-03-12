@@ -156,6 +156,10 @@ async function main() {
   const adapters = one ? [one] : ADAPTERS;
   const results = [];
 
+  // Fresh checkouts need the core workspace package built before example
+  // TypeScript projects can resolve @oxdeai/core types from its dist output.
+  runChecked("pnpm", ["--filter", "@oxdeai/core", "build"], repoRoot);
+
   for (const adapter of adapters) {
     const result = await validateAdapter(adapter);
     results.push(result);
