@@ -394,3 +394,10 @@ test("verify fails closed on malformed authorization payload", async () => {
   assert.equal(latest.status, "invalid");
   assert.ok((latest.violations ?? []).length > 0);
 });
+
+test("verify auth without file returns actionable guidance", async () => {
+  const cap = ioCapture();
+  const code = await runCli(["verify", "auth"], cap.io);
+  assert.equal(code, 1);
+  assert.match(cap.err[0] ?? "", /authorization verification requires --file/);
+});

@@ -90,11 +90,14 @@ Examples:
 oxdeai verify snap
 oxdeai verify audit
 oxdeai verify envelope
+oxdeai verify auth --file authorization.json --expected-issuer oxdeai://issuer --expected-audience rp://tool-gateway --json
 oxdeai verify --kind snapshot --file snapshot.bin --json
 oxdeai verify --kind audit --file audit.ndjson --mode strict --json
 oxdeai verify --kind envelope --file envelope.bin --trusted-keyset keyset.json --require-signature --json
 oxdeai verify --kind authorization --file authorization.json --expected-issuer oxdeai://issuer --expected-audience rp://tool-gateway --json
 ```
+
+`verify auth` does not assume a default file. Pass `--file <authorization.json>` explicitly.
 
 ### replay
 

@@ -7,6 +7,58 @@ This project follows Semantic Versioning.
 
 ---
 
+## [0.2.4] - 2026-03-12
+
+### Changed
+
+- Follow-up CLI usability patch release after `0.2.3`.
+- Clarified authorization shorthand behavior so `oxdeai verify auth` fails with actionable `--file` guidance instead of reading empty stdin.
+
+### Notes
+
+- Patch release only.
+- No protocol semantics or `@oxdeai/core` runtime behavior changes.
+
+---
+
+## [0.2.3] - 2026-03-12
+
+### Added
+
+- Standard CLI help support:
+  - `oxdeai --help`
+  - `oxdeai -h`
+  - `oxdeai help`
+  - subcommand help such as `oxdeai verify --help`
+- Standard CLI version support:
+  - `oxdeai --version`
+  - `oxdeai -v`
+- Positional shorthand command forms for common local workflows:
+  - `oxdeai verify snap`
+  - `oxdeai verify audit`
+  - `oxdeai verify envelope`
+  - `oxdeai verify auth`
+  - `oxdeai build snapshot`
+- Post-build executable entrypoint handling for the published CLI bin target.
+
+### Changed
+
+- Improved monorepo developer workflow with clearer local CLI execution paths.
+- Improved README quickstart for:
+  - npm users
+  - local contributors
+  - linked/global CLI workflows
+- Improved top-level CLI error handling and usage guidance for unsupported flags and command misuse.
+- Fixed direct execution detection so linked/global `oxdeai` works correctly through symlinked bin paths.
+- Authorization shorthand now fails with actionable guidance when `--file` is omitted.
+
+### Notes
+
+- CLI usability and packaging release only.
+- No protocol semantics or `@oxdeai/core` runtime behavior changes.
+
+---
+
 ## [0.2.2] - 2026-03-08
 
 ### Changed
