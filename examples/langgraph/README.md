@@ -60,6 +60,17 @@ pnpm build
 node dist/run.js
 ```
 
+## Shared Demo Scenario
+
+This example implements the canonical cross-adapter scenario in [`docs/integrations/shared-demo-scenario.md`](../../docs/integrations/shared-demo-scenario.md).
+
+Expected visible outcome:
+
+- decision 1: `ALLOW`
+- decision 2: `ALLOW`
+- decision 3: `DENY`
+- envelope verification: `ok`
+
 ---
 
 ## Expected output (compact)

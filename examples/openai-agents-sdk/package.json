@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "pnpm build && node dist/run.js",
+    "validate": "node ../../scripts/validate-adapters.mjs --one openai-agents-sdk",
     "demo:openai-agents-sdk": "pnpm -C examples/openai-agents-sdk build && node examples/openai-agents-sdk/dist/run.js"
   },
   "dependencies": {

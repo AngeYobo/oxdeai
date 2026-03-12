@@ -69,6 +69,17 @@ node dist/run.js
 
 No paid API calls. Tool execution is mocked. The economic boundary is real.
 
+## Shared Demo Scenario
+
+This example is the reference implementation of the shared cross-adapter scenario in [`docs/integrations/shared-demo-scenario.md`](../../docs/integrations/shared-demo-scenario.md).
+
+Expected visible outcome:
+
+- decision 1: `ALLOW`
+- decision 2: `ALLOW`
+- decision 3: `DENY`
+- envelope verification: `ok`
+
 ---
 
 ## Expected output

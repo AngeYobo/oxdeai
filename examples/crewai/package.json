@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "pnpm build && node dist/run.js",
+    "validate": "node ../../scripts/validate-adapters.mjs --one crewai",
     "demo:crewai": "pnpm -C examples/crewai build && node examples/crewai/dist/run.js"
   },
   "dependencies": {
