@@ -4,11 +4,27 @@ This guide describes a minimal production wiring pattern for a Policy Enforcemen
 
 Reference architecture:
 - [`docs/adapter-reference-architecture.md`](./adapter-reference-architecture.md)
+- [`docs/adapter-contract.md`](./adapter-contract.md)
 - diagram workflow: [`docs/diagrams/README.md`](./diagrams/README.md)
 
 ## Scope
 
 Applies to services that execute external side effects (tools, provisioning, payments, API calls) and must enforce OxDeAI authorization before execution.
+
+Upstream runtimes MAY reach the PEP through structured tool calls, CLI-style command execution, MCP/server-mediated invocation, or framework-specific adapters.
+Any adapter layer between those action surfaces and OxDeAI is responsible for deterministic normalization into intent before policy evaluation.
+OxDeAI remains the authorization layer at the execution boundary; it does not define the upstream action-expression interface.
+
+## Shared Adapter Contract Relation
+
+The shared adapter contract is documented in [`docs/adapter-contract.md`](./adapter-contract.md).
+
+For production PEP wiring, that contract implies:
+
+- normalization happens before policy evaluation
+- PEP enforcement happens before side effects
+- the refusal path MUST remain explicit
+- audit emission SHOULD remain consistent with the evaluated intent, state, and authorization context
 
 ## Required Inputs
 

@@ -35,6 +35,45 @@ Outputs are deterministic for the same inputs.
 If allowed, a signed authorization artifact is emitted.
 If denied, execution MUST NOT proceed.
 
+### Action Surface Independence
+
+OxDeAI is independent from the action interface used by agent runtimes.
+
+Agent runtimes may express actions through various interfaces, including:
+
+* structured tool calls
+* CLI-style command execution (e.g. `run("command")`)
+* workflow engines
+* MCP tool invocation
+* framework-specific tool adapters
+
+OxDeAI does not define how actions are expressed.
+
+Instead, runtimes SHOULD normalize proposed actions into a deterministic **intent** before submitting them to the policy engine.
+
+```
+action surface
+→ normalization
+→ intent
+→ OxDeAI PDP evaluation
+→ AuthorizationV1
+→ PEP enforcement
+→ side effect
+```
+
+This ensures that OxDeAI secures the **execution boundary**, independent of the upstream action surface.
+This is a documentation clarification of interface-independence, not a new protocol artifact layer.
+
+### Intent Normalization
+
+Before policy evaluation, runtimes SHOULD normalize proposed actions into the intent representation used by their OxDeAI integration.
+
+Normalization preserves deterministic evaluation and policy portability across different action surfaces.
+The protocol does not currently mandate one universal normalization schema for all runtimes.
+
+Implementations MUST ensure that supported action surfaces map to intent deterministically.
+Equivalent external actions SHOULD map to equivalent intent representations within the implementation that evaluates and enforces them.
+
 ## 3) Artifact Flow
 
 ![Agent authorization boundary](./docs/diagrams/agent-authorization-boundary.svg)
@@ -146,6 +185,52 @@ Protocol-critical paths are deterministic:
 - no hidden entropy in verification functions
 
 This is what makes offline verification and cross-runtime conformance possible.
+
+## Future Policy Dimensions
+
+OxDeAI already evaluates policy over `(intent, state)`.
+Richer authorization semantics can therefore be expressed through deterministic state modeling without changing the current protocol contract.
+
+### 1) Context-Aware Authorization
+
+Policy evaluation MAY depend on contextual state accumulated during execution.
+
+Examples of contextual state include:
+
+- remaining budget
+- action counters
+- resource scopes
+- environment flags
+- execution phase
+
+Context-aware decisions are already expressible through the `state` input without protocol changes.
+
+### 2) Execution Path Policies
+
+Execution path policies depend on sequences of actions rather than one action in isolation.
+
+Examples include:
+
+- `read_secret` -> forbid `external_upload`
+- `access_sensitive_resource` -> restrict network access
+- `deployment_started` -> restrict destructive actions
+
+The OxDeAI protocol does not currently define path-policy primitives.
+Instead, runtimes MAY encode relevant execution history, derived flags, or workflow markers into the policy state used during evaluation.
+
+### 3) Delegated Authority
+
+Delegated authority describes bounded authorization in multi-agent systems.
+
+For example, a parent agent may authorize a child agent with reduced:
+
+- budget
+- action types
+- resource scope
+- time window
+
+Future protocol versions MAY introduce explicit delegation artifacts such as `DelegatedAuthorizationV1`.
+For the current protocol line, delegation can be implemented through state-scoped policies that preserve deterministic evaluation over `(intent, state, policy)`.
 
 ## 8) Versioning and Stability
 

@@ -7,6 +7,9 @@ For current protocol lines, use:
 - [`SPEC.md`](../SPEC.md) (current normative sections)
 - [`PROTOCOL.md`](../PROTOCOL.md) (current front-door protocol overview)
 
+Note: current documentation on action-surface independence and intent normalization is maintained in [`PROTOCOL.md`](../PROTOCOL.md).
+This archival profile preserves the v1.0.2 normative artifact and verification semantics.
+
 ## 1. Conformance Language
 
 The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHOULD**, **SHOULD NOT**, and **MAY** are to be interpreted as described in RFC 2119.
