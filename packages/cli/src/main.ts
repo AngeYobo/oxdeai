@@ -548,6 +548,9 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
       if (!kind) throw new Error("Usage: verify --kind <snapshot|audit|envelope|authorization> [--file <path>|-]");
 
       const file = flags.file ?? defaultVerifyFile(kind);
+      if (kind === "authorization" && !file) {
+        throw new Error("authorization verification requires --file <authorization.json>");
+      }
       const mode = flags.mode ?? "strict";
       const fromFile = file && file !== "-";
       const bytes = fromFile
