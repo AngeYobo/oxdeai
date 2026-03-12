@@ -22,6 +22,9 @@ oxdeai --version
 oxdeai verify snap
 oxdeai verify envelope
 oxdeai build snapshot
+oxdeai verify all
+oxdeai inspect snapshot --file .oxdeai/snapshot.bin
+oxdeai doctor
 ```
 
 ### Local monorepo contributors
@@ -60,6 +63,11 @@ oxdeai --help
 
 - `oxdeai build`
 - `oxdeai verify`
+- `oxdeai inspect`
+- `oxdeai doctor`
+- `oxdeai paths`
+- `oxdeai auth`
+- `oxdeai examples`
 - `oxdeai replay`
 
 Legacy helper commands are still available (`init`, `launch`, `state`, `audit`, `verify-audit`, `make-envelope`, `verify-envelope`, `snapshot-hash`) for local development workflows.
@@ -98,6 +106,59 @@ oxdeai verify --kind authorization --file authorization.json --expected-issuer o
 ```
 
 `verify auth` does not assume a default file. Pass `--file <authorization.json>` explicitly.
+
+### inspect
+
+Inspects local protocol artifacts without changing them.
+
+```bash
+oxdeai inspect snapshot --file .oxdeai/snapshot.bin
+oxdeai inspect audit --file .oxdeai/audit.ndjson
+oxdeai inspect envelope --file .oxdeai/envelope.bin
+oxdeai inspect auth --file authorization.json
+```
+
+### verify all
+
+Runs snapshot, audit, and envelope verification together using local defaults.
+
+```bash
+oxdeai verify all
+```
+
+### auth
+
+Creates and inspects authorization artifacts for local relying-party tests.
+
+```bash
+oxdeai auth create PROVISION 100 us-east-1 --agent agent-1 --nonce 1 --out authorization.json --json
+oxdeai auth inspect --file authorization.json
+```
+
+### doctor and paths
+
+Shows local path defaults and checks whether expected files exist.
+
+```bash
+oxdeai paths
+oxdeai doctor
+```
+
+### examples init
+
+Writes a starter local state file and clears the audit log.
+
+```bash
+oxdeai examples init
+```
+
+### launch dry-run
+
+Evaluates an action without mutating local state or audit files.
+
+```bash
+oxdeai launch dry-run PROVISION 100 us-east-1 --agent agent-1 --nonce 1 --json
+```
 
 ### replay
 
