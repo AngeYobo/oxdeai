@@ -93,26 +93,67 @@ OpenClaw status: demo integration is implemented; broader production/runtime-spe
 Execution checklist:
 - [x] Ship 3 maintained adapter targets (`OpenAI Agents SDK`, `CrewAI`, `AutoGen`).
 - [x] Ship OpenClaw adapter demo coverage (`examples/openclaw`).
-- [ ] Define one shared adapter contract (proposed action input, authorization gate, execute/refuse output, audit emission).
-- [ ] Publish a consistent integration kit for each adapter:
+- [x] Define one shared adapter contract (proposed action input, authorization gate, execute/refuse output, audit emission).
+  - canonical doc: [`docs/adapter-contract.md`](./docs/adapter-contract.md)
+- [x] Document a shared adapter/normalization contract:
+  - recommended minimal fields for proposed-action -> intent mapping
+  - deterministic normalization expectations across action surfaces
+  - cross-adapter reproducibility and comparable audit evidence requirements
+- [x] Document how future authorization semantics remain state-modeled in the current contract:
+  - context-aware authorization through deterministic state inputs
+  - execution path policy modeling through state-carried history or flags
+  - delegated authority as a future protocol area with current state-scoped implementation guidance
+- [x] Publish a consistent integration kit for each adapter:
+  - canonical docs: [`docs/integrations/`](./docs/integrations)
   - install
   - minimal quickstart
   - production PEP wiring notes
-- [ ] Provide cross-adapter reproducible demo scenario:
+- [x] Provide cross-adapter reproducible demo scenario:
   - `ALLOW`, `ALLOW`, `DENY`
   - `verifyEnvelope() => ok`
-- [ ] Add adapter validation gates in CI/docs:
+  - canonical doc: [`docs/integrations/shared-demo-scenario.md`](./docs/integrations/shared-demo-scenario.md)
+- [x] Add adapter validation gates in CI/docs:
   - deterministic behavior checks
   - authorization boundary enforcement checks
-- [ ] Publish at least 2 case-style integration writeups:
+  - canonical doc: [`docs/integrations/adapter-validation.md`](./docs/integrations/adapter-validation.md)
+- [x] Publish at least 2 case-style integration writeups:
   - API cost containment
   - infrastructure provisioning control
   - each writeup includes architecture, controls, failure mode prevented, and verification evidence (snapshot/audit/envelope outcomes)
+  - index: [`docs/cases/README.md`](./docs/cases/README.md)
 
 Completion criteria:
-- [ ] At least 3 adapter integrations are reproducible from docs.
-- [ ] Adapter demos are conformance-aligned and produce deterministic verification outcomes.
-- [ ] Integration docs and case studies are sufficient for third-party adoption without source deep-dive.
+- [x] At least 3 adapter integrations are reproducible from docs.
+  - reference docs: [`docs/integrations/README.md`](./docs/integrations/README.md)
+- [x] Adapter demos are conformance-aligned and produce deterministic verification outcomes.
+  - validation docs: [`docs/integrations/adapter-validation.md`](./docs/integrations/adapter-validation.md)
+- [x] Integration docs and case studies are sufficient for third-party adoption without source deep-dive.
+  - adoption checklist: [`docs/integrations/adoption-checklist.md`](./docs/integrations/adoption-checklist.md)
+
+### v1.5 - Developer Experience
+Status: `Planned`
+
+Focus:
+- visual demos of the authorization boundary
+- improved quickstart experience
+- architecture explainer for integrators
+- clearer adapter integration docs
+
+Execution:
+- [x] Add demo GIFs to README
+- [x] Improve Quickstart section
+- [x] Publish architecture explainer
+- [x] Add cross-links between protocol, integrations, and cases
+- [x] Ensure demos run in <2 minutes
+
+Completion criteria:
+- [x] A new developer can run a demo in under 5 minutes
+- [x] The authorization boundary is visually understandable
+- [x] Integrations can be reproduced from documentation
+
+References:
+- [`docs/media/README.md`](./docs/media/README.md)
+- [`docs/architecture/why-oxdeai.md`](./docs/architecture/why-oxdeai.md)
 
 ### v2.x - Delegated Agent Authorization
 Status: `Planned`
@@ -124,6 +165,24 @@ Scope:
 
 Possible future artifact:
 - `DelegatedAuthorizationV1`
+
+Design preparation:
+- [`docs/design/delegated-authorization.md`](./docs/design/delegated-authorization.md)
+
+#### Advanced Authorization Semantics
+
+Future exploration areas:
+
+- context-aware policy evaluation patterns
+- execution path policy modeling
+- delegated authorization primitives
+- safe multi-agent authority propagation
+
+These evolutions preserve the core protocol contract:
+
+`(intent, state, policy) -> deterministic decision`
+
+They MUST avoid introducing non-deterministic evaluation behavior.
 
 ### v3.x - Verifiable Execution Infrastructure
 Status: `Planned`

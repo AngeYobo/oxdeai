@@ -28,7 +28,8 @@ Instead of monitoring behavior after execution, OxDeAI enforces pre-execution au
 - `v1.1` Authorization Artifact: complete
 - `v1.2` Non-Forgeable Verification: complete
 - `v1.3` Guard Adapter + Integration Surface: complete
-- Next: `v1.4` ecosystem adoption
+- `v1.4` Ecosystem Adoption: complete
+- Next: `v1.5` developer experience
 
 Planned phases (`v2.x` Delegated Agent Authorization, `v3.x` Verifiable Execution Infrastructure) are tracked in [`ROADMAP.md`](./ROADMAP.md).
 
@@ -74,9 +75,12 @@ Examples:
 
 Specifications and docs:
 - `SPEC.md`, `SECURITY.md`, `PROTOCOL.md`
+- architecture explainer: [`docs/architecture/why-oxdeai.md`](./docs/architecture/why-oxdeai.md)
+- integrations index: [`docs/integrations/README.md`](./docs/integrations/README.md)
 - production integration guide: [`docs/pep-production-guide.md`](./docs/pep-production-guide.md)
 - adapter integration model: [`docs/adapter-reference-architecture.md`](./docs/adapter-reference-architecture.md)
 - diagram workflow: [`docs/diagrams/README.md`](./docs/diagrams/README.md)
+- media demos: [`docs/media/README.md`](./docs/media/README.md)
 - contributor guide: [`CONTRIBUTING.md`](./CONTRIBUTING.md)
 
 ## Examples
@@ -104,6 +108,62 @@ Specifications and docs:
 - [`examples/openclaw`](./examples/openclaw) - OpenClaw-shaped integration demo
   - same deterministic economic policy scenario
   - same PDP/PEP enforcement and envelope verification path
+
+## Integrations
+
+- [OpenAI tools integration](./docs/integrations/openai-tools.md)
+- [OpenAI Agents SDK integration](./docs/integrations/openai-agents-sdk.md)
+- [LangGraph integration](./docs/integrations/langgraph.md)
+- [CrewAI integration](./docs/integrations/crewai.md)
+- [AutoGen integration](./docs/integrations/autogen.md)
+- [OpenClaw integration](./docs/integrations/openclaw.md)
+
+## Cross-Adapter Demo Scenario
+
+All maintained adapters implement the same reproducible authorization scenario:
+
+- `ALLOW`
+- `ALLOW`
+- `DENY`
+- `verifyEnvelope() => ok`
+
+Reference:
+- [Shared demo scenario](./docs/integrations/shared-demo-scenario.md)
+
+## Adapter Validation
+
+Maintained adapters are validated for:
+
+- deterministic scenario behavior
+- authorization boundary enforcement
+
+Reference:
+- [Adapter validation](./docs/integrations/adapter-validation.md)
+- [Adoption checklist](./docs/integrations/adoption-checklist.md)
+
+## Quick Demo
+
+![OxDeAI demo](./docs/media/oxdeai-demo-simple-agent.gif)
+
+Run one maintained adapter demo from the repository root:
+
+```bash
+pnpm -C examples/openai-tools start
+```
+
+Expected semantic result:
+
+- `ALLOW`
+- `ALLOW`
+- `DENY`
+- `verifyEnvelope() => ok`
+
+This is the execution authorization boundary in action: two proposed actions are authorized, the third is refused before side effects, and the resulting evidence verifies offline.
+
+## Case Studies
+
+- [API cost containment](./docs/cases/api-cost-containment.md)
+- [Infrastructure provisioning control](./docs/cases/infrastructure-provisioning-control.md)
 
 ## Stack Placement
 
@@ -148,10 +208,49 @@ Native implementations are supported by the protocol spec and conformance vector
 
 ## Quickstart
 
+Clone:
+
+```bash
+git clone https://github.com/AngeYobo/oxdeai-core.git
+cd oxdeai-core
+```
+
+Install `pnpm`:
+
+```bash
+corepack enable
+corepack prepare pnpm@9.12.2 --activate
+```
+
 Install dependencies:
+
 ```bash
 pnpm install
 ```
+
+Build the workspace:
+
+```bash
+pnpm build
+```
+
+Run demo:
+
+```bash
+pnpm -C examples/openai-tools start
+```
+
+Expected output:
+
+- `ALLOW`
+- `ALLOW`
+- `DENY`
+- `verifyEnvelope() => ok`
+
+What you are seeing:
+- the runtime proposes three actions
+- OxDeAI authorizes two and refuses the third before execution
+- the resulting snapshot, audit evidence, and verification envelope stay consistent
 
 ## Release
 
