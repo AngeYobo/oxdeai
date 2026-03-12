@@ -2,12 +2,19 @@
   "name": "oxdeai-core",
   "private": true,
   "packageManager": "pnpm@9.12.2",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },  
   "scripts": {
+    "clean": "pnpm -r exec rm -rf dist",
+    "build": "pnpm -r build",
     "build:core": "pnpm --filter @oxdeai/core build",
+    "rebuild": "pnpm clean && pnpm build",
     "typecheck": "pnpm build:core && pnpm -r typecheck",
     "test": "pnpm build:core && pnpm -r test",
-    "build": "pnpm -r build",
     "validate:adapters": "node scripts/validate-adapters.mjs",
+    "ci": "pnpm install --frozen-lockfile && pnpm -r build && pnpm test && pnpm validate:adapters",
     "oxdeai": "pnpm -C packages/cli start --",
     "cli": "pnpm -C packages/cli start --",
     "run:bench": "pnpm --filter oxdeai-bench run run"

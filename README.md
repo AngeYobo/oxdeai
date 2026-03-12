@@ -6,6 +6,24 @@ OxDeAI-core hosts OxDeAI protocol specifications and the TypeScript reference st
 
 OxDeAI enforces economic and operational constraints before an agent executes an external action, with deterministic policy evaluation, cryptographic authorization, and tamper-evident audit evidence.
 
+## Demo
+
+![OxDeAI Demo](./docs/media/oxdeai-demo.gif)
+
+This is the canonical cross-adapter validation scenario.
+
+Expected deterministic result:
+
+- `ALLOW`
+- `ALLOW`
+- `DENY`
+
+Verification result:
+
+- `verifyEnvelope() => ok`
+
+This demo shows the OxDeAI deterministic authorization boundary enforcing policy decisions before agent actions execute.
+
 ## Why OxDeAI Exists
 
 Most AI guardrail systems focus on prompts or model outputs. OxDeAI focuses on the execution authorization boundary.
@@ -207,6 +225,11 @@ Native implementations are supported by the protocol spec and conformance vector
 - [`packages/conformance`](./packages/conformance)
 
 ## Quickstart
+
+## Requirements
+
+- Node.js >= 20
+- pnpm >= 9
 
 Clone:
 

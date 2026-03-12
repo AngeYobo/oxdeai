@@ -14,3 +14,4 @@ bench/outputs/
 bench/bench/
 bench/results/
 bench/outputs/graphs/
+*.tar.gz
