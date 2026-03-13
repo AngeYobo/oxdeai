@@ -22,15 +22,36 @@ import { AGENT_ID, engine, makeState, POLICY_ID } from "./policy.js";
 import { guardedProvision } from "./pep.js";
 import { proposeCallsViaLangGraph } from "./graph.js";
 
+const C = {
+  reset:      "\x1b[0m",
+  bold:       "\x1b[1m",
+  dim:        "\x1b[2m",
+  cyan:       "\x1b[36m",
+  green:      "\x1b[32m",
+  red:        "\x1b[31m",
+  yellow:     "\x1b[33m",
+  blue:       "\x1b[34m",
+  magenta:    "\x1b[35m",
+  white:      "\x1b[97m",
+  bCyan:      "\x1b[1;36m",
+  bGreen:     "\x1b[1;32m",
+  bRed:       "\x1b[1;31m",
+  bYellow:    "\x1b[1;33m",
+  bWhite:     "\x1b[1;97m",
+  bMagenta:   "\x1b[1;35m",
+};
+
+const c = (color: string, text: string) => `${color}${text}${C.reset}`;
+
 export async function runDemo(log: (msg: string) => void = (msg) => console.log(msg)): Promise<void> {
   const decisions: string[] = [];
 
-  log("╔══════════════════════════════════════════════════════════════════╗");
-  log("║  OxDeAI — LangGraph Integration Boundary Demo                   ║");
-  log("║  Scenario: GPU provisioning — budget for exactly 2 calls        ║");
-  log("╚══════════════════════════════════════════════════════════════════╝");
-  log(`\nAgent:   ${AGENT_ID}`);
-  log("Policy:  budget=1000 minor units  max_per_action=500  (2× a100 allowed)");
+  log(c(C.cyan, "╔══════════════════════════════════════════════════════════════════╗"));
+  log(c(C.cyan, "║") + c(C.bWhite, "  OxDeAI — LangGraph Integration Boundary Demo                   ") + c(C.cyan, "║"));
+  log(c(C.cyan, "║") + c(C.dim,    "  Scenario: GPU provisioning — budget for exactly 2 calls        ") + c(C.cyan, "║"));
+  log(c(C.cyan, "╚══════════════════════════════════════════════════════════════════╝"));
+  log(`\n${c(C.dim, "Agent:")}   ${c(C.bCyan, AGENT_ID)}`);
+  log(`${c(C.dim, "Policy:")}  budget=${c(C.yellow, "1000")} minor units  max_per_action=${c(C.yellow, "500")}  (2× a100 allowed)`);
   log("Source:  tool proposals from LangGraph node");
 
   const baseTimestamp = Math.floor(Date.now() / 1000);
@@ -41,7 +62,7 @@ export async function runDemo(log: (msg: string) => void = (msg) => console.log(
 
   const plannedCalls = await proposeCallsViaLangGraph(log);
 
-  log("\n── Agent proposals (from LangGraph) ───────────────────────────────");
+  log(`\n${c(C.dim, "── Agent proposals (from LangGraph) ───────────────────────────────")}`);
   for (const call of plannedCalls) {
     const timestamp = baseTimestamp + callIndex;
     const result = guardedProvision(call.asset, call.region, state, timestamp, log);
@@ -52,7 +73,7 @@ export async function runDemo(log: (msg: string) => void = (msg) => console.log(
       state = result.nextState;
       const spent = state.budget.spent_in_period[AGENT_ID] ?? 0n;
       const limit = state.budget.budget_limit[AGENT_ID] ?? 0n;
-      log(`   budget after: ${spent}/${limit} minor units spent`);
+      log(`   ${c(C.dim, "budget after:")} ${c(C.yellow, `${spent}/${limit}`)} minor units spent`);
     } else {
       decisions.push("DENY");
       deniedCount++;
@@ -60,33 +81,39 @@ export async function runDemo(log: (msg: string) => void = (msg) => console.log(
     callIndex++;
   }
 
-  log("\n── Summary ──────────────────────────────────────────────────────────");
-  log(`   Allowed: ${allowedCount}   Denied: ${deniedCount}`);
+  log(`\n${c(C.dim, "── Summary ──────────────────────────────────────────────────────────")}`);
+  log(`   Allowed: ${c(C.bGreen, String(allowedCount))}   Denied: ${c(C.bRed, String(deniedCount))}`);
 
   const auditEvents = engine.audit.snapshot();
-  log(`\n── Audit events (${auditEvents.length}) ──────────────────────────────────────────`);
+  log(`\n${c(C.dim, `── Audit events (${auditEvents.length}) ──────────────────────────────────────────`)}`);
   for (const event of auditEvents) {
     const e = event as Record<string, unknown>;
     const type = String(e["type"] ?? "UNKNOWN");
     const ts = String(e["timestamp"] ?? "?");
     const ih = e["intent_hash"] as string | undefined;
     const dec = e["decision"] as string | undefined;
-    const detail = ih ? `  intent=${ih.slice(0, 16)}...` : "";
-    const decStr = dec ? `  decision=${dec}` : "";
-    log(`   [${ts}] ${type}${detail}${decStr}`);
+    const detail = ih ? `  intent=${c(C.blue, ih.slice(0, 16) + "...")}` : "";
+    let decStr = "";
+    if (dec === "ALLOW") decStr = `  decision=${c(C.bGreen, "ALLOW")}`;
+    if (dec === "DENY") decStr = `  decision=${c(C.bRed, "DENY")}`;
+    let typeColored = type;
+    if (type === "INTENT_RECEIVED") typeColored = c(C.cyan, type);
+    if (type === "DECISION") typeColored = c(C.white, type);
+    if (type === "AUTH_EMITTED") typeColored = c(C.green, type);
+    log(`   ${c(C.dim, `[${ts}]`)} ${typeColored}${detail}${decStr}`);
   }
 
-  log("\n── Snapshot ─────────────────────────────────────────────────────────");
+  log(`\n${c(C.dim, "── Snapshot ─────────────────────────────────────────────────────────")}`);
   const canonicalState = engine.exportState(state);
   const snapshotBytes = encodeCanonicalState(canonicalState);
   const snapResult = verifySnapshot(snapshotBytes, { expectedPolicyId: POLICY_ID });
   if (snapResult.status !== "ok" || !snapResult.stateHash) {
     throw new Error(`Snapshot verification failed: ${snapResult.status}`);
   }
-  log(`   stateHash: ${snapResult.stateHash.slice(0, 32)}...`);
+  log(`   ${c(C.dim, "stateHash:")} ${c(C.blue, snapResult.stateHash.slice(0, 32) + "...")}`);
   log(`   size:      ${snapshotBytes.length} bytes`);
 
-  log("\n── Verification envelope ────────────────────────────────────────────");
+  log(`\n${c(C.dim, "── Verification envelope ────────────────────────────────────────────")}`);
   const eventsWithCheckpoint = [
     ...auditEvents,
     {
@@ -102,45 +129,45 @@ export async function runDemo(log: (msg: string) => void = (msg) => console.log(
     snapshot: snapshotBytes,
     events: eventsWithCheckpoint,
   });
-  log(`   Envelope size: ${envelopeBytes.length} bytes`);
+  log(`   ${c(C.dim, "Envelope size:")} ${envelopeBytes.length} bytes`);
 
-  log("\n── verifyEnvelope (strict mode) ─────────────────────────────────────");
+  log(`\n${c(C.dim, "── verifyEnvelope (strict mode) ─────────────────────────────────────")}`);
   const vr = verifyEnvelope(envelopeBytes, {
     expectedPolicyId: POLICY_ID,
     mode: "strict",
   });
 
-  log(`   status:        ${vr.status}`);
-  log(`   policyId:      ${(vr.policyId ?? "—").slice(0, 32)}...`);
-  log(`   stateHash:     ${(vr.stateHash ?? "—").slice(0, 32)}...`);
-  log(`   auditHeadHash: ${(vr.auditHeadHash ?? "—").slice(0, 32)}...`);
-  log(`   violations:    ${vr.violations.length === 0 ? "none" : JSON.stringify(vr.violations)}`);
+  log(`   ${c(C.dim, "status:")}        ${vr.status === "ok" ? c(C.bGreen, "ok") : c(C.bRed, vr.status)}`);
+  log(`   ${c(C.dim, "policyId:")}      ${c(C.blue, (vr.policyId ?? "—").slice(0, 32) + "...")}`);
+  log(`   ${c(C.dim, "stateHash:")}     ${c(C.blue, (vr.stateHash ?? "—").slice(0, 32) + "...")}`);
+  log(`   ${c(C.dim, "auditHeadHash:")} ${c(C.blue, (vr.auditHeadHash ?? "—").slice(0, 32) + "...")}`);
+  log(`   ${c(C.dim, "violations:")}    ${vr.violations.length === 0 ? c(C.bGreen, "none") : c(C.bRed, JSON.stringify(vr.violations))}`);
 
   if (vr.status !== "ok") {
     throw new Error(`Envelope verification failed: ${vr.status}`);
   }
 
-  log("\n── Cross-adapter demo scenario ──────────────────────────────────────");
+  log(`\n${c(C.dim, "── Cross-adapter demo scenario ──────────────────────────────────────")}`);
   decisions.forEach((decision, index) => {
-    log(`   decision ${index + 1}: ${decision}`);
+    log(`   decision ${index + 1}: ${decision === "ALLOW" ? c(C.bGreen, decision) : c(C.bRed, decision)}`);
   });
-  log(`   verifyEnvelope() => ${vr.status}`);
+  log(`   verifyEnvelope() => ${c(C.bGreen, vr.status)}`);
 
   log(`
-✓ Verification passed.
+${c(C.bGreen, "✓ Verification passed.")}
 
-  What just happened:
-  ┌─────────────────────────────────────────────────────────────────                        ┐
-  │ LangGraph proposed tool calls.                                                         │
-  │ OxDeAI PDP evaluated each proposed call before execution.                              │
-  │                                                                                         │
-  │ PEP enforced Authorization at the execution boundary.                                  │
-  │ No Authorization = no execution, even on ALLOW.                                        │
-  │                                                                                         │
-  │ Call 3 was denied by budget policy; tool did not execute.                              │
-  │                                                                                         │
-  │ Envelope verification remained offline + deterministic.                                 │
-  └─────────────────────────────────────────────────────────────────                        ┘`);
+  ${c(C.bWhite, "What just happened:")}
+  ${c(C.cyan, "┌─────────────────────────────────────────────────────────────────┐")}
+  ${c(C.cyan, "│")} LangGraph proposed tool calls.                                 ${c(C.cyan, "│")}
+  ${c(C.cyan, "│")} OxDeAI ${c(C.bCyan, "PDP")} evaluated each proposed call before execution.  ${c(C.cyan, "│")}
+  ${c(C.cyan, "│")}                                                                 ${c(C.cyan, "│")}
+  ${c(C.cyan, "│")} ${c(C.bCyan, "PEP")} enforced Authorization at the execution boundary.      ${c(C.cyan, "│")}
+  ${c(C.cyan, "│")} No Authorization = no execution, even on ${c(C.bGreen, "ALLOW")}.            ${c(C.cyan, "│")}
+  ${c(C.cyan, "│")}                                                                 ${c(C.cyan, "│")}
+  ${c(C.cyan, "│")} Call 3 was ${c(C.bRed, "denied")} by budget policy; tool did not execute.  ${c(C.cyan, "│")}
+  ${c(C.cyan, "│")}                                                                 ${c(C.cyan, "│")}
+  ${c(C.cyan, "│")} ${c(C.bCyan, "ENVELOPE")} verification remained offline + deterministic.     ${c(C.cyan, "│")}
+  ${c(C.cyan, "└─────────────────────────────────────────────────────────────────┘")}`);
 }
 
 const entrypoint = process.argv[1];
