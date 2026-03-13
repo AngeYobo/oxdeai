@@ -8,21 +8,9 @@ OxDeAI enforces economic and operational constraints before an agent executes an
 
 ## Demo
 
-![OxDeAI Demo](./docs/media/oxdeai-demo.gif)
+![OxDeAI demo](docs/media/oxdeai-demo.gif)
 
-This is the canonical cross-adapter validation scenario.
-
-Expected deterministic result:
-
-- `ALLOW`
-- `ALLOW`
-- `DENY`
-
-Verification result:
-
-- `verifyEnvelope() => ok`
-
-This demo shows the OxDeAI deterministic authorization boundary enforcing policy decisions before agent actions execute.
+---
 
 ## Why OxDeAI Exists
 
@@ -147,6 +135,8 @@ All maintained adapters implement the same reproducible authorization scenario:
 
 Reference:
 - [Shared demo scenario](./docs/integrations/shared-demo-scenario.md)
+
+![Cross-adapter demo](docs/media/oxdeai-demo-cross-adapter.gif)
 
 ## Adapter Validation
 
