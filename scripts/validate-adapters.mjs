@@ -17,6 +17,22 @@ const ADAPTERS = [
   "openclaw",
 ];
 
+const ANSI = {
+  reset:  "\x1b[0m",
+  dim:    "\x1b[2m",
+  bGreen: "\x1b[1;32m",
+  bCyan:  "\x1b[1;36m",
+  yellow: "\x1b[33m",
+  white:  "\x1b[97m",
+};
+const c = (color, text) => `${color}${text}${ANSI.reset}`;
+
+// ── Strip ANSI escape codes before assertions ─────────────────────────────────
+const ANSI_RE = /\x1b\[[0-9;]*m/g;
+function stripAnsi(str) {
+  return str.replace(ANSI_RE, "");
+}
+
 function parseArgs(argv) {
   let one = null;
   for (let i = 0; i < argv.length; i += 1) {
@@ -58,10 +74,12 @@ async function captureDemoOutput(adapterDir) {
 }
 
 function countMatches(text, pattern) {
-  return [...text.matchAll(pattern)].length;
+  return [...stripAnsi(text).matchAll(pattern)].length;
 }
 
 function assertOutput(adapter, output) {
+  const plain = stripAnsi(output);
+
   const required = [
     "decision 1: ALLOW",
     "decision 2: ALLOW",
@@ -71,7 +89,7 @@ function assertOutput(adapter, output) {
   ];
 
   for (const needle of required) {
-    if (!output.includes(needle)) {
+    if (!plain.includes(needle)) {
       throw new Error(`${adapter}: missing required output: ${needle}`);
     }
   }
@@ -83,94 +101,80 @@ function assertOutput(adapter, output) {
 }
 
 async function assertMissingAuthorizationIsRejected(adapterDir, adapter) {
-  const pepUrl = pathToFileURL(path.join(adapterDir, "dist", "pep.js")).href;
+  const pepUrl    = pathToFileURL(path.join(adapterDir, "dist", "pep.js")).href;
   const policyUrl = pathToFileURL(path.join(adapterDir, "dist", "policy.js")).href;
 
-  const pepModule = await import(pepUrl);
+  const pepModule    = await import(pepUrl);
   const policyModule = await import(policyUrl);
 
   const { guardedProvision } = pepModule;
   const { engine, makeState } = policyModule;
 
-  if (typeof guardedProvision !== "function") {
+  if (typeof guardedProvision !== "function")
     throw new Error(`${adapter}: dist/pep.js does not export guardedProvision`);
-  }
-  if (!engine || typeof engine.evaluatePure !== "function") {
+  if (!engine || typeof engine.evaluatePure !== "function")
     throw new Error(`${adapter}: dist/policy.js does not expose engine.evaluatePure`);
-  }
-  if (typeof makeState !== "function") {
+  if (typeof makeState !== "function")
     throw new Error(`${adapter}: dist/policy.js does not export makeState`);
-  }
 
   const originalEvaluatePure = engine.evaluatePure.bind(engine);
-  engine.evaluatePure = () => ({
-    decision: "ALLOW",
-    nextState: makeState(),
-  });
+  engine.evaluatePure = () => ({ decision: "ALLOW", nextState: makeState() });
 
   let threw = false;
   try {
     guardedProvision("a100", "us-east-1", makeState(), 1_733_338_614, () => {});
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (!message.includes("ALLOW with no Authorization")) {
+    if (!message.includes("ALLOW with no Authorization"))
       throw new Error(`${adapter}: unexpected missing-authorization failure: ${message}`);
-    }
     threw = true;
   } finally {
     engine.evaluatePure = originalEvaluatePure;
   }
 
-  if (!threw) {
+  if (!threw)
     throw new Error(`${adapter}: missing authorization did not fail closed`);
-  }
 }
 
 async function validateAdapter(adapter) {
   const adapterDir = path.join(repoRoot, "examples", adapter);
-  const runFile = path.join(adapterDir, "dist", "run.js");
+  const runFile    = path.join(adapterDir, "dist", "run.js");
 
-  if (!existsSync(adapterDir)) {
+  if (!existsSync(adapterDir))
     throw new Error(`Unknown adapter example: ${adapter}`);
-  }
 
   runChecked("pnpm", ["-C", adapterDir, "build"], repoRoot);
 
-  if (!existsSync(runFile)) {
+  if (!existsSync(runFile))
     throw new Error(`${adapter}: missing built entrypoint ${runFile}`);
-  }
 
   const output = await captureDemoOutput(adapterDir);
   assertOutput(adapter, output);
   await assertMissingAuthorizationIsRejected(adapterDir, adapter);
 
-  return {
-    adapter,
-    executed: 2,
-    denied: 1,
-  };
+  return { adapter, executed: 2, denied: 1 };
 }
 
 async function main() {
   const { one } = parseArgs(process.argv.slice(2));
   const adapters = one ? [one] : ADAPTERS;
-  const results = [];
+  const results  = [];
 
-  // Fresh checkouts need the core workspace package built before example
-  // TypeScript projects can resolve @oxdeai/core types from its dist output.
   runChecked("pnpm", ["--filter", "@oxdeai/core", "build"], repoRoot);
 
   for (const adapter of adapters) {
     const result = await validateAdapter(adapter);
     results.push(result);
-    console.log(`${adapter.padEnd(20, ".")} PASS`);
+    console.log(`${c(ANSI.dim, adapter.padEnd(20, "."))} ${c(ANSI.bGreen, "PASS")}`);
   }
 
   if (results.length > 1) {
-    console.log("\nAdapter validation summary");
+    console.log(`\n${c(ANSI.bCyan, "Adapter validation summary")}`);
     for (const result of results) {
       console.log(
-        `${result.adapter.padEnd(20, ".")} PASS  decisions=ALLOW,ALLOW,DENY  verifyEnvelope=ok`
+        `${c(ANSI.dim, result.adapter.padEnd(20, "."))} ${c(ANSI.bGreen, "PASS")}` +
+        `  ${c(ANSI.dim, "decisions=")}${c(ANSI.bGreen, "ALLOW")},${c(ANSI.bGreen, "ALLOW")},${c(ANSI.yellow, "DENY")}` +
+        `  ${c(ANSI.dim, "verifyEnvelope=")}${c(ANSI.bGreen, "ok")}`
       );
     }
   }

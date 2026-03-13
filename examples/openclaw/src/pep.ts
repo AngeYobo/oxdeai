@@ -1,6 +1,23 @@
 import type { Authorization, State } from "@oxdeai/core";
 import { buildProvisionIntent, engine, gpuCost } from "./policy.js";
 
+// ── ANSI color helpers ────────────────────────────────────────────────────────
+const C = {
+  reset:   "\x1b[0m",
+  dim:     "\x1b[2m",
+  cyan:    "\x1b[36m",
+  green:   "\x1b[32m",
+  red:     "\x1b[31m",
+  yellow:  "\x1b[33m",
+  blue:    "\x1b[34m",
+  bGreen:  "\x1b[1;32m",
+  bRed:    "\x1b[1;31m",
+  bYellow: "\x1b[1;33m",
+  bCyan:   "\x1b[1;36m",
+  bWhite:  "\x1b[1;97m",
+};
+const c = (color: string, text: string) => `${color}${text}${C.reset}`;
+
 let provisionCounter = 0;
 
 function provision_gpu(asset: string, region: string): string {
@@ -19,33 +36,38 @@ export function guardedProvision(
   timestampSeconds: number,
   log: (msg: string) => void
 ): GuardedResult {
-  const cost = gpuCost(asset, region);
+  const cost   = gpuCost(asset, region);
   const intent = buildProvisionIntent(asset, region, timestampSeconds);
 
-  log(`\n┌─ Proposed tool call`);
-  log(`│  provision_gpu(asset=${asset}, region=${region})`);
-  log(`│  cost=${cost} minor units  nonce=${intent.nonce}  intent_id=${intent.intent_id}`);
+  // ── Proposal box header ──────────────────────────────────────────────────
+  log(`\n${c(C.dim, "┌─ Proposed tool call")}`);
+  log(`${c(C.dim, "│")}  ${c(C.bWhite, `provision_gpu`)}${c(C.dim, `(asset=${asset}, region=${region})`)}`);
+  log(`${c(C.dim, "│")}  ${c(C.dim, `cost=${c(C.yellow, String(cost))} minor units  nonce=${intent.nonce}  intent_id=${intent.intent_id}`)}`);
 
   const result = engine.evaluatePure(intent, state);
+
+  // ── DENY path ────────────────────────────────────────────────────────────
   if (result.decision === "DENY") {
     const reasons = result.reasons ?? ["unknown"];
-    log(`└─ DENY  reasons: ${reasons.join(", ")}`);
+    log(`${c(C.bRed, "└─ DENY")}  ${c(C.dim, "reasons:")} ${c(C.bYellow, reasons.join(", "))}`);
     return { allowed: false, reasons };
   }
 
+  // ── ALLOW path ───────────────────────────────────────────────────────────
   const authorization = result.authorization;
   if (!authorization) {
     throw new Error(`PEP invariant violated: ALLOW with no Authorization for ${intent.intent_id}`);
   }
 
-  log(`│  ALLOW  auth_id=${authorization.authorization_id.slice(0, 16)}...`);
-  log(`│         expires=${authorization.expires_at}  state_hash=${authorization.state_snapshot_hash.slice(0, 16)}...`);
+  log(`${c(C.dim, "│")}  ${c(C.bGreen, "ALLOW")}  ${c(C.dim, "auth_id=")}${c(C.blue, authorization.authorization_id.slice(0, 16) + "...")}`);
+  log(`${c(C.dim, "│")}         ${c(C.dim, "expires=")}${authorization.expires_at}  ${c(C.dim, "state_hash=")}${c(C.blue, authorization.state_snapshot_hash.slice(0, 16) + "...")}`);
 
   const instanceId = provision_gpu(asset, region);
-  log(`└─ EXECUTED  instance_id=${instanceId}`);
+  log(`${c(C.bGreen, "└─ EXECUTED")}  ${c(C.dim, "instance_id=")}${c(C.cyan, instanceId)}`);
 
   if (!result.nextState) {
     throw new Error(`PDP returned ALLOW but no nextState for ${intent.intent_id}`);
   }
+
   return { allowed: true, instanceId, authorization, nextState: result.nextState };
 }
