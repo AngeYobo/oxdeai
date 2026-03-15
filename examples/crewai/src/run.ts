@@ -53,7 +53,7 @@ export async function runDemo(log: (msg: string) => void = (msg) => console.log(
   log(`\n${c(C.dim, "── Agent proposals (from CrewAI) ──────────────────────────────────")}`);
   for (const call of plannedCalls) {
     const timestamp = baseTimestamp + callIndex;
-    const result = guardedProvision(call.asset, call.region, state, timestamp, log);
+    const result = await guardedProvision(call.asset, call.region, state, timestamp, log);
 
     if (result.allowed) {
       decisions.push("ALLOW");

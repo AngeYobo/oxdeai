@@ -1,13 +1,14 @@
 /**
  * pep.ts — Policy Enforcement Point (PEP)
  *
- * Mirrors examples/openai-tools:
- *   - PDP evaluates intent
- *   - PEP executes tool only on ALLOW with Authorization present
+ * Uses @oxdeai/langgraph to delegate all authorization logic to the
+ * universal guard. No evaluatePure / verifyAuthorization calls here.
  */
 
 import type { Authorization, State } from "@oxdeai/core";
-import { buildProvisionIntent, engine, gpuCost } from "./policy.js";
+import { createLangGraphGuard, OxDeAIDenyError } from "@oxdeai/langgraph";
+import type { LangGraphToolCall } from "@oxdeai/langgraph";
+import { buildProvisionIntent, engine, gpuCost, AGENT_ID } from "./policy.js";
 
 const C = {
   reset:      "\x1b[0m",
@@ -41,40 +42,61 @@ export type GuardedResult =
   | { allowed: true; instanceId: string; authorization: Authorization; nextState: State }
   | { allowed: false; reasons: string[] };
 
-export function guardedProvision(
+export async function guardedProvision(
   asset: string,
   region: string,
   state: State,
   timestampSeconds: number,
   log: (msg: string) => void
-): GuardedResult {
+): Promise<GuardedResult> {
   const cost = gpuCost(asset, region);
+
+  // Build the intent once — used for logging and passed directly via mapActionToIntent.
+  // This avoids double-incrementing the nonce counter.
   const intent = buildProvisionIntent(asset, region, timestampSeconds);
 
   log(`\n${c(C.dim, "┌─ Proposed tool call")}`);
   log(`${c(C.dim, "│")}  ${c(C.bWhite, "provision_gpu")}(asset=${asset}, region=${region})`);
   log(`${c(C.dim, "│")}  cost=${c(C.yellow, String(cost))} minor units  nonce=${intent.nonce}  intent_id=${intent.intent_id}`);
 
-  const result = engine.evaluatePure(intent, state);
-  if (result.decision === "DENY") {
-    const reasons = result.reasons ?? ["unknown"];
-    log(`${c(C.bRed, "└─ DENY")}  reasons: ${c(C.bYellow, reasons.join(", "))}`);
-    return { allowed: false, reasons };
+  let nextState = state;
+  let capturedAuth: Authorization | undefined;
+
+  const toolCall: LangGraphToolCall = {
+    name: "provision_gpu",
+    args: { asset, region },
+    id: intent.intent_id,
+  };
+
+  const guard = createLangGraphGuard({
+    engine,
+    agentId: AGENT_ID,
+    getState: () => state,
+    setState: (s: State) => { nextState = s; },
+    // Return the pre-built intent so nonce/intent_id are stable.
+    mapActionToIntent: () => intent,
+    beforeExecute(_action: unknown, authorization: Authorization) {
+      capturedAuth = authorization;
+      log(`${c(C.dim, "│")}  ${c(C.bGreen, "ALLOW")}  auth_id=${c(C.blue, authorization.authorization_id.slice(0, 16) + "...")}`);
+      log(`${c(C.dim, "│")}         expires=${authorization.expires_at}  state_hash=${c(C.cyan, authorization.state_snapshot_hash.slice(0, 16) + "...")}`);
+    },
+  });
+
+  try {
+    const instanceId = await guard(toolCall, async () => {
+      const id = provision_gpu(asset, region);
+      log(`${c(C.bGreen, "└─ EXECUTED")}  instance_id=${c(C.cyan, id)}`);
+      return id;
+    });
+
+    return { allowed: true, instanceId: instanceId as string, authorization: capturedAuth!, nextState };
+  } catch (err) {
+    if (err instanceof OxDeAIDenyError) {
+      const reasons = [...(err as OxDeAIDenyError).reasons];
+      log(`${c(C.bRed, "└─ DENY")}  reasons: ${c(C.bYellow, reasons.join(", "))}`);
+      return { allowed: false, reasons };
+    }
+    // OxDeAIAuthorizationError and others: re-throw (fail closed).
+    throw err;
   }
-
-  const authorization = result.authorization;
-  if (!authorization) {
-    throw new Error(`PEP invariant violated: ALLOW with no Authorization for ${intent.intent_id}`);
-  }
-
-  log(`${c(C.dim, "│")}  ${c(C.bGreen, "ALLOW")}  auth_id=${c(C.blue, authorization.authorization_id.slice(0, 16) + "...")}`);
-  log(`${c(C.dim, "│")}         expires=${authorization.expires_at}  state_hash=${c(C.cyan, authorization.state_snapshot_hash.slice(0, 16) + "...")}`);
-
-  const instanceId = provision_gpu(asset, region);
-  log(`${c(C.bGreen, "└─ EXECUTED")}  instance_id=${c(C.cyan, instanceId)}`);
-
-  if (!result.nextState) {
-    throw new Error(`PDP returned ALLOW but no nextState for ${intent.intent_id}`);
-  }
-  return { allowed: true, instanceId, authorization, nextState: result.nextState };
 }

@@ -2,6 +2,8 @@
 
 OpenClaw-shaped integration demo showing OxDeAI as the deterministic authorization boundary.
 
+The PEP layer uses [`@oxdeai/openclaw`](../../packages/openclaw/README.md) — a thin adapter that maps OpenClaw actions (`{ name, args, step_id, workflow_id }`) to the universal guard. No authorization logic lives in this example.
+
 ## Run
 
 ```bash
