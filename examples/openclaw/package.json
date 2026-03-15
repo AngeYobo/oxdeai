@@ -11,7 +11,8 @@
     "demo:openclaw": "pnpm -C examples/openclaw build && node examples/openclaw/dist/run.js"
   },
   "dependencies": {
-    "@oxdeai/core": "workspace:*"
+    "@oxdeai/core": "workspace:*",
+    "@oxdeai/openclaw": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

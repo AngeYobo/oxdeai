@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@langchain/langgraph": "^0.2.0",
-    "@oxdeai/core": "workspace:*"
+    "@oxdeai/core": "workspace:*",
+    "@oxdeai/langgraph": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

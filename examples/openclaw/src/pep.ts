@@ -1,5 +1,14 @@
+/**
+ * pep.ts - Policy Enforcement Point (PEP)
+ *
+ * Uses @oxdeai/openclaw to delegate all authorization logic to the
+ * universal guard. No evaluatePure / verifyAuthorization calls here.
+ */
+
 import type { Authorization, State } from "@oxdeai/core";
-import { buildProvisionIntent, engine, gpuCost } from "./policy.js";
+import { createOpenClawGuard, OxDeAIDenyError } from "@oxdeai/openclaw";
+import type { OpenClawAction } from "@oxdeai/openclaw";
+import { buildProvisionIntent, engine, gpuCost, AGENT_ID } from "./policy.js";
 
 // ── ANSI color helpers ────────────────────────────────────────────────────────
 const C = {
@@ -29,14 +38,17 @@ export type GuardedResult =
   | { allowed: true; instanceId: string; authorization: Authorization; nextState: State }
   | { allowed: false; reasons: string[] };
 
-export function guardedProvision(
+export async function guardedProvision(
   asset: string,
   region: string,
   state: State,
   timestampSeconds: number,
   log: (msg: string) => void
-): GuardedResult {
+): Promise<GuardedResult> {
   const cost   = gpuCost(asset, region);
+
+  // Build the intent once - used for logging and passed directly via mapActionToIntent.
+  // This avoids double-incrementing the nonce counter.
   const intent = buildProvisionIntent(asset, region, timestampSeconds);
 
   // ── Proposal box header ──────────────────────────────────────────────────
@@ -44,30 +56,45 @@ export function guardedProvision(
   log(`${c(C.dim, "│")}  ${c(C.bWhite, `provision_gpu`)}${c(C.dim, `(asset=${asset}, region=${region})`)}`);
   log(`${c(C.dim, "│")}  ${c(C.dim, `cost=${c(C.yellow, String(cost))} minor units  nonce=${intent.nonce}  intent_id=${intent.intent_id}`)}`);
 
-  const result = engine.evaluatePure(intent, state);
+  let nextState = state;
+  let capturedAuth: Authorization | undefined;
 
-  // ── DENY path ────────────────────────────────────────────────────────────
-  if (result.decision === "DENY") {
-    const reasons = result.reasons ?? ["unknown"];
-    log(`${c(C.bRed, "└─ DENY")}  ${c(C.dim, "reasons:")} ${c(C.bYellow, reasons.join(", "))}`);
-    return { allowed: false, reasons };
+  const action: OpenClawAction = {
+    name: "provision_gpu",
+    args: { asset, region },
+    step_id: intent.intent_id,
+    workflow_id: "openclaw-gpu-demo",
+  };
+
+  const guard = createOpenClawGuard({
+    engine,
+    agentId: AGENT_ID,
+    getState: () => state,
+    setState: (s: State) => { nextState = s; },
+    // Return the pre-built intent so nonce/intent_id are stable.
+    mapActionToIntent: () => intent,
+    beforeExecute(_action: unknown, authorization: Authorization) {
+      capturedAuth = authorization;
+      log(`${c(C.dim, "│")}  ${c(C.bGreen, "ALLOW")}  ${c(C.dim, "auth_id=")}${c(C.blue, authorization.authorization_id.slice(0, 16) + "...")}`);
+      log(`${c(C.dim, "│")}         ${c(C.dim, "expires=")}${authorization.expires_at}  ${c(C.dim, "state_hash=")}${c(C.blue, authorization.state_snapshot_hash.slice(0, 16) + "...")}`);
+    },
+  });
+
+  try {
+    const instanceId = await guard(action, async () => {
+      const id = provision_gpu(asset, region);
+      log(`${c(C.bGreen, "└─ EXECUTED")}  ${c(C.dim, "instance_id=")}${c(C.cyan, id)}`);
+      return id;
+    });
+
+    return { allowed: true, instanceId: instanceId as string, authorization: capturedAuth!, nextState };
+  } catch (err) {
+    if (err instanceof OxDeAIDenyError) {
+      const reasons = [...(err as OxDeAIDenyError).reasons];
+      log(`${c(C.bRed, "└─ DENY")}  ${c(C.dim, "reasons:")} ${c(C.bYellow, reasons.join(", "))}`);
+      return { allowed: false, reasons };
+    }
+    // OxDeAIAuthorizationError and others: re-throw (fail closed).
+    throw err;
   }
-
-  // ── ALLOW path ───────────────────────────────────────────────────────────
-  const authorization = result.authorization;
-  if (!authorization) {
-    throw new Error(`PEP invariant violated: ALLOW with no Authorization for ${intent.intent_id}`);
-  }
-
-  log(`${c(C.dim, "│")}  ${c(C.bGreen, "ALLOW")}  ${c(C.dim, "auth_id=")}${c(C.blue, authorization.authorization_id.slice(0, 16) + "...")}`);
-  log(`${c(C.dim, "│")}         ${c(C.dim, "expires=")}${authorization.expires_at}  ${c(C.dim, "state_hash=")}${c(C.blue, authorization.state_snapshot_hash.slice(0, 16) + "...")}`);
-
-  const instanceId = provision_gpu(asset, region);
-  log(`${c(C.bGreen, "└─ EXECUTED")}  ${c(C.dim, "instance_id=")}${c(C.cyan, instanceId)}`);
-
-  if (!result.nextState) {
-    throw new Error(`PDP returned ALLOW but no nextState for ${intent.intent_id}`);
-  }
-
-  return { allowed: true, instanceId, authorization, nextState: result.nextState };
 }

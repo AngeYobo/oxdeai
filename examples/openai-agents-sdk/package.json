@@ -11,7 +11,8 @@
     "demo:openai-agents-sdk": "pnpm -C examples/openai-agents-sdk build && node examples/openai-agents-sdk/dist/run.js"
   },
   "dependencies": {
-    "@oxdeai/core": "workspace:*"
+    "@oxdeai/core": "workspace:*",
+    "@oxdeai/openai-agents": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

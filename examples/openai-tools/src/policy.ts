@@ -1,5 +1,5 @@
 /**
- * policy.ts — Policy Decision Point (PDP)
+ * policy.ts - Policy Decision Point (PDP)
  *
  * Owns the OxDeAI engine, policy state, and intent construction.
  * Nothing executes without passing through here first.

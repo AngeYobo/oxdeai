@@ -84,7 +84,7 @@ export async function runDemo(log: (msg: string) => void = (msg) => console.log(
   for (const call of PLANNED_CALLS) {
     const timestamp = baseTimestamp + callIndex;
 
-    const result = guardedProvision(
+    const result = await guardedProvision(
       call.asset,
       call.region,
       state,

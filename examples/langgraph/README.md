@@ -30,7 +30,8 @@ At the end, snapshot + audit events are packed into a verification envelope and 
 ```text
 LangGraph (graph.ts)
   -> proposes tool actions
-  -> OxDeAI Guard (PEP, pep.ts)
+  -> @oxdeai/langgraph (pep.ts)     ← thin adapter, no security logic
+  -> @oxdeai/guard                   ← universal PEP / authorization boundary
   -> Tool Execution (only if Authorization is valid)
 ```
 
@@ -39,14 +40,17 @@ Expanded:
 ```text
 LangGraph workflow node
   -> proposed provision_gpu(asset, region)
-  -> PEP builds Intent
-  -> PDP evaluatePure(intent, state)
-      -> DENY  => no execution
-      -> ALLOW => AuthorizationV1 required
-  -> PEP executes tool only after authorization check
+  -> createLangGraphGuard (pep.ts)
+      -> maps LangGraphToolCall -> ProposedAction
+      -> OxDeAIGuard -> evaluatePure(intent, state)
+          -> DENY  => OxDeAIDenyError, no execution
+          -> ALLOW => Authorization required + verified
+  -> execute() called only after authorization check
   -> state commit via nextState
   -> audit chain + envelope + verifyEnvelope()
 ```
+
+The PEP contains no authorization logic. All security decisions live in `@oxdeai/guard`.
 
 ---
 

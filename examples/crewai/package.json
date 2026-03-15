@@ -11,7 +11,8 @@
     "demo:crewai": "pnpm -C examples/crewai build && node examples/crewai/dist/run.js"
   },
   "dependencies": {
-    "@oxdeai/core": "workspace:*"
+    "@oxdeai/core": "workspace:*",
+    "@oxdeai/crewai": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.0.0"
