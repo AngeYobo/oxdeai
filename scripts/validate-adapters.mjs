@@ -122,10 +122,15 @@ async function assertMissingAuthorizationIsRejected(adapterDir, adapter) {
 
   let threw = false;
   try {
-    guardedProvision("a100", "us-east-1", makeState(), 1_733_338_614, () => {});
+    // Support both sync and async guardedProvision implementations.
+    await Promise.resolve(guardedProvision("a100", "us-east-1", makeState(), 1_733_338_614, () => {}));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (!message.includes("ALLOW with no Authorization"))
+    // Accept the legacy hand-rolled message or the structured OxDeAIAuthorizationError message.
+    const isExpected =
+      message.includes("ALLOW with no Authorization") ||
+      message.includes("authorization artifact");
+    if (!isExpected)
       throw new Error(`${adapter}: unexpected missing-authorization failure: ${message}`);
     threw = true;
   } finally {

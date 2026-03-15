@@ -33,6 +33,9 @@ importers:
 
   examples/autogen:
     dependencies:
+      '@oxdeai/autogen':
+        specifier: workspace:*
+        version: link:../../packages/autogen
       '@oxdeai/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -46,6 +49,9 @@ importers:
       '@oxdeai/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@oxdeai/crewai':
+        specifier: workspace:*
+        version: link:../../packages/crewai
     devDependencies:
       typescript:
         specifier: ^5.0.0
@@ -61,6 +67,9 @@ importers:
       '@oxdeai/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@oxdeai/langgraph':
+        specifier: workspace:*
+        version: link:../../packages/langgraph
     devDependencies:
       typescript:
         specifier: ^5.0.0
@@ -71,6 +80,9 @@ importers:
       '@oxdeai/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@oxdeai/openai-agents':
+        specifier: workspace:*
+        version: link:../../packages/openai-agents
     devDependencies:
       typescript:
         specifier: ^5.0.0
@@ -91,10 +103,26 @@ importers:
       '@oxdeai/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@oxdeai/openclaw':
+        specifier: workspace:*
+        version: link:../../packages/openclaw
     devDependencies:
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
+
+  packages/autogen:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../core
+      '@oxdeai/guard':
+        specifier: workspace:*
+        version: link:../guard
+    devDependencies:
+      '@oxdeai/sdk':
+        specifier: workspace:*
+        version: link:../sdk
 
   packages/cli:
     dependencies:
@@ -123,6 +151,68 @@ importers:
       '@microsoft/api-extractor':
         specifier: ^7.57.6
         version: 7.57.6(@types/node@25.3.3)
+
+  packages/crewai:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../core
+      '@oxdeai/guard':
+        specifier: workspace:*
+        version: link:../guard
+    devDependencies:
+      '@oxdeai/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+
+  packages/guard:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@oxdeai/sdk':
+        specifier: ^1.3.0
+        version: 1.3.1
+
+  packages/langgraph:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../core
+      '@oxdeai/guard':
+        specifier: workspace:*
+        version: link:../guard
+    devDependencies:
+      '@oxdeai/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+
+  packages/openai-agents:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../core
+      '@oxdeai/guard':
+        specifier: workspace:*
+        version: link:../guard
+    devDependencies:
+      '@oxdeai/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+
+  packages/openclaw:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../core
+      '@oxdeai/guard':
+        specifier: workspace:*
+        version: link:../guard
+    devDependencies:
+      '@oxdeai/sdk':
+        specifier: workspace:*
+        version: link:../sdk
 
   packages/sdk:
     dependencies:
@@ -368,6 +458,9 @@ packages:
   '@oxdeai/core@1.3.0':
     resolution: {integrity: sha512-ScWmPqrRKpOZ46YeVlSHLGX+fCm0LxFsigIjHVoz3PVK/IoFfSqIWqTuB8Df5hUb2DQnv2TEZaY0h24eohmB1w==}
     engines: {node: '>=18'}
+
+  '@oxdeai/sdk@1.3.1':
+    resolution: {integrity: sha512-sx+cmYKDeEGVYWu7SRUnKwgco5MNVc5B/ba4OU6DtkTNlFWJhvBWqdnGOmsgkY4eK6gdGsFNmX8KGbzqFClv4g==}
 
   '@rushstack/node-core-library@5.20.3':
     resolution: {integrity: sha512-95JgEPq2k7tHxhF9/OJnnyHDXfC9cLhhta0An/6MlkDsX2A6dTzDrTUG18vx4vjc280V0fi0xDH9iQczpSuWsw==}
@@ -1062,6 +1155,10 @@ snapshots:
   '@microsoft/tsdoc@0.16.0': {}
 
   '@oxdeai/core@1.3.0': {}
+
+  '@oxdeai/sdk@1.3.1':
+    dependencies:
+      '@oxdeai/core': 1.3.0
 
   '@rushstack/node-core-library@5.20.3(@types/node@25.3.3)':
     dependencies:

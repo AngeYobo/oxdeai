@@ -34,12 +34,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AngeYobo/oxdeai-core.git",
+    "url": "git+https://github.com/AngeYobo/oxdeai.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/AngeYobo/oxdeai-core",
+  "homepage": "https://github.com/AngeYobo/oxdeai",
   "bugs": {
-    "url": "https://github.com/AngeYobo/oxdeai-core/issues"
+    "url": "https://github.com/AngeYobo/oxdeai/issues"
   },
   "keywords": [
     "ai-agents",
