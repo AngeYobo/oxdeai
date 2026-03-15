@@ -1,0 +1,20 @@
+{
+  "name": "@oxdeai/langgraph",
+  "version": "1.0.0",
+  "description": "Thin LangGraph adapter for the OxDeAI universal execution guard",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@oxdeai/core": "workspace:*",
+    "@oxdeai/guard": "workspace:*"
+  },
+  "devDependencies": {
+    "@oxdeai/sdk": "workspace:*"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "test": "pnpm build && node --test \"dist/test/adapter.test.js\""
+  }
+}
