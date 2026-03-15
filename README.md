@@ -56,7 +56,7 @@ Instead of monitoring behavior after execution, OxDeAI enforces pre-execution au
 ![OxDeAI demo](docs/media/oxdeai-demo.gif)
 
 ```bash
-pnpm -C examples/openai-tools start
+pnpm -C examples/openclaw start
 ```
 
 Expected result:
