@@ -32,9 +32,13 @@ v1.2 baseline additions (preserved in v1.3.x):
 Validation status:
 
 - conformance suite: **94 assertions passing**
-- working demos:
+- working demos (all produce `ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`):
   - `examples/openai-tools` (protocol reference)
-  - `examples/langgraph` (framework integration)
+  - `examples/langgraph`
+  - `examples/crewai`
+  - `examples/openai-agents-sdk`
+  - `examples/autogen`
+  - `examples/openclaw`
 
 Future protocol releases maintain backward compatibility for frozen verification artifacts unless a major protocol version declares otherwise.
 
@@ -251,7 +255,7 @@ npm install @oxdeai/core
 
 ## Core Model
 
-![Agent authorization boundary](../../docs/diagrams/agent-authorization-boundary.svg)
+![PDP / PEP execution flow](../../docs/diagrams/pdp-pep-flow.svg)
 
 Diagram source/editing policy:
 - [`docs/diagrams/README.md`](../../docs/diagrams/README.md)
@@ -522,17 +526,32 @@ Stateless verification layer for protocol artifacts.
 * public-key verification
 * future keyset / rotation model
 
-### v1.3 — Protocol CLI
-* oxdeai build
-* oxdeai verify
-* oxdeai replay
-* cross-platform dev UX
+### v1.3 — Guard Adapter + Integration Surface (shipped)
+* `@oxdeai/guard` — universal PEP package, all adapters delegate here
+* `@oxdeai/sdk` — stable integration surface
+* `@oxdeai/cli` — `build`, `verify`, `replay` tooling
 
-### v1.4 — Conformance & Ecosystem
-* stronger conformance vectors
-* external implementation guide
-* sdk guard adapter
-* additional integration wrappers
+### v1.4 — Ecosystem Adoption (shipped)
+* 5 runtime adapter packages: `@oxdeai/langgraph`, `@oxdeai/openai-agents`, `@oxdeai/crewai`, `@oxdeai/autogen`, `@oxdeai/openclaw`
+* shared adapter contract and cross-adapter validation
+* integration documentation for all maintained adapters
+* case studies: API cost containment, infrastructure provisioning control
+
+### v1.5 — Developer Experience (shipped)
+* demo GIFs and visual architecture diagrams
+* improved quickstart and architecture explainer
+* cross-links between protocol, integrations, and cases
+
+### v2.x — Delegated Agent Authorization (next)
+
+## See also
+
+- [Root README](../../README.md)
+- [Architecture](../../docs/architecture.md)
+- [Why OxDeAI](../../docs/architecture/why-oxdeai.md)
+- [Adapter stack](../../docs/integrations/adapter-stack.md)
+- [Integrations index](../../docs/integrations/README.md)
+- [Conformance vectors](../../docs/conformance-vectors.md)
 
 ## License
 

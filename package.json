@@ -1,5 +1,5 @@
 {
-  "name": "oxdeai-core",
+  "name": "oxdeai",
   "private": true,
   "packageManager": "pnpm@9.12.2",
   "engines": {
