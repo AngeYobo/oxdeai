@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="820" viewBox="0 0 800 820" role="img" aria-label="OxDeAI Adapter Stack Layer Model">
+  <rect width="800" height="820" fill="#ffffff"/>
+
+  <text x="50" y="46" font-family="Inter, Arial, sans-serif" font-size="24" fill="#111827" font-weight="700">Adapter Stack — Layer Model</text>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+  </defs>
+
+  <!-- A: Agent Runtime -->
+  <rect x="250" y="80" width="300" height="70" rx="8" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+  <text x="400" y="121" font-family="Inter, Arial, sans-serif" font-size="18" fill="#0f172a" font-weight="600" text-anchor="middle">Agent Runtime</text>
+
+  <!-- Arrow A → B -->
+  <line x1="400" y1="150" x2="400" y2="196" stroke="#334155" stroke-width="2.5" marker-end="url(#arr)"/>
+
+  <!-- B: Runtime adapter package -->
+  <rect x="60" y="196" width="680" height="114" rx="8" fill="#f0f9ff" stroke="#0369a1" stroke-width="2"/>
+  <text x="400" y="232" font-family="Inter, Arial, sans-serif" font-size="17" fill="#075985" font-weight="600" text-anchor="middle">Runtime adapter package</text>
+  <text x="400" y="256" font-family="Inter, Arial, sans-serif" font-size="13" fill="#0369a1" text-anchor="middle">@oxdeai/langgraph · @oxdeai/openai-agents · @oxdeai/crewai</text>
+  <text x="400" y="276" font-family="Inter, Arial, sans-serif" font-size="13" fill="#0369a1" text-anchor="middle">@oxdeai/autogen · @oxdeai/openclaw</text>
+  <text x="400" y="296" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" font-style="italic" text-anchor="middle">thin binding — no auth logic</text>
+
+  <!-- Arrow B → C with label -->
+  <line x1="400" y1="310" x2="400" y2="374" stroke="#334155" stroke-width="2.5" marker-end="url(#arr)"/>
+  <text x="408" y="348" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b">ProposedAction</text>
+
+  <!-- C: @oxdeai/guard PEP -->
+  <rect x="200" y="374" width="400" height="100" rx="10" fill="#fff7ed" stroke="#9a3412" stroke-width="3"/>
+  <text x="400" y="412" font-family="Inter, Arial, sans-serif" font-size="18" fill="#7c2d12" font-weight="700" text-anchor="middle">@oxdeai/guard</text>
+  <text x="400" y="436" font-family="Inter, Arial, sans-serif" font-size="14" fill="#9a3412" font-weight="600" text-anchor="middle">universal PEP</text>
+  <text x="400" y="458" font-family="Inter, Arial, sans-serif" font-size="12" fill="#7c2d12" text-anchor="middle">evaluatePure · verifyAuthorization · fail-closed</text>
+
+  <!-- Arrow C → D with label -->
+  <line x1="400" y1="474" x2="400" y2="538" stroke="#334155" stroke-width="2.5" marker-end="url(#arr)"/>
+  <text x="408" y="512" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b">intent + state</text>
+
+  <!-- D: @oxdeai/core PDP -->
+  <rect x="130" y="538" width="540" height="120" rx="8" fill="#eefbf3" stroke="#166534" stroke-width="2"/>
+  <text x="400" y="574" font-family="Inter, Arial, sans-serif" font-size="18" fill="#14532d" font-weight="600" text-anchor="middle">@oxdeai/core</text>
+  <text x="400" y="598" font-family="Inter, Arial, sans-serif" font-size="13" fill="#374151" font-weight="600" text-anchor="middle">PDP</text>
+  <text x="400" y="620" font-family="Inter, Arial, sans-serif" font-size="13" fill="#374151" text-anchor="middle">policy evaluation · AuthorizationV1 · audit chain · verification envelope</text>
+  <text x="400" y="642" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">AuthorizationV1 on ALLOW</text>
+
+  <!-- Arrow D → E with label -->
+  <line x1="400" y1="658" x2="400" y2="718" stroke="#334155" stroke-width="2.5" marker-end="url(#arr)"/>
+  <text x="408" y="694" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b">verifyAuthorization</text>
+
+  <!-- E: Tool execution -->
+  <rect x="270" y="718" width="260" height="70" rx="8" fill="#ffffff" stroke="#475569" stroke-width="2"/>
+  <text x="400" y="759" font-family="Inter, Arial, sans-serif" font-size="18" fill="#0f172a" font-weight="600" text-anchor="middle">tool execution</text>
+</svg>

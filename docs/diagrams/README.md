@@ -25,7 +25,9 @@ Example:
 
 ## File Set
 
-- `agent-authorization-boundary.*`
-- `pdp-pep-flow.*`
-- `verification-envelope-flow.*`
-- `adapter-sidecar-architecture.*`
+- `agent-authorization-boundary.*` - OxDeAI boundary overview (PDP, PEP, evidence path)
+- `adapter-execution-boundary.*` - adapter layer model (@oxdeai/guard + thin adapters + ALLOW/DENY paths)
+- `agent-safety-layers.*` - three-layer agent safety stack positioning
+- `pdp-pep-flow.*` - PDP/PEP evaluation flow
+- `verification-envelope-flow.*` - audit + snapshot + envelope construction
+- `adapter-sidecar-architecture.*` - adapter sidecar placement

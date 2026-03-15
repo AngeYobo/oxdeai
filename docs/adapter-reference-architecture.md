@@ -24,7 +24,7 @@ Diagram source/editing policy:
 
 - **Agent runtime**: proposes actions; does not directly authorize side effects.
 - **Adapter**: translates runtime-specific action proposals into OxDeAI intent inputs and maps outputs back to runtime conventions.
-- **SDK guard**: standard integration boundary (`createGuard`) that enforces execute-or-refuse behavior around callbacks.
+- **`@oxdeai/guard`**: universal PEP package (`OxDeAIGuard`) that enforces execute-or-refuse behavior around callbacks. All runtime adapters delegate to this package - none contain authorization logic.
 - **PDP**: returns deterministic `ALLOW`/`DENY` and emits authorization/state transition data for `ALLOW`.
 - **PEP**: verifies authorization constraints (issuer, audience, policy, intent/state binding, expiry, replay) before execution.
 - **Verification artifacts**: audit events, canonical snapshot, and envelope provide offline/stateless evidence and replay-grade verification.
@@ -56,10 +56,14 @@ In that contract, the adapter is responsible for normalization plus authorizatio
 The adapter is not the protocol and it is not the runtime.
 It sits between the raw action surface and OxDeAI intent/state evaluation.
 
-Current runtime-style demo coverage in this repository:
-- OpenAI tools reference boundary demo
-- LangGraph
-- CrewAI
-- OpenAI Agents SDK
-- AutoGen
-- OpenClaw
+Current runtime adapter packages in this repository:
+
+| Package | Binding | Factory |
+|---|---|---|
+| `@oxdeai/langgraph` | LangGraph tool calls (`args`/`id`) | `createLangGraphGuard` |
+| `@oxdeai/openai-agents` | OpenAI Agents SDK tool calls (`input`/`call_id`) | `createOpenAIAgentsGuard` |
+| `@oxdeai/crewai` | CrewAI tool calls (`args`/`id`) | `createCrewAIGuard` |
+| `@oxdeai/autogen` | AutoGen tool calls (`args`/`id`) | `createAutoGenGuard` |
+| `@oxdeai/openclaw` | OpenClaw actions (`args`/`step_id`/`workflow_id`) | `createOpenClawGuard` |
+
+All adapters delegate to `@oxdeai/guard`. None contain authorization logic.

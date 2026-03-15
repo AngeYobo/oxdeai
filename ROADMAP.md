@@ -1,24 +1,32 @@
 # OxDeAI Roadmap Status
 
-Last updated: 2026-03-08
+Last updated: 2026-03-15
 
 ## Version Snapshot
 
 Protocol stack:
-- `@oxdeai/core`: `1.3.0`
+- `@oxdeai/core`: `1.3.1`
 - `@oxdeai/sdk`: `1.3.1`
 - `@oxdeai/conformance`: `1.3.1`
 
+Adapter packages (all `1.0.0`):
+- `@oxdeai/guard`, `@oxdeai/langgraph`, `@oxdeai/openai-agents`, `@oxdeai/crewai`, `@oxdeai/autogen`, `@oxdeai/openclaw`
+
 Tooling:
-- `@oxdeai/cli`: `0.2.2` (independent tooling line)
+- `@oxdeai/cli`: `0.2.4` (independent tooling line)
 
 ## Current Validation Snapshot
 
 - [x] `pnpm build` passes
-- [x] `pnpm -r test` passes
+- [x] `pnpm -r test` passes (all adapter tests)
 - [x] `pnpm -C packages/conformance validate` passes (`94` assertions)
+- [x] `node scripts/validate-adapters.mjs` passes (6/6 adapters)
 - [x] `examples/openai-tools` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
 - [x] `examples/langgraph` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
+- [x] `examples/crewai` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
+- [x] `examples/openai-agents-sdk` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
+- [x] `examples/autogen` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
+- [x] `examples/openclaw` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
 
 ## Architecture Doctrine
 
@@ -72,23 +80,19 @@ References:
 - [`docs/pep-production-guide.md`](./docs/pep-production-guide.md)
 
 ### v1.4 - Ecosystem Adoption
-Status: `Next`
+Status: `Done`
 
-Focus:
-- more framework adapters
-- integration documentation
-- production-oriented demos
-- case-study style examples
-
-Examples of target integrations:
-- CrewAI
-- OpenAI Agents SDK
-- AutoGen
-- OpenClaw
-- other runtime adapters
+Delivered:
+- universal execution guard (`@oxdeai/guard`) - single PEP package shared by all adapters
+- 5 runtime adapter packages: `@oxdeai/langgraph`, `@oxdeai/openai-agents`, `@oxdeai/crewai`, `@oxdeai/autogen`, `@oxdeai/openclaw`
+- all 5 adapter examples migrated to use adapter packages
+- integration documentation for all maintained adapters
+- cross-adapter validation (`node scripts/validate-adapters.mjs`)
+- production-oriented demos and case studies
 
 Note: OxDeAI remains a protocol/enforcement layer, not a framework.
-OpenClaw status: demo integration is implemented; broader production/runtime-specific integration remains future work.
+
+Release notes: [`docs/adapter-stack-release-notes.md`](./docs/adapter-stack-release-notes.md)
 
 Execution checklist:
 - [x] Ship 3 maintained adapter targets (`OpenAI Agents SDK`, `CrewAI`, `AutoGen`).
@@ -131,7 +135,7 @@ Completion criteria:
   - adoption checklist: [`docs/integrations/adoption-checklist.md`](./docs/integrations/adoption-checklist.md)
 
 ### v1.5 - Developer Experience
-Status: `Planned`
+Status: `Done`
 
 Focus:
 - visual demos of the authorization boundary

@@ -32,8 +32,8 @@ pnpm install
 Relevant packages:
 
 - `@oxdeai/core`
-- optionally `@oxdeai/sdk`
-- `@langchain/langgraph`
+- `@oxdeai/langgraph` (thin adapter binding)
+- `@oxdeai/guard` (universal PEP — delegated to by `@oxdeai/langgraph`)
 
 ## Minimal Quickstart
 
@@ -58,13 +58,13 @@ The workflow node proposes actions; the adapter normalizes them into intent befo
 
 ## Adapter Responsibilities
 
-For this integration, the adapter:
+The `@oxdeai/langgraph` package is a **thin binding only**. It:
 
-- normalizes node-level action proposals into intent
-- provides current policy state
-- invokes OxDeAI evaluation
-- enforces `verifyAuthorization(...)` before execution
-- emits audit events for decision and execution reasoning
+- injects `agentId` from config into every tool call (LangGraph tool calls carry no agent identity)
+- maps `toolCall.id` → `context.intent_id`
+- passes the resulting `ProposedAction` to `@oxdeai/guard`
+
+Everything else — policy evaluation, authorization verification, state persistence, fail-closed behavior — happens inside `@oxdeai/guard`.
 
 Adapters are integration components.
 They are not part of the protocol.
