@@ -12,9 +12,9 @@ Deterministic Execution Authorization Layer for Autonomous Systems
 
 `@oxdeai/core` is a stable protocol library.
 
-Current protocol stack line: **v1.3.x**.
+Current protocol stack line: **v1.5.x**.
 
-Version 1.3.x preserves the stateless verification surface:
+Version 1.5.x preserves the stateless verification surface:
 
 - verifySnapshot
 - verifyAuditEvents
