@@ -1,6 +1,6 @@
 {
   "name": "@oxdeai/langgraph",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "Apache-2.0",
   "description": "Thin LangGraph adapter for the OxDeAI universal execution guard",
   "keywords": [
