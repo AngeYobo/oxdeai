@@ -1,7 +1,23 @@
 {
   "name": "@oxdeai/openai-agents",
   "version": "1.0.0",
+  "license": "Apache-2.0",
   "description": "Thin OpenAI Agents SDK adapter for the OxDeAI universal execution guard",
+  "keywords": [
+    "oxdeai",
+    "openai",
+    "openai-agents",
+    "openai-agents-sdk",
+    "ai-agents",
+    "agent-security",
+    "agent-authorization",
+    "execution-authorization",
+    "execution-guard",
+    "deterministic-policy",
+    "agent-safety",
+    "autonomous-systems",
+    "authorization-protocol"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -1,7 +1,23 @@
 {
   "name": "@oxdeai/guard",
   "version": "1.0.0",
+  "license": "Apache-2.0",
   "description": "Universal execution authorization guard (PEP boundary) for OxDeAI",
+  "keywords": [
+    "oxdeai",
+    "ai-agents",
+    "agent-security",
+    "agent-authorization",
+    "execution-authorization",
+    "policy-enforcement",
+    "pep",
+    "execution-guard",
+    "fail-closed",
+    "deterministic-policy",
+    "agent-safety",
+    "autonomous-systems",
+    "authorization-protocol"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
