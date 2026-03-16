@@ -1,7 +1,22 @@
 {
   "name": "@oxdeai/langgraph",
   "version": "1.0.0",
+  "license": "Apache-2.0",
   "description": "Thin LangGraph adapter for the OxDeAI universal execution guard",
+  "keywords": [
+    "oxdeai",
+    "langgraph",
+    "langchain",
+    "ai-agents",
+    "agent-security",
+    "agent-authorization",
+    "execution-authorization",
+    "execution-guard",
+    "deterministic-policy",
+    "agent-safety",
+    "autonomous-systems",
+    "authorization-protocol"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
