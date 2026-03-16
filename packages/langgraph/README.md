@@ -1,6 +1,6 @@
 # @oxdeai/langgraph
 
-**Thin LangGraph binding for [@oxdeai/guard](../guard/README.md).**
+**Thin LangGraph binding for [@oxdeai/guard](https://github.com/AngeYobo/oxdeai/blob/main/packages/guard/README.md).**
 
 This package connects LangGraph tool calls to the OxDeAI universal execution
 guard. It contains no authorization logic - all policy evaluation and PEP
@@ -150,7 +150,7 @@ All of that lives in `@oxdeai/guard`.
 
 ## See also
 
-- [LangGraph integration guide](../../docs/integrations/langgraph.md)
-- [Adapter stack architecture](../../docs/integrations/adapter-stack.md)
-- [Adapter reference architecture](../../docs/adapter-reference-architecture.md)
-- [Root README](../../README.md)
+- [LangGraph integration guide](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/langgraph.md)
+- [Adapter stack architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/adapter-stack.md)
+- [Adapter reference architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapter-reference-architecture.md)
+- [Root README](https://github.com/AngeYobo/oxdeai/blob/main/README.md)

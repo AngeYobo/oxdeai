@@ -1,6 +1,6 @@
 # @oxdeai/crewai
 
-**Thin CrewAI binding for [@oxdeai/guard](../guard/README.md).**
+**Thin CrewAI binding for [@oxdeai/guard](https://github.com/AngeYobo/oxdeai/blob/main/packages/guard/README.md).**
 
 This package connects CrewAI tool calls to the OxDeAI universal execution
 guard. It contains no authorization logic — all policy evaluation and PEP
@@ -128,7 +128,7 @@ All of that lives in `@oxdeai/guard`.
 
 ## See also
 
-- [CrewAI integration guide](../../docs/integrations/crewai.md)
-- [Adapter stack architecture](../../docs/integrations/adapter-stack.md)
-- [Adapter reference architecture](../../docs/adapter-reference-architecture.md)
-- [Root README](../../README.md)
+- [CrewAI integration guide](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/crewai.md)
+- [Adapter stack architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/adapter-stack.md)
+- [Adapter reference architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapter-reference-architecture.md)
+- [Root README](https://github.com/AngeYobo/oxdeai/blob/main/README.md)

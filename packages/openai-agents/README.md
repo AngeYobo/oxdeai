@@ -1,6 +1,6 @@
 # @oxdeai/openai-agents
 
-**Thin OpenAI Agents SDK binding for [@oxdeai/guard](../guard/README.md).**
+**Thin OpenAI Agents SDK binding for [@oxdeai/guard](https://github.com/AngeYobo/oxdeai/blob/main/packages/guard/README.md).**
 
 This package connects OpenAI Agents SDK tool calls to the OxDeAI universal
 execution guard. It contains no authorization logic - all policy evaluation
@@ -149,7 +149,7 @@ All of that lives in `@oxdeai/guard`.
 
 ## See also
 
-- [OpenAI Agents SDK integration guide](../../docs/integrations/openai-agents-sdk.md)
-- [Adapter stack architecture](../../docs/integrations/adapter-stack.md)
-- [Adapter reference architecture](../../docs/adapter-reference-architecture.md)
-- [Root README](../../README.md)
+- [OpenAI Agents SDK integration guide](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/openai-agents-sdk.md)
+- [Adapter stack architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/adapter-stack.md)
+- [Adapter reference architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapter-reference-architecture.md)
+- [Root README](https://github.com/AngeYobo/oxdeai/blob/main/README.md)

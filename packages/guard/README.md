@@ -172,7 +172,7 @@ OxDeAIGuard({
 
 ## See also
 
-- [Adapter stack architecture](../../docs/integrations/adapter-stack.md)
-- [Adapter reference architecture](../../docs/adapter-reference-architecture.md)
-- [Adapter release notes](../../docs/adapter-stack-release-notes.md)
-- [Root README](../../README.md)
+- [Adapter stack architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/adapter-stack.md)
+- [Adapter reference architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapter-reference-architecture.md)
+- [Adapter release notes](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapter-stack-release-notes.md)
+- [Root README](https://github.com/AngeYobo/oxdeai/blob/main/README.md)
