@@ -255,7 +255,7 @@ npm install @oxdeai/core
 
 ## Core Model
 
-![PDP / PEP execution flow](../../docs/diagrams/pdp-pep-flow.svg)
+![OxDeAI Core - Protocol Responsibilities](../../docs/diagrams/core-model.svg)
 
 Diagram source/editing policy:
 - [`docs/diagrams/README.md`](../../docs/diagrams/README.md)
@@ -505,7 +505,7 @@ Stateless verification layer for protocol artifacts.
 * Unified `VerificationResult` (`ok` / `invalid` / `inconclusive`)
 * Deterministic violation ordering
 
-### v1.0.3 — Stable Protocol Core (shipped)
+### v1.0.3 - Stable Protocol Core (shipped)
 * deterministic policy engine
 * canonical snapshots
 * hash-chained audit
@@ -514,35 +514,35 @@ Stateless verification layer for protocol artifacts.
 * conformance tests
 * reference integration demo (OpenAI tools boundary)
 
-### v1.1 — Authorization Artifact (shipped)
+### v1.1 - Authorization Artifact (shipped)
 * formalize AuthorizationV1 as first-class protocol artifact
 * relying-party verification contract
 * verifyAuthorization() as explicit protocol primitive
 * spec updates for PDP / PEP separation
 
-### v1.2 — Non-Forgeable Verification (shipped)
+### v1.2 - Non-Forgeable Verification (shipped)
 * Ed25519 support
 * kid / alg fields
 * public-key verification
 * future keyset / rotation model
 
-### v1.3 — Guard Adapter + Integration Surface (shipped)
-* `@oxdeai/guard` — universal PEP package, all adapters delegate here
-* `@oxdeai/sdk` — stable integration surface
-* `@oxdeai/cli` — `build`, `verify`, `replay` tooling
+### v1.3 - Guard Adapter + Integration Surface (shipped)
+* `@oxdeai/guard` - universal PEP package, all adapters delegate here
+* `@oxdeai/sdk` - stable integration surface
+* `@oxdeai/cli` - `build`, `verify`, `replay` tooling
 
-### v1.4 — Ecosystem Adoption (shipped)
+### v1.4 - Ecosystem Adoption (shipped)
 * 5 runtime adapter packages: `@oxdeai/langgraph`, `@oxdeai/openai-agents`, `@oxdeai/crewai`, `@oxdeai/autogen`, `@oxdeai/openclaw`
 * shared adapter contract and cross-adapter validation
 * integration documentation for all maintained adapters
 * case studies: API cost containment, infrastructure provisioning control
 
-### v1.5 — Developer Experience (shipped)
+### v1.5 - Developer Experience (shipped)
 * demo GIFs and visual architecture diagrams
 * improved quickstart and architecture explainer
 * cross-links between protocol, integrations, and cases
 
-### v2.x — Delegated Agent Authorization (next)
+### v2.x - Delegated Agent Authorization (next)
 
 ## See also
 

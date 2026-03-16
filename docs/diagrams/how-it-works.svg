@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="460" viewBox="0 0 1500 460" role="img" aria-label="OxDeAI How It Works">
-  <rect width="1500" height="460" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="460" viewBox="0 0 1440 460" role="img" aria-label="OxDeAI - How It Works">
+  <rect width="1440" height="460" fill="#ffffff"/>
 
   <defs>
     <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -14,54 +14,59 @@
   </defs>
 
   <!-- A: Agent Runtime -->
-  <rect x="20" y="160" width="240" height="120" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
-  <text x="140" y="208" font-family="Inter, Arial, sans-serif" font-size="16" fill="#0f172a" font-weight="600" text-anchor="middle">Agent Runtime</text>
-  <text x="140" y="228" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">LangGraph · CrewAI · AutoGen</text>
-  <text x="140" y="246" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">OpenAI Agents · OpenClaw</text>
+  <rect x="20" y="140" width="238" height="140" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+  <text x="139" y="196" font-family="Inter, Arial, sans-serif" font-size="17" fill="#0f172a" font-weight="600" text-anchor="middle">Agent Runtime</text>
+  <text x="139" y="222" font-family="Inter, Arial, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">LangGraph · CrewAI · AutoGen</text>
+  <text x="139" y="242" font-family="Inter, Arial, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">OpenAI Agents · OpenClaw</text>
 
   <!-- B: OxDeAI PDP -->
-  <rect x="320" y="160" width="220" height="120" rx="10" fill="#eefbf3" stroke="#166534" stroke-width="2"/>
-  <text x="430" y="208" font-family="Inter, Arial, sans-serif" font-size="16" fill="#14532d" font-weight="600" text-anchor="middle">OxDeAI PDP</text>
-  <text x="430" y="232" font-family="Inter, Arial, sans-serif" font-size="12" fill="#374151" text-anchor="middle">deterministic policy</text>
-  <text x="430" y="250" font-family="Inter, Arial, sans-serif" font-size="12" fill="#374151" text-anchor="middle">evaluation</text>
+  <rect x="318" y="140" width="238" height="140" rx="10" fill="#eefbf3" stroke="#166534" stroke-width="2.5"/>
+  <text x="437" y="196" font-family="Inter, Arial, sans-serif" font-size="17" fill="#14532d" font-weight="700" text-anchor="middle">OxDeAI PDP</text>
+  <text x="437" y="222" font-family="Inter, Arial, sans-serif" font-size="13" fill="#374151" text-anchor="middle">deterministic policy evaluation</text>
+  <text x="437" y="242" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">@oxdeai/core</text>
 
   <!-- C: AuthorizationV1 -->
-  <rect x="600" y="175" width="165" height="90" rx="8" fill="#eef2ff" stroke="#4338ca" stroke-width="2"/>
-  <text x="682" y="218" font-family="Inter, Arial, sans-serif" font-size="15" fill="#312e81" font-weight="600" text-anchor="middle">Authorization</text>
-  <text x="682" y="238" font-family="Inter, Arial, sans-serif" font-size="15" fill="#312e81" font-weight="600" text-anchor="middle">V1</text>
+  <rect x="616" y="140" width="218" height="140" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2"/>
+  <text x="725" y="206" font-family="Inter, Arial, sans-serif" font-size="17" fill="#312e81" font-weight="700" text-anchor="middle">AuthorizationV1</text>
+  <text x="725" y="230" font-family="Inter, Arial, sans-serif" font-size="12" fill="#4338ca" text-anchor="middle">signed · expiring</text>
+  <text x="725" y="250" font-family="Inter, Arial, sans-serif" font-size="12" fill="#4338ca" text-anchor="middle">bound to intent + state</text>
 
   <!-- D: @oxdeai/guard PEP -->
-  <rect x="825" y="160" width="255" height="120" rx="12" fill="#fff7ed" stroke="#9a3412" stroke-width="3"/>
-  <text x="952" y="205" font-family="Inter, Arial, sans-serif" font-size="16" fill="#7c2d12" font-weight="700" text-anchor="middle">@oxdeai/guard</text>
-  <text x="952" y="225" font-family="Inter, Arial, sans-serif" font-size="13" fill="#9a3412" font-weight="600" text-anchor="middle">PEP</text>
-  <text x="952" y="248" font-family="Inter, Arial, sans-serif" font-size="12" fill="#7c2d12" text-anchor="middle">verifyAuthorization()</text>
+  <rect x="894" y="132" width="268" height="156" rx="12" fill="#fff7ed" stroke="#9a3412" stroke-width="3"/>
+  <text x="1028" y="190" font-family="Inter, Arial, sans-serif" font-size="18" fill="#7c2d12" font-weight="700" text-anchor="middle">@oxdeai/guard</text>
+  <text x="1028" y="214" font-family="Inter, Arial, sans-serif" font-size="14" fill="#9a3412" font-weight="600" text-anchor="middle">PEP</text>
+  <text x="1028" y="238" font-family="Inter, Arial, sans-serif" font-size="13" fill="#7c2d12" text-anchor="middle">verifyAuthorization()</text>
+  <text x="1028" y="258" font-family="Inter, Arial, sans-serif" font-size="12" fill="#b45309" text-anchor="middle">fail-closed enforcement</text>
 
   <!-- E: External System -->
-  <rect x="1145" y="160" width="255" height="120" rx="10" fill="#ffffff" stroke="#475569" stroke-width="2"/>
-  <text x="1272" y="208" font-family="Inter, Arial, sans-serif" font-size="16" fill="#0f172a" font-weight="600" text-anchor="middle">External System</text>
-  <text x="1272" y="232" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">API · Tool · Infrastructure</text>
-  <text x="1272" y="250" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">Payment</text>
+  <rect x="1222" y="140" width="198" height="140" rx="10" fill="#ffffff" stroke="#475569" stroke-width="2"/>
+  <text x="1321" y="196" font-family="Inter, Arial, sans-serif" font-size="17" fill="#0f172a" font-weight="600" text-anchor="middle">External System</text>
+  <text x="1321" y="222" font-family="Inter, Arial, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">API · Tool</text>
+  <text x="1321" y="242" font-family="Inter, Arial, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">Infrastructure · Payment</text>
 
   <!-- A → B: proposes action -->
-  <line x1="260" y1="220" x2="320" y2="220" stroke="#334155" stroke-width="2.5" marker-end="url(#arr)"/>
-  <text x="262" y="213" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">proposes action</text>
+  <line x1="258" y1="210" x2="318" y2="210" stroke="#334155" stroke-width="2.5" marker-end="url(#arr)"/>
+  <rect x="243" y="186" width="90" height="19" rx="4" fill="#f1f5f9" stroke="#475569" stroke-width="1"/>
+  <text x="288" y="200" font-family="Inter, Arial, sans-serif" font-size="12" fill="#1e293b" font-weight="700" text-anchor="middle">proposes action</text>
 
   <!-- B → C: ALLOW -->
-  <line x1="540" y1="220" x2="600" y2="220" stroke="#166534" stroke-width="2.5" marker-end="url(#arr-green)"/>
-  <text x="547" y="213" font-family="Inter, Arial, sans-serif" font-size="12" fill="#166534" font-weight="600">ALLOW</text>
+  <line x1="556" y1="210" x2="616" y2="210" stroke="#166534" stroke-width="2.5" marker-end="url(#arr-green)"/>
+  <rect x="549" y="186" width="74" height="19" rx="4" fill="#dcfce7" stroke="#166534" stroke-width="1"/>
+  <text x="586" y="200" font-family="Inter, Arial, sans-serif" font-size="13" fill="#166534" font-weight="700" text-anchor="middle">ALLOW</text>
 
   <!-- C → D -->
-  <line x1="765" y1="220" x2="825" y2="220" stroke="#334155" stroke-width="2.5" marker-end="url(#arr)"/>
+  <line x1="834" y1="210" x2="894" y2="210" stroke="#334155" stroke-width="2.5" marker-end="url(#arr)"/>
 
   <!-- D → E: execute -->
-  <line x1="1080" y1="220" x2="1145" y2="220" stroke="#166534" stroke-width="2.5" marker-end="url(#arr-green)"/>
-  <text x="1085" y="213" font-family="Inter, Arial, sans-serif" font-size="12" fill="#166534" font-weight="600">execute</text>
+  <line x1="1162" y1="210" x2="1222" y2="210" stroke="#166534" stroke-width="2.5" marker-end="url(#arr-green)"/>
+  <rect x="1154" y="186" width="76" height="19" rx="4" fill="#dcfce7" stroke="#166534" stroke-width="1"/>
+  <text x="1192" y="200" font-family="Inter, Arial, sans-serif" font-size="13" fill="#166534" font-weight="700" text-anchor="middle">execute</text>
 
-  <!-- DENY arc: B top → D top (above flow) -->
-  <path d="M 430 160 C 430 78 952 78 952 160" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,3" fill="none" marker-end="url(#arr-red)"/>
-  <text x="691" y="70" font-family="Inter, Arial, sans-serif" font-size="12" fill="#dc2626" font-weight="600" text-anchor="middle">DENY</text>
+  <!-- DENY arc: B top → D top (above) -->
+  <path d="M 437 140 C 437 50 1028 50 1028 132" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="7,4" fill="none" marker-end="url(#arr-red)"/>
+  <text x="732" y="36" font-family="Inter, Arial, sans-serif" font-size="13" fill="#dc2626" font-weight="700" text-anchor="middle">DENY - refused before execution</text>
 
-  <!-- block arc: D bottom → E bottom (below flow) -->
-  <path d="M 952 280 C 952 400 1272 400 1272 280" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,3" fill="none" marker-end="url(#arr-red)"/>
-  <text x="1112" y="420" font-family="Inter, Arial, sans-serif" font-size="12" fill="#dc2626" font-weight="600" text-anchor="middle">block</text>
+  <!-- block arc: D bottom → E bottom (below) -->
+  <path d="M 1028 288 C 1028 400 1321 400 1321 280" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="7,4" fill="none" marker-end="url(#arr-red)"/>
+  <text x="1175" y="424" font-family="Inter, Arial, sans-serif" font-size="13" fill="#dc2626" font-weight="700" text-anchor="middle">block - no side effect</text>
 </svg>
