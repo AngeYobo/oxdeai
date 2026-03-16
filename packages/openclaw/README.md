@@ -1,6 +1,6 @@
 # @oxdeai/openclaw
 
-**Thin OpenClaw binding for [@oxdeai/guard](../guard/README.md).**
+**Thin OpenClaw binding for [@oxdeai/guard](https://github.com/AngeYobo/oxdeai/blob/main/packages/guard/README.md).**
 
 This package connects OpenClaw action/skill calls to the OxDeAI universal
 execution guard. It contains no authorization logic - all policy evaluation
@@ -135,7 +135,7 @@ All of that lives in `@oxdeai/guard`.
 
 ## See also
 
-- [OpenClaw integration guide](../../docs/integrations/openclaw.md)
-- [Adapter stack architecture](../../docs/integrations/adapter-stack.md)
-- [Adapter reference architecture](../../docs/adapter-reference-architecture.md)
-- [Root README](../../README.md)
+- [OpenClaw integration guide](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/openclaw.md)
+- [Adapter stack architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/adapter-stack.md)
+- [Adapter reference architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapter-reference-architecture.md)
+- [Root README](https://github.com/AngeYobo/oxdeai/blob/main/README.md)
