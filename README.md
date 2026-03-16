@@ -4,7 +4,7 @@ Deterministic execution authorization protocol for autonomous systems.
 
 **OxDeAI is the execution authorization layer for AI agents.**
 
-Before an agent executes an external action - API call, infrastructure provisioning, payment, or tool execution - OxDeAI evaluates whether the action is allowed and emits a cryptographically verifiable authorization artifact.
+Before an agent executes an external action (API call, infrastructure provisioning, payment, or tool execution), OxDeAI evaluates whether the action is allowed and emits a cryptographically verifiable authorization artifact.
 
 ---
 
