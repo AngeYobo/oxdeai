@@ -30,15 +30,7 @@ OxDeAI addresses that narrower problem: whether a proposed action is authorized 
 
 OxDeAI sits between the runtime and the external system.
 
-```text
-runtime / agent
-  -> adapter normalization
-  -> intent + state
-  -> OxDeAI PDP
-  -> AuthorizationV1 on ALLOW
-  -> PEP verifyAuthorization
-  -> side effect or refusal
-```
+![Execution Authorization Boundary](../diagrams/execution-boundary.svg)
 
 The control point is pre-execution:
 
