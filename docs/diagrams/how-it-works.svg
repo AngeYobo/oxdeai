@@ -44,10 +44,10 @@
   <text x="1371" y="222" font-family="Inter, Arial, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">API · Tool</text>
   <text x="1371" y="242" font-family="Inter, Arial, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">Infrastructure · Payment</text>
 
-  <!-- A → B: proposes action (110px gap) -->
+  <!-- A → B: proposed action (110px gap) -->
   <line x1="258" y1="210" x2="368" y2="210" stroke="#334155" stroke-width="2.5" marker-end="url(#arr)"/>
   <rect x="263" y="186" width="100" height="19" rx="4" fill="#f1f5f9" stroke="#475569" stroke-width="1"/>
-  <text x="313" y="200" font-family="Inter, Arial, sans-serif" font-size="12" fill="#1e293b" font-weight="700" text-anchor="middle">proposes action</text>
+  <text x="313" y="200" font-family="Inter, Arial, sans-serif" font-size="12" fill="#1e293b" font-weight="700" text-anchor="middle">proposed action</text>
 
   <!-- B → C: ALLOW -->
   <line x1="606" y1="210" x2="666" y2="210" stroke="#166534" stroke-width="2.5" marker-end="url(#arr-green)"/>

@@ -83,10 +83,10 @@
     {
       "id": "arrow-ab",
       "type": "arrow",
-      "x": 400,
-      "y": 120,
-      "width": 0,
-      "height": 80,
+      "x": 400.29307286711264,
+      "y": 120.26203566733676,
+      "width": 0.0843349235228743,
+      "height": 77.6828673611665,
       "angle": 0,
       "strokeColor": "#334155",
       "backgroundColor": "transparent",
@@ -101,11 +101,11 @@
         "type": 2
       },
       "seed": 201,
-      "version": 2,
-      "versionNonce": 720963405,
+      "version": 35,
+      "versionNonce": 2098843299,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1773603501263,
+      "updated": 1773667232845,
       "link": null,
       "locked": false,
       "points": [
@@ -114,8 +114,8 @@
           0
         ],
         [
-          0,
-          80
+          -0.0843349235228743,
+          77.6828673611665
         ]
       ],
       "lastCommittedPoint": null,
@@ -136,10 +136,10 @@
     {
       "id": "rect-b",
       "type": "rectangle",
-      "x": 60,
-      "y": 200,
-      "width": 680,
-      "height": 120,
+      "x": 61.89632056919959,
+      "y": 198.1036794308004,
+      "width": 676.2073588616008,
+      "height": 107.06688512279617,
       "angle": 0,
       "strokeColor": "#0369a1",
       "backgroundColor": "#f0f9ff",
@@ -154,8 +154,8 @@
         "type": 3
       },
       "seed": 103,
-      "version": 2,
-      "versionNonce": 1652006915,
+      "version": 37,
+      "versionNonce": 754951939,
       "isDeleted": false,
       "boundElements": [
         {
@@ -171,7 +171,7 @@
           "id": "arrow-bc"
         }
       ],
-      "updated": 1773603501263,
+      "updated": 1773667232845,
       "link": null,
       "locked": false,
       "index": "a3"
@@ -179,10 +179,10 @@
     {
       "id": "text-b",
       "type": "text",
-      "x": 60,
-      "y": 200,
-      "width": 680,
-      "height": 120,
+      "x": 128.125,
+      "y": 211.6371219921985,
+      "width": 543.75,
+      "height": 80,
       "angle": 0,
       "strokeColor": "#075985",
       "backgroundColor": "transparent",
@@ -195,11 +195,11 @@
       "frameId": null,
       "roundness": null,
       "seed": 104,
-      "version": 2,
-      "versionNonce": 1515492781,
+      "version": 39,
+      "versionNonce": 385532387,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1773603501263,
+      "updated": 1773667232846,
       "link": null,
       "locked": false,
       "text": "Runtime adapter package\n@oxdeai/langgraph · @oxdeai/openai-agents · @oxdeai/crewai\n@oxdeai/autogen · @oxdeai/openclaw\nthin binding — no auth logic",
@@ -217,10 +217,10 @@
     {
       "id": "arrow-bc",
       "type": "arrow",
-      "x": 400.0881922497518,
-      "y": 320.1760903646893,
-      "width": 0.4749910037591576,
-      "height": 79.58238893581665,
+      "x": 400.47714547229236,
+      "y": 305.3293409558937,
+      "width": 0.5867997024426472,
+      "height": 94.42913834461223,
       "angle": 0,
       "strokeColor": "#334155",
       "backgroundColor": "transparent",
@@ -235,8 +235,8 @@
         "type": 2
       },
       "seed": 202,
-      "version": 74,
-      "versionNonce": 698349923,
+      "version": 107,
+      "versionNonce": 47055427,
       "isDeleted": false,
       "boundElements": [
         {
@@ -244,7 +244,7 @@
           "id": "label-bc"
         }
       ],
-      "updated": 1773603606447,
+      "updated": 1773667232845,
       "link": null,
       "locked": false,
       "points": [
@@ -253,8 +253,8 @@
           0
         ],
         [
-          0.4749910037591576,
-          79.58238893581665
+          0.5867997024426472,
+          94.42913834461223
         ]
       ],
       "lastCommittedPoint": null,
