@@ -45,11 +45,11 @@ Future protocol releases maintain backward compatibility for frozen verification
 ---
 
 
-`@oxdeai/core` is the TypeScript execution authorization layer for agent actions. It enforces hard economic invariants *before* an agent executes an action.
+`@oxdeai/core` is the TypeScript reference library for deterministic execution authorization in autonomous systems. It evaluates whether a proposed action is allowed under the current policy state before any side effect occurs, and emits a cryptographically verifiable authorization artifact on every allowed action.
 
 It answers a narrow question:
 
-> Given an intent and a policy state, is this action economically allowed - deterministically?
+> Given an intent and a policy state, is this action allowed to execute - deterministically?
 
 If allowed, it emits a signed, expiring authorization bound to the intent and state snapshot.
 If denied, it fails closed.
@@ -59,21 +59,22 @@ No LLM classifiers.
 No heuristics.
 No post-fact monitoring.
 
-Just deterministic pre-execution containment.
+Just deterministic pre-execution authorization with verifiable artifacts.
 
-OxDeAI sits at the execution boundary of agent runtimes and external systems.
+`@oxdeai/core` sits at the execution boundary of agent runtimes and external systems.
 
 ---
 
 ## Overview
 
-`@oxdeai/core` is a deterministic execution authorization layer for autonomous systems.
+`@oxdeai/core` is the TypeScript reference implementation of the OxDeAI execution authorization protocol.
 
-It enforces economic invariants before an action executes and emits deterministic artifacts that can be verified independently.
+It enforces authorization invariants before an action executes and emits cryptographically verifiable artifacts that can be verified independently - offline, without access to the running system.
 
 The library exposes:
 
 * deterministic policy evaluation
+* signed authorization artifacts (`AuthorizationV1`)
 * canonical state snapshots
 * hash-chained audit events
 * stateless verification primitives
@@ -123,7 +124,7 @@ All return `VerificationResult` with status:
 
 ## The Problem
 
-Autonomous systems fail economically before they fail semantically.
+Autonomous systems often fail operationally before they fail semantically.
 
 Common failure modes:
 
@@ -131,48 +132,48 @@ Common failure modes:
 * recursive planning explosions
 * uncontrolled concurrency
 * replayed actions
-* silent budget drain
-* consumption-based billing surprises
+* silent resource exhaustion
+* unbounded external side effects
 
 Most “guardrails” operate after execution or rely on probabilistic models.
 
-Economic invariants should not be probabilistic.
+Execution authorization decisions should not be probabilistic.
 
 ---
 
 ## What This Library Is
 
-A deterministic policy substrate that:
+A deterministic execution authorization substrate that:
 
-* evaluates `(intent, state)` → stable decision
-* enforces:
+* evaluates `(intent, state)` → stable, reproducible decision
+* emits signed `AuthorizationV1` artifacts (Ed25519 preferred, legacy HMAC compatibility)
+* enforces policy domains as authorization invariants:
+  * budget - per-period spend caps
+  * velocity - rate and window limits
+  * concurrency - parallel slot control
+  * recursion - depth limits
+  * replay - nonce-based replay protection
+  * capability - allowlists and kill switches
+* produces hash-chained, tamper-evident audit logs
+* supports pure evaluation (`evaluatePure`) - no side effects
+* produces content-addressed `policyId`, canonical `stateHash`, tamper-evident `auditHeadHash`
+* packages snapshot + audit events into a portable `verificationEnvelope`
+* exposes stateless verifiers: `verifySnapshot`, `verifyAuditEvents`, `verifyEnvelope`, `verifyAuthorization`
 
-  * per-period budgets
-  * per-action caps
-  * velocity windows
-  * recursion depth limits
-  * concurrency slots
-  * replay protection
-* emits signed authorizations (Ed25519 preferred, legacy HMAC compatibility)
-* produces hash-chained audit logs
-* supports pure evaluation (`evaluatePure`)
-* produces content-addressed `policyId`
-* produces canonical `stateHash`
-* produces tamper-evident `auditHeadHash`
-
-Same inputs ⇒ same outputs.
+Same inputs ⇒ same outputs. Policy domains are examples of what the engine can enforce - not its sole identity.
 
 ---
 
 ## What This Library Is Not
 
-* Not a billing tool
-* Not a cloud budget monitor
-* Not a prompt filter
-* Not a dashboard
-* Not distributed coordination
+* Not a billing system or metering pipeline
+* Not a cloud budget monitor or cost dashboard
+* Not a reservation or settlement ledger
+* Not a prompt filter or model-output classifier
+* Not an observability or post-execution monitoring tool
+* Not distributed coordination infrastructure
 
-It is the deterministic outer boundary.
+`@oxdeai/core` can enforce spend, velocity, concurrency, and capability policies as authorization invariants. Its core role is execution authorization and verifiable artifacts - not downstream accounting.
 
 ---
 
@@ -266,7 +267,7 @@ Diagram source/editing policy:
 
 ### Intent
 
-A structured economic action.
+A structured authorization action.
 
 Examples:
 
@@ -543,6 +544,14 @@ Stateless verification layer for protocol artifacts.
 * cross-links between protocol, integrations, and cases
 
 ### v2.x - Delegated Agent Authorization (next)
+
+### v3.x - Verifiable Execution Infrastructure (planned)
+
+- deterministic execution receipts
+- binary Merkle batching of receipt hashes
+- proof-of-inclusion for individual receipts
+- optional on-chain proof anchoring / smart-contract verifier
+- authorization remains off-chain-first
 
 ## See also
 

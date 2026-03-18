@@ -277,6 +277,7 @@ TypeScript is the current reference implementation. Rust, Go, and Python develop
 | `v1.4` Ecosystem Adoption | complete |
 | `v1.5` Developer Experience | complete |
 | `v2.x` Delegated Agent Authorization | next |
+| `v3.x` Verifiable Execution Infrastructure | planned |
 
 ### v1.4 - Ecosystem Adoption
 
