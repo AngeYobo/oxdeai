@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="400" viewBox="0 0 760 400" role="img" aria-label="OxDeAI - Agent Risks to Policy Invariants">
+  <rect width="760" height="400" fill="#ffffff"/>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#166534"/>
+    </marker>
+  </defs>
+
+  <!-- Agent Risks ellipse (center: 82, 200) -->
+  <ellipse cx="82" cy="200" rx="72" ry="32" fill="#fff7ed" stroke="#9a3412" stroke-width="2"/>
+  <text x="82" y="195" font-family="Inter, Arial, sans-serif" font-size="13" fill="#7c2d12" font-weight="700" text-anchor="middle">Agent</text>
+  <text x="82" y="213" font-family="Inter, Arial, sans-serif" font-size="13" fill="#7c2d12" font-weight="700" text-anchor="middle">Risks</text>
+
+  <!-- Risk nodes (x=195, w=185, h=46, spacing=70, start_y=22) -->
+  <!-- Row 1: Unbounded spend (center_y=45) -->
+  <rect x="195" y="22" width="185" height="46" rx="8" fill="#fff5f5" stroke="#f87171" stroke-width="1.5"/>
+  <text x="287" y="50" font-family="Inter, Arial, sans-serif" font-size="13" fill="#991b1b" font-weight="600" text-anchor="middle">Unbounded spend</text>
+
+  <!-- Row 2: Execution storms (center_y=115) -->
+  <rect x="195" y="92" width="185" height="46" rx="8" fill="#fff5f5" stroke="#f87171" stroke-width="1.5"/>
+  <text x="287" y="120" font-family="Inter, Arial, sans-serif" font-size="13" fill="#991b1b" font-weight="600" text-anchor="middle">Execution storms</text>
+
+  <!-- Row 3: Parallel explosion (center_y=185) -->
+  <rect x="195" y="162" width="185" height="46" rx="8" fill="#fff5f5" stroke="#f87171" stroke-width="1.5"/>
+  <text x="287" y="190" font-family="Inter, Arial, sans-serif" font-size="13" fill="#991b1b" font-weight="600" text-anchor="middle">Parallel explosion</text>
+
+  <!-- Row 4: Replay risk (center_y=255) -->
+  <rect x="195" y="232" width="185" height="46" rx="8" fill="#fff5f5" stroke="#f87171" stroke-width="1.5"/>
+  <text x="287" y="260" font-family="Inter, Arial, sans-serif" font-size="13" fill="#991b1b" font-weight="600" text-anchor="middle">Replay risk</text>
+
+  <!-- Row 5: Unsafe scope (center_y=325) -->
+  <rect x="195" y="302" width="185" height="46" rx="8" fill="#fff5f5" stroke="#f87171" stroke-width="1.5"/>
+  <text x="287" y="330" font-family="Inter, Arial, sans-serif" font-size="13" fill="#991b1b" font-weight="600" text-anchor="middle">Unsafe scope</text>
+
+  <!-- Invariant nodes (x=450, w=290, h=46, same rows) -->
+  <!-- Row 1: Budget Invariant -->
+  <rect x="450" y="22" width="290" height="46" rx="8" fill="#eefbf3" stroke="#166534" stroke-width="1.5"/>
+  <text x="595" y="50" font-family="Inter, Arial, sans-serif" font-size="13" fill="#14532d" font-weight="600" text-anchor="middle">Budget Invariant</text>
+
+  <!-- Row 2: Velocity Invariant -->
+  <rect x="450" y="92" width="290" height="46" rx="8" fill="#eefbf3" stroke="#166534" stroke-width="1.5"/>
+  <text x="595" y="120" font-family="Inter, Arial, sans-serif" font-size="13" fill="#14532d" font-weight="600" text-anchor="middle">Velocity Invariant</text>
+
+  <!-- Row 3: Concurrency Invariant -->
+  <rect x="450" y="162" width="290" height="46" rx="8" fill="#eefbf3" stroke="#166534" stroke-width="1.5"/>
+  <text x="595" y="190" font-family="Inter, Arial, sans-serif" font-size="13" fill="#14532d" font-weight="600" text-anchor="middle">Concurrency Invariant</text>
+
+  <!-- Row 4: Replay Protection -->
+  <rect x="450" y="232" width="290" height="46" rx="8" fill="#eefbf3" stroke="#166534" stroke-width="1.5"/>
+  <text x="595" y="260" font-family="Inter, Arial, sans-serif" font-size="13" fill="#14532d" font-weight="600" text-anchor="middle">Replay Protection</text>
+
+  <!-- Row 5: Capability Scope -->
+  <rect x="450" y="302" width="290" height="46" rx="8" fill="#eefbf3" stroke="#166534" stroke-width="1.5"/>
+  <text x="595" y="330" font-family="Inter, Arial, sans-serif" font-size="13" fill="#14532d" font-weight="600" text-anchor="middle">Capability Scope</text>
+
+  <!-- Agent Risks → Risk nodes (fan-out lines) -->
+  <line x1="154" y1="200" x2="193" y2="45" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="154" y1="200" x2="193" y2="115" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="154" y1="200" x2="193" y2="185" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="154" y1="200" x2="193" y2="255" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="154" y1="200" x2="193" y2="325" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Risk nodes → Invariant nodes -->
+  <line x1="380" y1="45" x2="448" y2="45" stroke="#166534" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <line x1="380" y1="115" x2="448" y2="115" stroke="#166534" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <line x1="380" y1="185" x2="448" y2="185" stroke="#166534" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <line x1="380" y1="255" x2="448" y2="255" stroke="#166534" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <line x1="380" y1="325" x2="448" y2="325" stroke="#166534" stroke-width="1.5" marker-end="url(#arr-green)"/>
+</svg>
