@@ -1,14 +1,45 @@
 # OxDeAI Specification (v1.2.0)
 
-This document defines the protocol requirements for OxDeAI v1.2.0.
+This document defines the OxDeAI execution authorization protocol.
+
+OxDeAI is a portable, language-agnostic protocol for deterministic pre-execution authorization and post-execution evidence verification in autonomous systems.
+
+The protocol defines:
+
+- portable authorization artifacts
+- deterministic policy evaluation requirements
+- canonical signing and verification rules
+- a relying-party execution contract
+- verifiable evidence artifacts
+
+OxDeAI separates authorization decision logic from execution.
+A Policy Decision Point (PDP) evaluates whether an action is allowed.
+A Policy Enforcement Point (PEP) verifies authorization artifacts and executes the action only if verification succeeds.
+
+The TypeScript implementation in this repository is the reference implementation of this protocol, but conformant implementations MAY exist in any language if they reproduce the same artifacts and verification behavior.
+
 Normative protocol text uses RFC 2119 terms: MUST, MUST NOT, SHOULD, SHOULD NOT, MAY.
 
 ## 1. Scope
 
-OxDeAI defines deterministic pre-execution authorization and post-execution evidence verification.
-A conformant implementation MUST produce deterministic outputs for equivalent inputs.
+OxDeAI defines deterministic pre-execution authorization and post-execution evidence verification for autonomous systems.
+
+A conformant implementation MUST produce deterministic outputs for equivalent inputs and MUST enforce the relying-party verification contract before execution occurs.
+
+The protocol defines portable artifacts that can be issued by one system and verified by another, including across language runtimes or infrastructure boundaries.
+
+OxDeAI is protocol-first:
+
+- this repository provides the reference implementation
+- other implementations MAY exist in other languages
+- conformance is defined by protocol artifacts and verification behavior
+
+Implementations are compliant if they reproduce the protocol artifacts defined in this specification and satisfy the conformance vectors for the targeted version profile.
 
 ## 2. Core Artifacts
+
+OxDeAI defines the following first-class protocol artifacts.
+These artifacts are language-independent and MUST be interpreted identically across compliant implementations.
 
 - Intent
 - CanonicalState snapshot
@@ -19,6 +50,10 @@ A conformant implementation MUST produce deterministic outputs for equivalent in
 - KeySet
 
 ## 3. Determinism Requirements
+
+Determinism is a core protocol invariant.
+
+For identical `(intent, state, policy configuration)` inputs, a conformant implementation MUST produce identical authorization decisions and identical signed artifacts.
 
 Implementations MUST use canonical encoding for signed and hashed payloads.
 Verification ordering and violation ordering MUST be deterministic.
@@ -59,6 +94,13 @@ Compliant verifier behavior SHOULD include this sequence:
 7. Fail closed on any malformed or ambiguous verification state.
 
 ## 4. Authorization Artifact (AuthorizationV1)
+
+`AuthorizationV1` is the primary authorization artifact defined by the OxDeAI protocol.
+
+It represents a deterministic authorization decision issued by a Policy Decision Point (PDP) and verified by a relying party, also referred to as a Policy Enforcement Point (PEP).
+
+`AuthorizationV1` is a portable protocol artifact, not an implementation detail.
+It is designed to be verifiable independently of the system that produced it.
 
 ### Definition
 
@@ -140,6 +182,11 @@ If verification state is ambiguous (for example, unresolved trust state, inconsi
 A reused `auth_id` MUST be rejected.
 
 ### Non-Forgeable Verification (v1.2)
+
+Non-forgeable verification ensures that authorization artifacts can be validated independently of the issuing system.
+
+Verification MUST depend only on the artifact contents, canonical payload rules, and trusted verification keys.
+No verifier may rely on implicit runtime state or undocumented side channels.
 
 In v1.2, `AuthorizationV1` MUST support public-key verification via `alg`, `kid`, and `signature`.
 
@@ -228,6 +275,10 @@ Artifact classes MUST NOT share signing domains.
 This prevents cross-artifact signature confusion.
 
 ## 7. Canonical Signing Format
+
+Canonical signing ensures cross-language interoperability.
+
+All conformant implementations MUST produce identical signing input bytes for identical artifact payloads, regardless of programming language or runtime environment.
 
 ### 1. Purpose
 
@@ -363,6 +414,12 @@ If a verifier runs in signature-required mode, missing envelope signature MUST f
 
 ## 9. Relying Party Contract
 
+A Relying Party, also referred to as a Policy Enforcement Point (PEP), is the system responsible for executing external actions after verifying an authorization artifact.
+
+The relying party enforces the OxDeAI execution authorization boundary.
+
+Before executing any action, the relying party MUST verify the authorization artifact according to the rules defined in this section.
+
 ### 1. Definition
 
 A **Relying Party** (Policy Enforcement Point, **PEP**) is the system that receives an authorization artifact and decides whether an external action may execute.
@@ -453,6 +510,10 @@ These checks collectively mitigate replay attacks, authorization forgery, and TO
 ```
 
 ## 10. KeySet and Key Rotation Model
+
+The KeySet model provides deterministic resolution of verification keys for authorization artifacts.
+
+This model enables independent verification of OxDeAI artifacts without requiring online access to the issuing system.
 
 ### 1. Purpose
 
@@ -597,6 +658,8 @@ Ambiguity MUST NOT be treated as success.
 
 ## 11. Replay and TOCTOU Resistance
 
+OxDeAI artifacts are designed to minimize replay and time-of-check/time-of-use (TOCTOU) risks in distributed execution environments.
+
 OxDeAI mitigates replay and check/use drift by combining:
 
 - single-use `auth_id`
@@ -621,6 +684,10 @@ Compatibility requirements:
 - Future versions MAY strengthen envelope-signing and key-distribution requirements.
 
 ## 13. Conformance Requirement
+
+Protocol conformance is determined by artifact compatibility and verification behavior.
+
+An implementation is compliant if it reproduces the protocol artifacts defined in this specification and passes the conformance vectors for the targeted version profile.
 
 A conformant implementation MUST reproduce expected conformance vectors for its targeted profile.
 Violation ordering in `VerificationResult` MUST be deterministic.
