@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="370" viewBox="0 0 1280 370" role="img" aria-label="OxDeAI - Execution Architecture">
+  <rect width="1280" height="370" fill="#ffffff"/>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#166534"/>
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+    <marker id="arr-indigo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4338ca"/>
+    </marker>
+  </defs>
+
+  <!-- R: Agent Runtime / Orchestrator -->
+  <rect x="20" y="100" width="175" height="90" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+  <text x="107" y="136" font-family="Inter, Arial, sans-serif" font-size="13" fill="#0f172a" font-weight="700" text-anchor="middle">Agent Runtime</text>
+  <text x="107" y="154" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">Orchestrator</text>
+  <text x="107" y="172" font-family="Inter, Arial, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">LangGraph · CrewAI · AutoGen</text>
+
+  <!-- I: Proposed Action / Intent -->
+  <rect x="252" y="100" width="170" height="90" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+  <text x="337" y="136" font-family="Inter, Arial, sans-serif" font-size="13" fill="#0f172a" font-weight="700" text-anchor="middle">Proposed Action</text>
+  <text x="337" y="154" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">Intent</text>
+  <text x="337" y="172" font-family="Inter, Arial, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">normalized · deterministic</text>
+
+  <!-- P: OxDeAI PDP -->
+  <rect x="482" y="88" width="222" height="114" rx="10" fill="#eefbf3" stroke="#166534" stroke-width="2.5"/>
+  <text x="593" y="122" font-family="Inter, Arial, sans-serif" font-size="14" fill="#14532d" font-weight="700" text-anchor="middle">OxDeAI PDP</text>
+  <text x="593" y="142" font-family="Inter, Arial, sans-serif" font-size="12" fill="#374151" text-anchor="middle">Deterministic Policy Evaluation</text>
+  <text x="593" y="160" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">evaluates (intent, state)</text>
+  <text x="593" y="178" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">@oxdeai/core</text>
+
+  <!-- G: PEP / Execution Gate -->
+  <rect x="802" y="88" width="198" height="114" rx="12" fill="#fff7ed" stroke="#9a3412" stroke-width="3"/>
+  <text x="901" y="122" font-family="Inter, Arial, sans-serif" font-size="14" fill="#7c2d12" font-weight="700" text-anchor="middle">PEP</text>
+  <text x="901" y="142" font-family="Inter, Arial, sans-serif" font-size="12" fill="#9a3412" font-weight="600" text-anchor="middle">Execution Gate</text>
+  <text x="901" y="160" font-family="Inter, Arial, sans-serif" font-size="11" fill="#b45309" text-anchor="middle">verifyAuthorization()</text>
+  <text x="901" y="178" font-family="Inter, Arial, sans-serif" font-size="11" fill="#b45309" text-anchor="middle">@oxdeai/guard</text>
+
+  <!-- E: External Execution -->
+  <rect x="1062" y="100" width="198" height="90" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+  <text x="1161" y="136" font-family="Inter, Arial, sans-serif" font-size="13" fill="#334155" font-weight="700" text-anchor="middle">External Execution</text>
+  <text x="1161" y="154" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Tool · API · Infra · Payment</text>
+
+  <!-- S: Canonical Policy State (below P) -->
+  <rect x="482" y="268" width="222" height="58" rx="8" fill="#eef2ff" stroke="#4338ca" stroke-width="1.5"/>
+  <text x="593" y="292" font-family="Inter, Arial, sans-serif" font-size="12" fill="#312e81" font-weight="700" text-anchor="middle">Canonical Policy State</text>
+  <text x="593" y="310" font-family="Inter, Arial, sans-serif" font-size="11" fill="#4338ca" text-anchor="middle">snapshot · deterministic</text>
+
+  <!-- X: Blocked Before Execution (below, left of P) -->
+  <rect x="232" y="268" width="198" height="58" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="331" y="292" font-family="Inter, Arial, sans-serif" font-size="12" fill="#dc2626" font-weight="700" text-anchor="middle">Blocked Before</text>
+  <text x="331" y="310" font-family="Inter, Arial, sans-serif" font-size="12" fill="#dc2626" font-weight="700" text-anchor="middle">Execution</text>
+
+  <!-- V: Verification Artifacts -->
+  <rect x="797" y="268" width="208" height="58" rx="8" fill="#eef2ff" stroke="#4338ca" stroke-width="1.5"/>
+  <text x="901" y="292" font-family="Inter, Arial, sans-serif" font-size="12" fill="#312e81" font-weight="700" text-anchor="middle">Verification Artifacts</text>
+  <text x="901" y="310" font-family="Inter, Arial, sans-serif" font-size="11" fill="#4338ca" text-anchor="middle">Audit Chain + Envelope</text>
+
+  <!-- R → I -->
+  <line x1="195" y1="145" x2="250" y2="145" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- I → P: proposed action pill -->
+  <line x1="422" y1="145" x2="480" y2="145" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="424" y="126" width="54" height="17" rx="4" fill="#f1f5f9" stroke="#475569" stroke-width="1"/>
+  <text x="451" y="139" font-family="Inter, Arial, sans-serif" font-size="10" fill="#1e293b" font-weight="700" text-anchor="middle">action</text>
+
+  <!-- S → P: policy state (upward arrow) -->
+  <line x1="593" y1="268" x2="593" y2="204" stroke="#4338ca" stroke-width="1.5" marker-end="url(#arr-indigo)"/>
+  <rect x="599" y="228" width="78" height="17" rx="4" fill="#eef2ff" stroke="#4338ca" stroke-width="1"/>
+  <text x="638" y="241" font-family="Inter, Arial, sans-serif" font-size="10" fill="#4338ca" font-weight="700" text-anchor="middle">policy state</text>
+
+  <!-- P → G: ALLOW + AuthorizationV1 -->
+  <line x1="704" y1="145" x2="800" y2="145" stroke="#166534" stroke-width="2.5" marker-end="url(#arr-green)"/>
+  <rect x="706" y="126" width="62" height="17" rx="4" fill="#dcfce7" stroke="#166534" stroke-width="1"/>
+  <text x="737" y="139" font-family="Inter, Arial, sans-serif" font-size="11" fill="#166534" font-weight="700" text-anchor="middle">ALLOW</text>
+  <text x="752" y="164" font-family="Inter, Arial, sans-serif" font-size="10" fill="#4338ca" text-anchor="middle">AuthorizationV1</text>
+
+  <!-- P → X: DENY (dashed red, curve down-left) -->
+  <path d="M 535,202 C 535,248 430,252 430,266" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arr-red)"/>
+  <rect x="468" y="224" width="48" height="17" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+  <text x="492" y="237" font-family="Inter, Arial, sans-serif" font-size="11" fill="#dc2626" font-weight="700" text-anchor="middle">DENY</text>
+
+  <!-- G → E: execute pill -->
+  <line x1="1000" y1="145" x2="1060" y2="145" stroke="#166534" stroke-width="2.5" marker-end="url(#arr-green)"/>
+  <rect x="1003" y="126" width="56" height="17" rx="4" fill="#dcfce7" stroke="#166534" stroke-width="1"/>
+  <text x="1031" y="139" font-family="Inter, Arial, sans-serif" font-size="11" fill="#166534" font-weight="700" text-anchor="middle">execute</text>
+
+  <!-- G → V: downward arrow -->
+  <line x1="901" y1="202" x2="901" y2="266" stroke="#4338ca" stroke-width="1.5" marker-end="url(#arr-indigo)"/>
+  <rect x="907" y="226" width="56" height="17" rx="4" fill="#eef2ff" stroke="#4338ca" stroke-width="1"/>
+  <text x="935" y="239" font-family="Inter, Arial, sans-serif" font-size="10" fill="#4338ca" font-weight="700" text-anchor="middle">package</text>
+
+  <!-- Caption -->
+  <text x="640" y="352" font-family="Inter, Arial, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle" font-style="italic">The runtime proposes an action, OxDeAI evaluates it deterministically, and the relying party executes only when a valid authorization artifact is present.</text>
+</svg>
