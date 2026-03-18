@@ -3,29 +3,33 @@
 Deterministic execution authorization protocol for autonomous systems.
 
 OxDeAI is the verifiable authorization layer for AI agents and agent runtimes.
-Before an agent executes an external action (API call, infrastructure provisioning, payment, or tool execution), OxDeAI evaluates whether that action is allowed under the current policy state and emits a cryptographically verifiable authorization artifact.
+Before an agent executes an external action, OxDeAI evaluates whether that action is allowed under the current policy state and emits a cryptographically verifiable authorization artifact.
+
+OxDeAI defines portable protocol artifacts and a relying-party verification contract for execution authorization.
+The TypeScript packages in this repository are the reference implementation of that protocol.
 
 ---
 
 ## TL;DR
 
-Agents can trigger real-world side effects. OxDeAI inserts a deterministic authorization boundary before any of them execute.
+Agents can trigger real-world side effects.
+OxDeAI inserts a deterministic authorization boundary before any of them execute.
 
 - If policy denies the action, the action never executes.
 - If policy allows the action, OxDeAI emits a cryptographically verifiable `AuthorizationV1` artifact.
 - The artifact can be verified offline - independently, without access to the running system.
 
-![Policy boundary](./docs/diagrams/policy-boundary.svg)
+![Execution architecture](./docs/diagrams/execution-architecture.svg)
 
 ---
 
 ## What OxDeAI Is
 
-- A **deterministic execution authorization protocol** for autonomous systems
-- The **verifiable authorization layer** for AI agents and agent runtimes
-- A system that evaluates whether a proposed action is allowed **before any side effect occurs**
-- A protocol that emits a **cryptographically verifiable authorization artifact** on every allowed action
-- A protocol focused on **pre-execution authorization**, **fail-closed gating**, **offline verification**, and **tamper-evident evidence**
+- A deterministic execution authorization protocol for autonomous systems
+- The verifiable authorization layer for AI agents and agent runtimes
+- A protocol that evaluates whether a proposed action is allowed before any side effect occurs
+- A protocol that emits a cryptographically verifiable authorization artifact on every allowed action
+- A protocol focused on pre-execution authorization, fail-closed gating, offline verification, and tamper-evident evidence
 
 ---
 
@@ -38,17 +42,23 @@ OxDeAI is not primarily:
 - a provider pricing proxy
 - a reservation or settlement ledger
 
-OxDeAI can enforce spend, velocity, concurrency, and capability policies, but its core role is execution authorization, not downstream accounting.
+OxDeAI can enforce spend, velocity, concurrency, replay, and capability policies, but its core role is execution authorization, not downstream accounting.
 
 ---
 
 ## Why OxDeAI Exists
 
-Most AI safety systems focus on prompts or model outputs. Prompt guardrails filter inputs. Model-output filtering reviews responses. Observability and post-execution monitoring record what happened.
+Most AI safety systems focus on prompts or model outputs.
+
+- Prompt guardrails shape model behavior.
+- Output filters review responses.
+- Observability and post-execution monitoring record what happened.
 
 None of these prevent a side effect from occurring.
 
-OxDeAI focuses on the execution authorization boundary - the moment before an agent calls an external system. The critical question is deterministic:
+OxDeAI focuses on the execution authorization boundary - the moment before an agent calls an external system.
+
+The critical question is deterministic:
 
 > Is this action allowed to execute under the current policy state?
 
@@ -69,6 +79,7 @@ OxDeAI is designed for authorization decisions that must be deterministic, fail-
 3. If policy allows execution, OxDeAI emits an `AuthorizationV1` artifact.
 4. The policy enforcement point executes only when a valid authorization artifact is present.
 5. If policy denies the action, execution is blocked before any side effect occurs.
+6. Post-execution evidence can be packaged into a `VerificationEnvelopeV1` for offline verification.
 
 ---
 
@@ -87,7 +98,7 @@ Expected result:
 - `DENY`
 - `verifyEnvelope() => ok`
 
-Two proposed actions are authorized, the third is refused before execution, and the resulting evidence verifies offline.
+Two proposed actions are authorized, the third is refused before execution, and the resulting verification evidence can be checked offline.
 
 ---
 
@@ -104,7 +115,9 @@ Two proposed actions are authorized, the third is refused before execution, and 
 
 ## Adapter Stack
 
-`@oxdeai/guard` centralizes all PEP security logic. Runtime adapters are thin bindings - none contain authorization logic. Adopting a new runtime requires only a thin adapter, not a new authorization implementation.
+`@oxdeai/guard` centralizes the universal PEP security boundary. Runtime adapters are thin bindings - none contain authorization logic. Adopting a new runtime requires only a thin adapter, not a new authorization implementation.
+
+This keeps the protocol surface stable while allowing multiple runtimes to integrate the same execution authorization boundary.
 
 | Package | Role | Example |
 |---|---|---|
@@ -132,7 +145,7 @@ References:
 - **Spend authorization** - enforce per-action and cumulative spend limits before execution ([case study](./docs/cases/api-cost-containment.md))
 - **Infrastructure authorization** - gate GPU allocation, cloud resource creation, and database operations ([case study](./docs/cases/infrastructure-provisioning-control.md))
 - **Workflow authorization** - deterministic authorization gates for multi-step agent pipelines
-- **Bounded execution policies** - velocity limits, concurrency caps, and kill-switch enforcement
+- **Bounded execution policies** - velocity limits, concurrency caps, replay protection, and kill-switch enforcement
 
 ---
 
@@ -171,6 +184,8 @@ Latest local validation (2026-03-15):
 Adapter validation references: [adapter-validation.md](./docs/integrations/adapter-validation.md) · [adoption-checklist.md](./docs/integrations/adoption-checklist.md)
 
 ---
+
+OxDeAI is designed as a protocol with a reference implementation: runtimes propose actions, policy decides deterministically, and relying parties verify authorization artifacts before execution.
 
 ## Quickstart
 
@@ -250,17 +265,25 @@ Specs and docs:
 
 ## Ecosystem Positioning
 
-Agent safety stacks are emerging in three layers:
+OxDeAI operates at the execution authorization layer.
+
+A useful way to think about the stack:
+
+- Layer 1: prompt and model safety
+- Layer 2: runtime orchestration and observability
+- Layer 3: execution authorization and relying-party enforcement
+
+Most agent safety systems focus on what models say or what runtimes log. OxDeAI focuses on what agents are actually allowed to execute.
 
 ![Agent safety layers](./docs/diagrams/agent-safety-layers.svg)
-
-OxDeAI operates at layer 3. Most agent safety systems focus on what models say or what runtimes log. OxDeAI focuses on what agents are actually allowed to execute.
 
 ---
 
 ## Multi-Language
 
-TypeScript is the current reference implementation. Rust, Go, and Python developers can verify OxDeAI artifacts today (`AuthorizationV1`, snapshots, audit chains, verification envelopes).
+TypeScript is the current reference implementation.
+
+OxDeAI artifacts are portable protocol artifacts: Rust, Go, and Python developers can verify `AuthorizationV1`, snapshots, audit chains, and verification envelopes today without reusing the TypeScript runtime itself.
 
 - [`docs/multi-language.md`](./docs/multi-language.md)
 - [`docs/conformance-vectors.md`](./docs/conformance-vectors.md)

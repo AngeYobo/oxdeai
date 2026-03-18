@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="930" viewBox="0 0 820 930" role="img" aria-label="OxDeAI - Authorization Flow">
+  <rect width="820" height="930" fill="#ffffff"/>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#166534"/>
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+    <marker id="arr-cyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e7490"/>
+    </marker>
+  </defs>
+
+  <!-- ── Main flow (center x=280) ── -->
+
+  <!-- A: Action Surface -->
+  <rect x="155" y="30" width="250" height="66" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+  <text x="280" y="55" font-family="Inter, Arial, sans-serif" font-size="15" fill="#0f172a" font-weight="700" text-anchor="middle">Action Surface</text>
+  <text x="280" y="76" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">tool call · CLI · workflow · MCP</text>
+
+  <!-- A → B: normalize pill -->
+  <line x1="280" y1="96" x2="280" y2="138" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="228" y="105" width="104" height="19" rx="4" fill="#f1f5f9" stroke="#475569" stroke-width="1"/>
+  <text x="280" y="119" font-family="Inter, Arial, sans-serif" font-size="12" fill="#1e293b" font-weight="700" text-anchor="middle">normalize</text>
+
+  <!-- B: Intent -->
+  <rect x="155" y="140" width="250" height="66" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+  <text x="280" y="165" font-family="Inter, Arial, sans-serif" font-size="15" fill="#0f172a" font-weight="700" text-anchor="middle">Intent</text>
+  <text x="280" y="186" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">normalized · deterministic</text>
+
+  <!-- B → C: evaluate pill -->
+  <line x1="280" y1="206" x2="280" y2="248" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="229" y="215" width="102" height="19" rx="4" fill="#f1f5f9" stroke="#475569" stroke-width="1"/>
+  <text x="280" y="229" font-family="Inter, Arial, sans-serif" font-size="12" fill="#1e293b" font-weight="700" text-anchor="middle">evaluate</text>
+
+  <!-- C: PolicyEngine PDP -->
+  <rect x="120" y="250" width="320" height="90" rx="10" fill="#eefbf3" stroke="#166534" stroke-width="2.5"/>
+  <text x="280" y="282" font-family="Inter, Arial, sans-serif" font-size="16" fill="#14532d" font-weight="700" text-anchor="middle">PolicyEngine</text>
+  <text x="280" y="302" font-family="Inter, Arial, sans-serif" font-size="13" fill="#374151" text-anchor="middle">PDP · @oxdeai/core</text>
+  <text x="280" y="322" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">evaluates (intent, state) deterministically</text>
+
+  <!-- C → DENY branch (right) -->
+  <line x1="440" y1="295" x2="553" y2="295" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arr-red)"/>
+  <rect x="444" y="274" width="52" height="19" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+  <text x="470" y="288" font-family="Inter, Arial, sans-serif" font-size="13" fill="#dc2626" font-weight="700" text-anchor="middle">DENY</text>
+
+  <!-- DENY: Blocked -->
+  <rect x="555" y="265" width="210" height="60" rx="10" fill="#fff5f5" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="660" y="291" font-family="Inter, Arial, sans-serif" font-size="14" fill="#dc2626" font-weight="700" text-anchor="middle">Blocked</text>
+  <text x="660" y="311" font-family="Inter, Arial, sans-serif" font-size="12" fill="#dc2626" text-anchor="middle">no side effect</text>
+
+  <!-- C → D: ALLOW pill -->
+  <line x1="280" y1="340" x2="280" y2="408" stroke="#166534" stroke-width="2" marker-end="url(#arr-green)"/>
+  <rect x="241" y="349" width="78" height="19" rx="4" fill="#dcfce7" stroke="#166534" stroke-width="1"/>
+  <text x="280" y="363" font-family="Inter, Arial, sans-serif" font-size="13" fill="#166534" font-weight="700" text-anchor="middle">ALLOW</text>
+
+  <!-- D: AuthorizationV1 -->
+  <rect x="155" y="410" width="250" height="72" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2"/>
+  <text x="280" y="438" font-family="Inter, Arial, sans-serif" font-size="15" fill="#312e81" font-weight="700" text-anchor="middle">AuthorizationV1</text>
+  <text x="280" y="458" font-family="Inter, Arial, sans-serif" font-size="12" fill="#4338ca" text-anchor="middle">signed · expiring · Ed25519</text>
+  <text x="280" y="474" font-family="Inter, Arial, sans-serif" font-size="12" fill="#4338ca" text-anchor="middle">bound to intent + state</text>
+
+  <!-- D → E -->
+  <line x1="280" y1="482" x2="280" y2="548" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- E: @oxdeai/guard PEP -->
+  <rect x="110" y="550" width="340" height="96" rx="12" fill="#fff7ed" stroke="#9a3412" stroke-width="3"/>
+  <text x="280" y="582" font-family="Inter, Arial, sans-serif" font-size="16" fill="#7c2d12" font-weight="700" text-anchor="middle">@oxdeai/guard</text>
+  <text x="280" y="602" font-family="Inter, Arial, sans-serif" font-size="13" fill="#9a3412" font-weight="600" text-anchor="middle">PEP · verifyAuthorization()</text>
+  <text x="280" y="622" font-family="Inter, Arial, sans-serif" font-size="12" fill="#b45309" text-anchor="middle">fail-closed · execution gate</text>
+  <text x="280" y="638" font-family="Inter, Arial, sans-serif" font-size="12" fill="#b45309" text-anchor="middle">ALLOW without valid artifact → throws</text>
+
+  <!-- E → ERR: no valid artifact (right, dashed red) -->
+  <line x1="450" y1="598" x2="553" y2="598" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arr-red)"/>
+  <rect x="452" y="577" width="98" height="19" rx="4" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+  <text x="501" y="591" font-family="Inter, Arial, sans-serif" font-size="11" fill="#dc2626" font-weight="700" text-anchor="middle">no valid artifact</text>
+
+  <!-- ERR: OxDeAIAuthorizationError -->
+  <rect x="555" y="568" width="220" height="60" rx="10" fill="#fff5f5" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="665" y="592" font-family="Inter, Arial, sans-serif" font-size="12" fill="#dc2626" font-weight="700" text-anchor="middle">OxDeAI</text>
+  <text x="665" y="612" font-family="Inter, Arial, sans-serif" font-size="12" fill="#dc2626" font-weight="700" text-anchor="middle">AuthorizationError</text>
+
+  <!-- E → F: execute pill -->
+  <line x1="280" y1="646" x2="280" y2="708" stroke="#166534" stroke-width="2" marker-end="url(#arr-green)"/>
+  <rect x="244" y="655" width="72" height="19" rx="4" fill="#dcfce7" stroke="#166534" stroke-width="1"/>
+  <text x="280" y="669" font-family="Inter, Arial, sans-serif" font-size="12" fill="#166534" font-weight="700" text-anchor="middle">execute</text>
+
+  <!-- F: Side Effect -->
+  <rect x="155" y="710" width="250" height="66" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+  <text x="280" y="737" font-family="Inter, Arial, sans-serif" font-size="15" fill="#0f172a" font-weight="700" text-anchor="middle">Side Effect</text>
+  <text x="280" y="758" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b" text-anchor="middle">API · tool · infra · payment</text>
+
+  <!-- F → G: package pill -->
+  <line x1="280" y1="776" x2="280" y2="838" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="240" y="785" width="80" height="19" rx="4" fill="#f1f5f9" stroke="#475569" stroke-width="1"/>
+  <text x="280" y="799" font-family="Inter, Arial, sans-serif" font-size="12" fill="#1e293b" font-weight="700" text-anchor="middle">package</text>
+
+  <!-- G: VerificationEnvelope -->
+  <rect x="120" y="840" width="320" height="66" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="2"/>
+  <text x="280" y="866" font-family="Inter, Arial, sans-serif" font-size="15" fill="#312e81" font-weight="700" text-anchor="middle">VerificationEnvelope</text>
+  <text x="280" y="886" font-family="Inter, Arial, sans-serif" font-size="12" fill="#4338ca" text-anchor="middle">snapshot + audit events · portable</text>
+
+  <!-- G → H: verify offline pill -->
+  <line x1="440" y1="873" x2="538" y2="873" stroke="#0e7490" stroke-width="2" marker-end="url(#arr-cyan)"/>
+  <rect x="442" y="852" width="94" height="19" rx="4" fill="#ecfeff" stroke="#0e7490" stroke-width="1"/>
+  <text x="489" y="866" font-family="Inter, Arial, sans-serif" font-size="11" fill="#0e7490" font-weight="700" text-anchor="middle">verify offline</text>
+
+  <!-- H: Offline Verify -->
+  <rect x="540" y="840" width="240" height="66" rx="10" fill="#ecfeff" stroke="#0e7490" stroke-width="2"/>
+  <text x="660" y="866" font-family="Inter, Arial, sans-serif" font-size="15" fill="#164e63" font-weight="700" text-anchor="middle">Offline Verify</text>
+  <text x="660" y="886" font-family="Inter, Arial, sans-serif" font-size="12" fill="#0e7490" text-anchor="middle">verifyEnvelope() · stateless</text>
+</svg>
