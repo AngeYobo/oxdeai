@@ -575,8 +575,8 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
       out(usage());
       return EXIT_CODE_OK;
     }
-    err(usage());
-    return EXIT_CODE_USAGE;
+    out(usage());
+    return EXIT_CODE_OK;
   }
 
   if (cmd === "help") {
