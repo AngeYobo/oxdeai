@@ -1,35 +1,59 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="520" viewBox="0 0 760 520" role="img" aria-label="Three Layers of Agent Safety">
-  <rect width="760" height="520" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="480" viewBox="0 0 680 480" role="img" aria-label="Three Layers of Agent Safety">
 
-  <text x="50" y="48" font-family="Inter, Arial, sans-serif" font-size="28" fill="#111827" font-weight="700">Three Layers of Agent Safety</text>
-
-  <!-- Layer 1 -->
-  <rect x="50" y="80" width="660" height="110" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
-  <text x="76" y="112" font-family="Inter, Arial, sans-serif" font-size="13" fill="#64748b" font-weight="600">LAYER 1</text>
-  <text x="76" y="136" font-family="Inter, Arial, sans-serif" font-size="20" fill="#1e293b" font-weight="600">Prompt and Output Guardrails</text>
-  <text x="76" y="162" font-family="Inter, Arial, sans-serif" font-size="15" fill="#64748b">Input filtering · content moderation · output classifiers</text>
-
-  <!-- Arrow 1→2 -->
   <defs>
-    <marker id="arrd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <filter id="shadow-sm" x="-8%" y="-8%" width="116%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.07"/>
+    </filter>
+    <filter id="shadow-lg" x="-10%" y="-10%" width="120%" height="136%">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#166534" flood-opacity="0.18"/>
+    </filter>
+    <linearGradient id="oxdeai-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0fdf4"/>
+      <stop offset="100%" stop-color="#dcfce7"/>
+    </linearGradient>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
     </marker>
   </defs>
-  <line x1="380" y1="190" x2="380" y2="218" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#arrd)"/>
 
-  <!-- Layer 2 -->
-  <rect x="50" y="218" width="660" height="110" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
-  <text x="76" y="250" font-family="Inter, Arial, sans-serif" font-size="13" fill="#64748b" font-weight="600">LAYER 2</text>
-  <text x="76" y="274" font-family="Inter, Arial, sans-serif" font-size="20" fill="#1e293b" font-weight="600">Runtime Monitoring and Observability</text>
-  <text x="76" y="300" font-family="Inter, Arial, sans-serif" font-size="15" fill="#64748b">Tracing · logging · behavioral anomaly detection</text>
+  <!-- Background -->
+  <rect width="680" height="480" fill="#f8fafc"/>
+
+  <!-- Layer 1: Prompt and Output Guardrails -->
+  <rect x="40" y="20" width="600" height="104" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="68" y="46" font-family="Inter, Arial, sans-serif" font-size="10" fill="#94a3b8" font-weight="700" letter-spacing="1">LAYER 1</text>
+  <text x="68" y="72" font-family="Inter, Arial, sans-serif" font-size="16" fill="#1e293b" font-weight="700">Prompt and Output Guardrails</text>
+  <text x="68" y="94" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b">Input filtering · content moderation · output classifiers</text>
+  <!-- probabilistic badge -->
+  <rect x="68" y="104" width="72" height="14" rx="7" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="104" y="115" font-family="Inter, Arial, sans-serif" font-size="9" fill="#64748b" font-weight="600" text-anchor="middle">probabilistic</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="340" y1="124" x2="340" y2="152" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Layer 2: Runtime Monitoring -->
+  <rect x="40" y="154" width="600" height="104" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="68" y="180" font-family="Inter, Arial, sans-serif" font-size="10" fill="#94a3b8" font-weight="700" letter-spacing="1">LAYER 2</text>
+  <text x="68" y="206" font-family="Inter, Arial, sans-serif" font-size="16" fill="#1e293b" font-weight="700">Runtime Monitoring and Observability</text>
+  <text x="68" y="228" font-family="Inter, Arial, sans-serif" font-size="12" fill="#64748b">Tracing · logging · behavioral anomaly detection</text>
+  <!-- post-execution badge -->
+  <rect x="68" y="238" width="80" height="14" rx="7" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="108" y="249" font-family="Inter, Arial, sans-serif" font-size="9" fill="#64748b" font-weight="600" text-anchor="middle">post-execution</text>
 
   <!-- Arrow 2→3 -->
-  <line x1="380" y1="328" x2="380" y2="356" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#arrd)"/>
+  <line x1="340" y1="258" x2="340" y2="288" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
 
-  <!-- Layer 3 (highlighted) -->
-  <rect x="50" y="356" width="660" height="130" rx="12" fill="#eefbf3" stroke="#166534" stroke-width="3"/>
-  <text x="76" y="390" font-family="Inter, Arial, sans-serif" font-size="13" fill="#166534" font-weight="600">LAYER 3  ←  OxDeAI</text>
-  <text x="76" y="416" font-family="Inter, Arial, sans-serif" font-size="20" fill="#14532d" font-weight="700">Execution Authorization</text>
-  <text x="76" y="444" font-family="Inter, Arial, sans-serif" font-size="15" fill="#166534">Deterministic pre-execution gate · cryptographic artifacts</text>
-  <text x="76" y="466" font-family="Inter, Arial, sans-serif" font-size="15" fill="#166534">Fail-closed enforcement · tamper-evident audit evidence</text>
+  <!-- Layer 3: OxDeAI — hero -->
+  <rect x="40" y="290" width="600" height="132" rx="14" fill="url(#oxdeai-grad)" stroke="#16a34a" stroke-width="2.5" filter="url(#shadow-lg)"/>
+  <text x="68" y="318" font-family="Inter, Arial, sans-serif" font-size="10" fill="#16a34a" font-weight="700" letter-spacing="1">LAYER 3  ·  OxDeAI</text>
+  <text x="68" y="346" font-family="Inter, Arial, sans-serif" font-size="16" fill="#14532d" font-weight="800">Execution Authorization</text>
+  <text x="68" y="370" font-family="Inter, Arial, sans-serif" font-size="12" fill="#166534">Deterministic pre-execution gate · cryptographic artifacts</text>
+  <text x="68" y="390" font-family="Inter, Arial, sans-serif" font-size="12" fill="#166534">Fail-closed enforcement · tamper-evident audit evidence</text>
+  <!-- deterministic badge -->
+  <rect x="68" y="400" width="74" height="16" rx="8" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+  <text x="105" y="412" font-family="Inter, Arial, sans-serif" font-size="9" fill="#166534" font-weight="700" text-anchor="middle">deterministic</text>
+
+  <!-- Caption -->
+  <text x="340" y="460" font-family="Inter, Arial, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle" font-style="italic">Most systems control what agents say. OxDeAI controls what agents execute.</text>
+
 </svg>
