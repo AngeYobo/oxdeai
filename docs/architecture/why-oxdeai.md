@@ -1,5 +1,7 @@
 # Why OxDeAI
 
+> Control execution, not just behavior.
+
 ## Introduction
 
 OxDeAI exists to enforce deterministic authorization at the execution boundary of autonomous systems.

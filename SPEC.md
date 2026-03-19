@@ -656,7 +656,56 @@ Ambiguity MUST NOT be treated as success.
 }
 ```
 
-## 11. Replay and TOCTOU Resistance
+## 11. KeySet Distribution (v1 baseline)
+
+Key distribution is external to the core protocol.
+
+The base protocol assumes:
+
+- Verifiers MUST have access to trusted KeySets per issuer.
+- KeySets MAY be provisioned statically or retrieved from a well-known endpoint.
+- Unknown issuer or unknown `kid` MUST fail closed.
+
+Recommended HTTP discovery format:
+
+```text
+GET /.well-known/oxdeai-keyset.json
+```
+
+A verifier MAY cache KeySets.
+A verifier MUST fail closed if:
+
+- issuer is unknown
+- `kid` is unknown
+- key cannot be resolved
+
+Dynamic discovery is OPTIONAL and not required for protocol compliance.
+
+---
+
+## 12. Cross-Organization Verification Model
+
+OxDeAI supports verification across trust boundaries.
+
+A relying party MUST:
+
+1. Maintain a set of trusted issuers.
+2. Resolve verification keys using `(issuer, kid, alg)`.
+3. Verify artifacts locally without contacting the issuer.
+
+The protocol does not require:
+
+- a shared control plane
+- runtime trust in the issuer
+- synchronous validation
+
+Trust is explicit and externally configured.
+
+Verification ambiguity MUST result in denial.
+
+---
+
+## 13. Replay and TOCTOU Resistance
 
 OxDeAI artifacts are designed to minimize replay and time-of-check/time-of-use (TOCTOU) risks in distributed execution environments.
 
@@ -672,7 +721,7 @@ Relying parties MUST enforce single-use state for `auth_id`.
 Relying parties SHOULD minimize check-to-execute latency.
 If execution context changes after verification, execution SHOULD be re-verified.
 
-## 12. Compatibility and Upgrade Notes
+## 14. Compatibility and Upgrade Notes
 
 v1.2 adds non-forgeable public-key verification as the preferred path.
 
@@ -683,7 +732,7 @@ Compatibility requirements:
 - Public-key mode SHOULD be default for third-party verification.
 - Future versions MAY strengthen envelope-signing and key-distribution requirements.
 
-## 13. Conformance Requirement
+## 15. Conformance Requirement
 
 Protocol conformance is determined by artifact compatibility and verification behavior.
 
