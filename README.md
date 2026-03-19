@@ -1,25 +1,37 @@
 # OxDeAI
 
-Deterministic execution authorization protocol for autonomous systems.
+Deterministic execution authorization for AI agents.
 
-OxDeAI is the verifiable authorization layer for AI agents and agent runtimes.
-Before an agent executes an external action, OxDeAI evaluates whether that action is allowed under the current policy state and emits a cryptographically verifiable authorization artifact.
+OxDeAI is the execution boundary between AI agents and real-world side effects.
 
-OxDeAI defines portable protocol artifacts and a relying-party verification contract for execution authorization.
-The TypeScript packages in this repository are the reference implementation of that protocol.
+Before an agent executes an external action (API call, infrastructure provisioning, payment, or tool execution), OxDeAI evaluates whether that action is allowed under a deterministic policy state.
+
+If denied, the action never executes.
+If allowed, OxDeAI emits a cryptographically verifiable authorization artifact.
+
+> Control execution, not just behavior.
+
+![Agent execution boundary](./docs/diagrams/agent-execution-boundary.svg)
+
+The LLM cannot execute anything directly.
+It must pass through a deterministic authorization boundary.
 
 ---
 
 ## TL;DR
 
-Agents can trigger real-world side effects.
-OxDeAI inserts a deterministic authorization boundary before any of them execute.
+Agents propose actions.
+OxDeAI decides if they are allowed to execute.
 
-- If policy denies the action, the action never executes.
-- If policy allows the action, OxDeAI emits a cryptographically verifiable `AuthorizationV1` artifact.
-- The artifact can be verified offline - independently, without access to the running system.
+No valid authorization => no execution.
 
-![Execution architecture](./docs/diagrams/execution-architecture.svg)
+This is enforced deterministically and verified locally.
+
+---
+
+## Execution Boundary
+
+![Execution boundary](./docs/diagrams/execution-boundary-simple.svg)
 
 ---
 
@@ -72,6 +84,68 @@ OxDeAI is designed for authorization decisions that must be deterministic, fail-
 
 ---
 
+## Why This Exists
+
+Most agent safety systems operate inside the model:
+
+- prompt guardrails
+- output filtering
+- observability
+
+These are probabilistic (p < 1).
+
+OxDeAI enforces a deterministic boundary (p = 1):
+execution either passes the policy or it does not.
+
+---
+
+## The Missing Layer
+
+Distributed systems solved:
+
+- rate limits
+- authorization
+- retries
+
+Agents still lack: **execution authorization**.
+
+OxDeAI provides that layer.
+
+```text
+Prompt guardrails  →  p < 1
+Execution authorization  →  p = 1
+```
+
+---
+
+## Artifact-First Model
+
+OxDeAI does not rely on a control plane at execution time.
+
+Every allowed action produces a portable `AuthorizationV1` artifact.
+
+The executor verifies:
+
+- signature
+- intent binding
+- state binding
+- policy binding
+
+Execution happens only if verification succeeds.
+
+---
+
+## Protocol Model
+
+OxDeAI follows a standard PDP/PEP architecture:
+
+- **PDP** (Policy Decision Point): evaluates `(intent, state)` → decision
+- **PEP** (Policy Enforcement Point): verifies `AuthorizationV1` → executes or denies
+
+The PEP MUST NOT execute without a valid authorization artifact.
+
+---
+
 ## How It Works
 
 1. A runtime proposes an action.
@@ -80,6 +154,17 @@ OxDeAI is designed for authorization decisions that must be deterministic, fail-
 4. The policy enforcement point executes only when a valid authorization artifact is present.
 5. If policy denies the action, execution is blocked before any side effect occurs.
 6. Post-execution evidence can be packaged into a `VerificationEnvelopeV1` for offline verification.
+
+---
+
+## Comparison
+
+| System | Controls |
+|---|---|
+| Prompt guardrails | model behavior (probabilistic) |
+| Observability | logs after execution |
+| Sandboxing | environment isolation |
+| OxDeAI | execution authorization (deterministic) |
 
 ---
 

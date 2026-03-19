@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="320" viewBox="0 0 420 320" role="img" aria-label="OxDeAI - Execution Boundary">
+
+  <defs>
+    <filter id="shadow-sm" x="-8%" y="-8%" width="116%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.07"/>
+    </filter>
+    <filter id="shadow-lg" x="-10%" y="-10%" width="120%" height="136%">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#166534" flood-opacity="0.18"/>
+    </filter>
+    <linearGradient id="oxdeai-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0fdf4"/>
+      <stop offset="100%" stop-color="#dcfce7"/>
+    </linearGradient>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="420" height="320" fill="#f8fafc"/>
+
+  <!-- Node 1: Agent Runtime -->
+  <rect x="60" y="20" width="300" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="210" y="43" font-family="Inter, Arial, sans-serif" font-size="15" fill="#1e293b" font-weight="700" text-anchor="middle">Agent Runtime</text>
+  <text x="210" y="61" font-family="Inter, Arial, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">LangGraph · CrewAI · AutoGen · OpenAI Agents</text>
+
+  <!-- Arrow 1→2 with label -->
+  <line x1="210" y1="72" x2="210" y2="118" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+  <rect x="142" y="82" width="136" height="20" rx="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="210" y="96" font-family="Inter, Arial, sans-serif" font-size="10" fill="#475569" font-weight="600" text-anchor="middle" letter-spacing="0.3">proposes action</text>
+
+  <!-- Node 2: OxDeAI PDP -->
+  <rect x="40" y="120" width="340" height="72" rx="14" fill="url(#oxdeai-grad)" stroke="#16a34a" stroke-width="2.5" filter="url(#shadow-lg)"/>
+  <text x="210" y="151" font-family="Inter, Arial, sans-serif" font-size="18" fill="#14532d" font-weight="800" text-anchor="middle">OxDeAI</text>
+  <text x="210" y="171" font-family="Inter, Arial, sans-serif" font-size="12" fill="#166534" font-weight="600" text-anchor="middle">Policy Decision Point</text>
+  <text x="210" y="185" font-family="Inter, Arial, sans-serif" font-size="10" fill="#4ade80" text-anchor="middle">deterministic · fail-closed</text>
+
+  <!-- Arrow 2→3 with ALLOW / DENY label -->
+  <line x1="210" y1="192" x2="210" y2="240" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <rect x="136" y="202" width="60" height="20" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+  <text x="166" y="216" font-family="Inter, Arial, sans-serif" font-size="10" fill="#16a34a" font-weight="700" text-anchor="middle">ALLOW</text>
+  <rect x="224" y="202" width="52" height="20" rx="10" fill="#fee2e2" stroke="#fca5a5" stroke-width="1"/>
+  <text x="250" y="216" font-family="Inter, Arial, sans-serif" font-size="10" fill="#dc2626" font-weight="700" text-anchor="middle">DENY</text>
+
+  <!-- Node 3: Execution -->
+  <rect x="60" y="242" width="300" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="210" y="265" font-family="Inter, Arial, sans-serif" font-size="15" fill="#1e293b" font-weight="700" text-anchor="middle">Execution</text>
+  <text x="210" y="283" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">only if authorized</text>
+
+  <!-- Caption -->
+  <text x="210" y="312" font-family="Inter, Arial, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle" font-style="italic">The model can propose. It cannot execute.</text>
+
+</svg>

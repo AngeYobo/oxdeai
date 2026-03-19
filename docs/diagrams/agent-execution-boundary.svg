@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="620" viewBox="0 0 680 620" role="img" aria-label="OxDeAI - Agent Execution Boundary">
+
+  <defs>
+    <!-- Shadows -->
+    <filter id="shadow-sm" x="-8%" y="-8%" width="116%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.07"/>
+    </filter>
+    <filter id="shadow-lg" x="-10%" y="-10%" width="120%" height="136%">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#166534" flood-opacity="0.18"/>
+    </filter>
+
+    <!-- OxDeAI gradient fill -->
+    <linearGradient id="oxdeai-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0fdf4"/>
+      <stop offset="100%" stop-color="#dcfce7"/>
+    </linearGradient>
+
+    <!-- Arrowheads -->
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="680" height="620" fill="#f8fafc"/>
+
+  <!-- Zone: model layer -->
+  <rect x="20" y="20" width="640" height="208" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="44" y="38" font-family="Inter, Arial, sans-serif" font-size="10" fill="#94a3b8" font-weight="600" letter-spacing="1">MODEL LAYER</text>
+
+  <!-- Zone: execution layer -->
+  <rect x="20" y="450" width="500" height="100" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="44" y="468" font-family="Inter, Arial, sans-serif" font-size="10" fill="#94a3b8" font-weight="600" letter-spacing="1">EXECUTION LAYER</text>
+
+  <!-- Node 1: Prompt / Plan -->
+  <rect x="80" y="48" width="420" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="290" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1e293b" font-weight="600" text-anchor="middle">Prompt / Plan</text>
+  <text x="290" y="88" font-family="Inter, Arial, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">user intent · task description</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="290" y1="100" x2="290" y2="120" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Node 2: LLM Reasoning -->
+  <rect x="80" y="122" width="420" height="52" rx="10" fill="#faf5ff" stroke="#a78bfa" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="290" y="144" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4c1d95" font-weight="600" text-anchor="middle">LLM Reasoning</text>
+  <text x="290" y="162" font-family="Inter, Arial, sans-serif" font-size="11" fill="#7c3aed" text-anchor="middle">model output · plan · tool selection</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="290" y1="174" x2="290" y2="194" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Node 3: Proposed Action -->
+  <rect x="80" y="196" width="420" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="290" y="218" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1e293b" font-weight="600" text-anchor="middle">Proposed Action</text>
+  <text x="290" y="236" font-family="Inter, Arial, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">intent · tool call · parameters</text>
+
+  <!-- Arrow 3→OxDeAI (longer gap for boundary pill) -->
+  <line x1="290" y1="248" x2="290" y2="302" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Authorization boundary pill — wider + taller -->
+  <rect x="190" y="258" width="200" height="26" rx="13" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>
+  <text x="290" y="275" font-family="Inter, Arial, sans-serif" font-size="11" fill="#166534" font-weight="700" text-anchor="middle" letter-spacing="0.5">AUTHORIZATION BOUNDARY</text>
+
+  <!-- Node 4: OxDeAI PDP — hero node -->
+  <rect x="60" y="304" width="460" height="94" rx="14" fill="url(#oxdeai-grad)" stroke="#16a34a" stroke-width="2.5" filter="url(#shadow-lg)"/>
+  <text x="290" y="336" font-family="Inter, Arial, sans-serif" font-size="20" fill="#14532d" font-weight="800" text-anchor="middle">OxDeAI</text>
+  <text x="290" y="358" font-family="Inter, Arial, sans-serif" font-size="12" fill="#166534" font-weight="600" text-anchor="middle">Policy Decision Point</text>
+  <text x="290" y="377" font-family="Inter, Arial, sans-serif" font-size="11" fill="#4ade80" text-anchor="middle">deterministic · fail-closed · cryptographic artifacts</text>
+
+  <!-- DENY arrow: right side -->
+  <line x1="520" y1="351" x2="548" y2="351" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-red)"/>
+
+  <!-- Blocked node — DENY inside -->
+  <rect x="550" y="325" width="120" height="58" rx="10" fill="#fff5f5" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3" filter="url(#shadow-sm)"/>
+  <text x="610" y="345" font-family="Inter, Arial, sans-serif" font-size="13" fill="#dc2626" font-weight="800" text-anchor="middle">DENY</text>
+  <text x="610" y="362" font-family="Inter, Arial, sans-serif" font-size="12" fill="#dc2626" font-weight="600" text-anchor="middle">Blocked</text>
+  <text x="610" y="377" font-family="Inter, Arial, sans-serif" font-size="10" fill="#f87171" text-anchor="middle">no side effect</text>
+
+  <!-- ALLOW arrow: bottom -->
+  <line x1="290" y1="398" x2="290" y2="476" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-green)"/>
+  <!-- ALLOW label -->
+  <rect x="259" y="410" width="62" height="17" rx="4" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+  <text x="290" y="423" font-family="Inter, Arial, sans-serif" font-size="10" fill="#16a34a" font-weight="700" text-anchor="middle">ALLOW</text>
+
+  <!-- Node 5: Execution -->
+  <rect x="80" y="478" width="420" height="56" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="290" y="501" font-family="Inter, Arial, sans-serif" font-size="14" fill="#1e293b" font-weight="600" text-anchor="middle">Execution</text>
+  <text x="290" y="520" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">API · tool · infrastructure · payment</text>
+
+  <!-- Caption -->
+  <text x="340" y="580" font-family="Inter, Arial, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle" font-style="italic">The model can propose. It cannot execute.</text>
+  <text x="340" y="598" font-family="Inter, Arial, sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle" font-style="italic">Every execution must pass through a deterministic authorization boundary.</text>
+
+</svg>
