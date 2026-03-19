@@ -439,7 +439,7 @@ OxDeAI artifacts are portable protocol artifacts: Rust, Go, and Python developer
 | `v1.3` Guard Adapter + Integration Surface | complete |
 | `v1.4` Ecosystem Adoption | complete |
 | `v1.5` Developer Experience | complete |
-| `v2.x` Delegated Agent Authorization | next |
+| `v2.x` Delegated Agent Authorization | in progress |
 | `v3.x` Verifiable Execution Infrastructure | planned |
 
 ### v1.4 - Ecosystem Adoption

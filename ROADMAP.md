@@ -160,7 +160,7 @@ References:
 - [`docs/architecture/why-oxdeai.md`](./docs/architecture/why-oxdeai.md)
 
 ### v2.x - Delegated Agent Authorization
-Status: `Planned`
+Status: `In Progress`
 
 Scope:
 - bounded delegation for multi-agent systems
