@@ -1,6 +1,6 @@
 # OxDeAI Release Policy
 
-Last updated: 2026-03-08
+Last updated: 2026-03-19
 
 This document is the single source of truth for OxDeAI release governance and release execution.
 
@@ -23,6 +23,15 @@ Protocol stack packages (coordinated releases):
 - `@oxdeai/core`
 - `@oxdeai/sdk`
 - `@oxdeai/conformance`
+
+Adapter packages (coordinated, independent version line from protocol stack):
+
+- `@oxdeai/guard`
+- `@oxdeai/langgraph`
+- `@oxdeai/openai-agents`
+- `@oxdeai/crewai`
+- `@oxdeai/autogen`
+- `@oxdeai/openclaw`
 
 Tooling package (independent release line):
 

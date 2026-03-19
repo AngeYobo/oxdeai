@@ -7,6 +7,14 @@ This project follows Semantic Versioning.
 
 ---
 
+## [0.2.4] - 2026-03-19
+
+### Fixed
+
+- No-command invocation (`oxdeai` with no arguments) now exits with code 0 and prints usage to stdout instead of stderr. Eliminates spurious `ELIFECYCLE` error from pnpm.
+
+---
+
 ## [0.2.4] - 2026-03-12
 
 ### Changed

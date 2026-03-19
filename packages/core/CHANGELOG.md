@@ -7,6 +7,32 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.5.0] - 2026-03-19
+
+### Changed
+
+- Execution authorization framing: replaced "economic and operational constraints" with "execution authorization" throughout package description, keywords, and documentation.
+- Package description updated on npm to reflect protocol-first positioning.
+- Keywords: replaced `economic-containment` and `agent-economics` with `authorization-artifact` and `fail-closed`.
+
+### Notes
+
+- `@oxdeai/core@1.5.0` corresponds to the v1.5 Developer Experience milestone.
+- Protocol semantics, artifact encoding, and verification API are unchanged from `1.3.x`.
+- `@oxdeai/sdk` and `@oxdeai/conformance` remain at `1.3.1` (no protocol changes).
+- Adapter packages (`@oxdeai/guard`, `@oxdeai/langgraph`, `@oxdeai/openai-agents`, `@oxdeai/crewai`, `@oxdeai/autogen`, `@oxdeai/openclaw`) released at `1.0.1`.
+
+---
+
+## [1.3.1] - 2026-03-08
+
+### Changed
+
+- Patch release aligned with `@oxdeai/sdk@1.3.1` and `@oxdeai/conformance@1.3.1`.
+- Documentation and release metadata updates.
+
+---
+
 ## [1.3.0] - 2026-03-08
 
 ### Changed
