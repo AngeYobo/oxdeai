@@ -34,7 +34,7 @@ Total: **4 new files**, **4 files extended**, **0 breaking changes**.
 
 ## 2. Core Types
 
-**`packages/core/src/types/delegation.ts`** — new file
+**`packages/core/src/types/delegation.ts`** - new file
 
 ```typescript
 export type DelegationScope = {
@@ -63,7 +63,7 @@ export type DelegationV1 = {
 **Extend `packages/core/src/types/authorization.ts`:**
 
 ```typescript
-// Add at bottom — no changes to AuthorizationV1
+// Add at bottom - no changes to AuthorizationV1
 export type AuthorizationCredential = AuthorizationV1 | DelegationV1;
 
 export function isDelegationV1(
@@ -88,7 +88,7 @@ export const SIGNING_DOMAINS = {
 } as const;
 ```
 
-The existing `signEd25519(domain, payload, privateKeyPem)` and `verifyEd25519(domain, payload, sig, publicKeyPem)` work unchanged — just pass `SIGNING_DOMAINS.DELEGATION_V1`.
+The existing `signEd25519(domain, payload, privateKeyPem)` and `verifyEd25519(domain, payload, sig, publicKeyPem)` work unchanged - just pass `SIGNING_DOMAINS.DELEGATION_V1`.
 
 Signing payload = `DelegationV1` object with `signature` field omitted.
 
@@ -96,7 +96,7 @@ Signing payload = `DelegationV1` object with `signature` field omitted.
 
 ## 4. `createDelegation()` and `signDelegation()`
 
-**`packages/core/src/delegation/createDelegation.ts`** — new file
+**`packages/core/src/delegation/createDelegation.ts`** - new file
 
 ```typescript
 import { createHash, randomUUID } from "node:crypto";
@@ -107,7 +107,7 @@ import { signEd25519, SIGNING_DOMAINS } from "../crypto/signatures.js";
 
 export type CreateDelegationOptions = {
   issuer: string;
-  delegator: string;   // must match parent.audience — caller is responsible
+  delegator: string;   // must match parent.audience - caller is responsible
   delegatee: string;
   scope: DelegationScope;
   kid: string;
@@ -117,7 +117,7 @@ export type CreateDelegationOptions = {
 
 /**
  * Build and sign a DelegationV1 from a resolved parent AuthorizationV1.
- * Does NOT enforce invariants — call verifyDelegation() after to confirm.
+ * Does NOT enforce invariants - call verifyDelegation() after to confirm.
  */
 export function createDelegation(
   parent: AuthorizationV1,
@@ -174,7 +174,7 @@ function sha256OfAuth(auth: AuthorizationV1): string {
 
 ## 5. `verifyDelegation()`
 
-**`packages/core/src/verification/verifyDelegation.ts`** — new file
+**`packages/core/src/verification/verifyDelegation.ts`** - new file
 
 ```typescript
 import { AuthorizationV1 } from "../types/authorization.js";
@@ -222,7 +222,7 @@ export function verifyDelegation(
   }
 
   // Step 4: Single-hop enforcement
-  // (DelegationV1 cannot be a parent — enforced by type system + this check)
+  // (DelegationV1 cannot be a parent - enforced by type system + this check)
   if ("delegation_id" in (parent as object)) {
     return deny(["multi-hop delegation not permitted"]);
   }
@@ -267,7 +267,7 @@ function checkScopeNarrowing(d: DelegationV1, parent: AuthorizationV1): string[]
   const v: string[] = [];
 
   if (d.scope.max_amount != null) {
-    // parent.amount is in bigint-equivalent units — compare numerically
+    // parent.amount is in bigint-equivalent units - compare numerically
     const parentAmount = typeof parent.amount === "bigint"
       ? Number(parent.amount) / 1_000_000
       : (parent.amount ?? Infinity);
@@ -355,7 +355,7 @@ export type OxDeAIGuardConfig = {
 };
 ```
 
-**Extend `packages/guard/src/guard.ts`** — add delegation branch after authorization check:
+**Extend `packages/guard/src/guard.ts`** - add delegation branch after authorization check:
 
 ```typescript
 import { isDelegationV1, verifyDelegation } from "@oxdeai/core";
@@ -392,7 +392,7 @@ if (isDelegationV1(credential)) {
     );
   }
 } else {
-  // Existing AuthorizationV1 path — unchanged
+  // Existing AuthorizationV1 path - unchanged
   const authCheck = config.engine.verifyAuthorization(intent, credential, nextState, now);
   if (!authCheck.valid) {
     throw new OxDeAIAuthorizationError(
@@ -408,7 +408,7 @@ The existing `AuthorizationV1` path is **untouched**. `isDelegationV1()` discrim
 
 ## 7. Exports
 
-**`packages/core/src/delegation/index.ts`** — new file
+**`packages/core/src/delegation/index.ts`** - new file
 
 ```typescript
 export { createDelegation, signDelegation } from "./createDelegation.js";
@@ -430,23 +430,23 @@ export { isDelegationV1 } from "./types/authorization.js";
 ## 8. Implementation Order
 
 ```
-1. packages/core/src/types/delegation.ts              — types first
-2. packages/core/src/types/authorization.ts           — add isDelegationV1, AuthorizationCredential
-3. packages/core/src/crypto/signatures.ts             — add DELEGATION_V1 domain
-4. packages/core/src/delegation/createDelegation.ts   — create + sign
-5. packages/core/src/verification/verifyDelegation.ts — verify
-6. packages/core/src/delegation/index.ts              — exports
-7. packages/core/src/index.ts                         — surface exports
-8. packages/guard/src/types.ts                        — config extension
-9. packages/guard/src/guard.ts                        — delegation branch
-10. tests                                             — see §9
+1. packages/core/src/types/delegation.ts              - types first
+2. packages/core/src/types/authorization.ts           - add isDelegationV1, AuthorizationCredential
+3. packages/core/src/crypto/signatures.ts             - add DELEGATION_V1 domain
+4. packages/core/src/delegation/createDelegation.ts   - create + sign
+5. packages/core/src/verification/verifyDelegation.ts - verify
+6. packages/core/src/delegation/index.ts              - exports
+7. packages/core/src/index.ts                         - surface exports
+8. packages/guard/src/types.ts                        - config extension
+9. packages/guard/src/guard.ts                        - delegation branch
+10. tests                                             - see §9
 ```
 
 ---
 
 ## 9. Tests
 
-**`packages/core/src/test/delegation.test.ts`** — new file, cover:
+**`packages/core/src/test/delegation.test.ts`** - new file, cover:
 
 - `createDelegation()` produces valid artifact
 - `verifyDelegation()` returns ok on valid chain
@@ -458,7 +458,7 @@ export { isDelegationV1 } from "./types/authorization.js";
 - DENY on invalid signature
 - DENY on consumed delegation_id
 
-**`packages/guard/src/test/guard-delegation.test.ts`** — new file, cover:
+**`packages/guard/src/test/guard-delegation.test.ts`** - new file, cover:
 
 - Guard accepts valid DelegationV1 and calls execute
 - Guard throws OxDeAIAuthorizationError on invalid delegation
@@ -469,12 +469,12 @@ export { isDelegationV1 } from "./types/authorization.js";
 
 ## 10. What Does Not Change
 
-- `AuthorizationV1` schema — no field changes
+- `AuthorizationV1` schema - no field changes
 - `PolicyEngine` evaluation logic
-- `verifyAuthorization()` — untouched
-- `OxDeAIGuard` default behavior — delegation is opt-in via `resolveParentAuthorization`
-- All existing adapter packages — no changes required
-- Conformance vectors — no existing vectors are invalidated
+- `verifyAuthorization()` - untouched
+- `OxDeAIGuard` default behavior - delegation is opt-in via `resolveParentAuthorization`
+- All existing adapter packages - no changes required
+- Conformance vectors - no existing vectors are invalidated
 
 ---
 

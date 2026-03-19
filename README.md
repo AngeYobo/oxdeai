@@ -140,9 +140,16 @@ Execution happens only if verification succeeds.
 OxDeAI follows a standard PDP/PEP architecture:
 
 - **PDP** (Policy Decision Point): evaluates `(intent, state)` → decision
-- **PEP** (Policy Enforcement Point): verifies `AuthorizationV1` → executes or denies
+- **PEP** (Policy Enforcement Point): verifies `AuthorizationV1` or `DelegationV1` → executes or denies
 
 The PEP MUST NOT execute without a valid authorization artifact.
+
+Authorization artifacts:
+
+| Artifact | Issued by | Scope |
+|---|---|---|
+| `AuthorizationV1` | PDP (policy evaluation) | defined by policy |
+| `DelegationV1` | delegating principal | subset of parent `AuthorizationV1` |
 
 ---
 
@@ -154,6 +161,54 @@ The PEP MUST NOT execute without a valid authorization artifact.
 4. The policy enforcement point executes only when a valid authorization artifact is present.
 5. If policy denies the action, execution is blocked before any side effect occurs.
 6. Post-execution evidence can be packaged into a `VerificationEnvelopeV1` for offline verification.
+
+---
+
+## Delegated Authorization
+
+A principal holding a valid `AuthorizationV1` can delegate a strictly narrowed subset of that authority to a child agent using `DelegationV1`.
+
+```
+parent-agent  →  AuthorizationV1   (tools=[provision_gpu, query_db], budget=1000)
+                      ↓ creates
+                 DelegationV1      (tools=[provision_gpu], max_amount=300, expiry=60s)
+                      ↓ presented by
+child-agent   →  PEP verifyDelegation()
+                      ↓
+                 Execution (within child scope only)
+```
+
+Key properties:
+
+- **Strictly narrowing** — scope, amount, and expiry can only be reduced, never expanded
+- **Single-hop** — a `DelegationV1` cannot itself be re-delegated
+- **Locally verifiable** — no control plane required at execution time
+- **Cryptographically bound** — Ed25519-signed, tied to a specific parent `AuthorizationV1` by hash
+
+![DelegationV1 flow](./docs/diagrams/delegation-flow.svg)
+
+```typescript
+import { createDelegation, verifyDelegation } from "@oxdeai/core";
+
+// Parent creates a delegation for child-agent
+const delegation = createDelegation(parentAuth, {
+  delegatee: "child-agent",
+  scope: { tools: ["provision_gpu"], max_amount: 300 },
+  expiry: Date.now() + 60_000,
+  kid: "key-1",
+}, privateKeyPem);
+
+// Child PEP verifies before execution
+const result = verifyDelegation(delegation, parentAuth, {
+  trustedKeySets: [keyset],
+  now: Date.now(),
+});
+// result.ok === true → execute
+// result.ok === false → DENY, tool blocked
+```
+
+Demo: [`examples/delegation`](./examples/delegation)
+Spec: [`docs/spec/delegation-v1.md`](./docs/spec/delegation-v1.md)
 
 ---
 

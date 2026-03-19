@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="460" viewBox="0 0 680 460" role="img" aria-label="OxDeAI - DelegationV1 Flow">
+
+  <defs>
+    <filter id="shadow-sm" x="-8%" y="-8%" width="116%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.07"/>
+    </filter>
+    <filter id="shadow-lg" x="-10%" y="-10%" width="120%" height="136%">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#166534" flood-opacity="0.18"/>
+    </filter>
+    <filter id="shadow-indigo" x="-10%" y="-10%" width="120%" height="136%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#312e81" flood-opacity="0.14"/>
+    </filter>
+    <linearGradient id="oxdeai-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0fdf4"/>
+      <stop offset="100%" stop-color="#dcfce7"/>
+    </linearGradient>
+    <linearGradient id="delegation-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#eef2ff"/>
+      <stop offset="100%" stop-color="#e0e7ff"/>
+    </linearGradient>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arr-indigo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4338ca"/>
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="680" height="460" fill="#f8fafc"/>
+
+  <!-- Node: Parent Agent -->
+  <rect x="40" y="30" width="180" height="56" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="130" y="53" font-family="Inter, Arial, sans-serif" font-size="13" fill="#1e293b" font-weight="700" text-anchor="middle">Parent Agent</text>
+  <text x="130" y="72" font-family="Inter, Arial, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle">full authority</text>
+
+  <!-- Arrow: Parent → OxDeAI PDP -->
+  <line x1="220" y1="58" x2="268" y2="58" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+  <rect x="221" y="44" width="46" height="16" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="244" y="56" font-family="Inter, Arial, sans-serif" font-size="9" fill="#475569" font-weight="600" text-anchor="middle">proposes</text>
+
+  <!-- Node: OxDeAI PDP -->
+  <rect x="270" y="20" width="200" height="76" rx="14" fill="url(#oxdeai-grad)" stroke="#16a34a" stroke-width="2.5" filter="url(#shadow-lg)"/>
+  <text x="370" y="50" font-family="Inter, Arial, sans-serif" font-size="15" fill="#14532d" font-weight="800" text-anchor="middle">OxDeAI PDP</text>
+  <text x="370" y="68" font-family="Inter, Arial, sans-serif" font-size="11" fill="#166534" font-weight="600" text-anchor="middle">Policy Decision Point</text>
+  <text x="370" y="85" font-family="Inter, Arial, sans-serif" font-size="10" fill="#4ade80" text-anchor="middle">deterministic · fail-closed</text>
+
+  <!-- Arrow: PDP → AuthorizationV1 -->
+  <line x1="370" y1="96" x2="370" y2="136" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <rect x="329" y="104" width="82" height="16" rx="8" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+  <text x="370" y="116" font-family="Inter, Arial, sans-serif" font-size="9" fill="#16a34a" font-weight="700" text-anchor="middle">ALLOW</text>
+
+  <!-- Node: AuthorizationV1 -->
+  <rect x="270" y="138" width="200" height="52" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="370" y="160" font-family="Inter, Arial, sans-serif" font-size="13" fill="#14532d" font-weight="700" text-anchor="middle">AuthorizationV1</text>
+  <text x="370" y="178" font-family="Inter, Arial, sans-serif" font-size="10" fill="#166534" text-anchor="middle">Ed25519 signed · intent + state + policy bound</text>
+
+  <!-- Arrow: Parent creates DelegationV1 (left arc) -->
+  <path d="M 130 86 C 130 200 270 220 290 220" fill="none" stroke="#4338ca" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-indigo)"/>
+  <rect x="56" y="178" width="122" height="16" rx="8" fill="#eef2ff" stroke="#a5b4fc" stroke-width="1"/>
+  <text x="117" y="190" font-family="Inter, Arial, sans-serif" font-size="9" fill="#4338ca" font-weight="600" text-anchor="middle">creates ↓ narrow scope</text>
+
+  <!-- Node: DelegationV1 -->
+  <rect x="270" y="210" width="200" height="66" rx="12" fill="url(#delegation-grad)" stroke="#4338ca" stroke-width="2" filter="url(#shadow-indigo)"/>
+  <text x="370" y="234" font-family="Inter, Arial, sans-serif" font-size="13" fill="#312e81" font-weight="700" text-anchor="middle">DelegationV1</text>
+  <text x="370" y="252" font-family="Inter, Arial, sans-serif" font-size="10" fill="#4338ca" text-anchor="middle">tools ⊆ parent · amount ≤ parent</text>
+  <text x="370" y="268" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6366f1" text-anchor="middle">expiry ≤ parent · single-hop</text>
+
+  <!-- Arrow: DelegationV1 → Child PEP -->
+  <line x1="370" y1="276" x2="370" y2="318" stroke="#4338ca" stroke-width="1.5" marker-end="url(#arr-indigo)"/>
+  <rect x="329" y="284" width="82" height="16" rx="8" fill="#eef2ff" stroke="#a5b4fc" stroke-width="1"/>
+  <text x="370" y="296" font-family="Inter, Arial, sans-serif" font-size="9" fill="#4338ca" font-weight="700" text-anchor="middle">presented by child</text>
+
+  <!-- Node: Child PEP -->
+  <rect x="270" y="320" width="200" height="56" rx="10" fill="#fff7ed" stroke="#9a3412" stroke-width="2" filter="url(#shadow-sm)"/>
+  <text x="370" y="344" font-family="Inter, Arial, sans-serif" font-size="13" fill="#7c2d12" font-weight="700" text-anchor="middle">PEP — verifyDelegation()</text>
+  <text x="370" y="362" font-family="Inter, Arial, sans-serif" font-size="10" fill="#b45309" text-anchor="middle">local · no control plane · fail-closed</text>
+
+  <!-- Arrow: PEP → Execution ALLOW -->
+  <line x1="470" y1="348" x2="544" y2="348" stroke="#16a34a" stroke-width="2" marker-end="url(#arr-green)"/>
+  <rect x="471" y="334" width="62" height="16" rx="8" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+  <text x="502" y="346" font-family="Inter, Arial, sans-serif" font-size="9" fill="#16a34a" font-weight="700" text-anchor="middle">ALLOW</text>
+
+  <!-- Node: Execution -->
+  <rect x="546" y="322" width="116" height="52" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="604" y="344" font-family="Inter, Arial, sans-serif" font-size="12" fill="#1e293b" font-weight="700" text-anchor="middle">Execution</text>
+  <text x="604" y="362" font-family="Inter, Arial, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">within child scope</text>
+
+  <!-- Arrow: PEP → DENY (scope violation) -->
+  <line x1="370" y1="376" x2="370" y2="406" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-red)"/>
+
+  <!-- Node: DENY -->
+  <rect x="290" y="408" width="160" height="36" rx="8" fill="#fff5f5" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5,3" filter="url(#shadow-sm)"/>
+  <text x="370" y="422" font-family="Inter, Arial, sans-serif" font-size="11" fill="#dc2626" font-weight="800" text-anchor="middle">DENY</text>
+  <text x="370" y="436" font-family="Inter, Arial, sans-serif" font-size="10" fill="#f87171" text-anchor="middle">scope / expiry / signature violation</text>
+
+  <!-- Caption -->
+  <text x="340" y="458" font-family="Inter, Arial, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle" font-style="italic">Delegation is strictly narrowing. The child cannot exceed parent authority.</text>
+
+</svg>
