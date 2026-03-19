@@ -1,0 +1,17 @@
+{
+  "name": "@oxdeai/example-delegation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OxDeAI DelegationV1 demo — parent delegates narrowed authority to child agent",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "pnpm build && node dist/run.js"
+  },
+  "dependencies": {
+    "@oxdeai/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
