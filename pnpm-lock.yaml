@@ -57,6 +57,16 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
+  examples/delegation:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   examples/gpu-guard: {}
 
   examples/langgraph:
