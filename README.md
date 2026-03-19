@@ -180,10 +180,10 @@ child-agent   →  PEP verifyDelegation()
 
 Key properties:
 
-- **Strictly narrowing** — scope, amount, and expiry can only be reduced, never expanded
-- **Single-hop** — a `DelegationV1` cannot itself be re-delegated
-- **Locally verifiable** — no control plane required at execution time
-- **Cryptographically bound** — Ed25519-signed, tied to a specific parent `AuthorizationV1` by hash
+- **Strictly narrowing** - scope, amount, and expiry can only be reduced, never expanded
+- **Single-hop** - a `DelegationV1` cannot itself be re-delegated
+- **Locally verifiable** - no control plane required at execution time
+- **Cryptographically bound** - Ed25519-signed, tied to a specific parent `AuthorizationV1` by hash
 
 ![DelegationV1 flow](./docs/diagrams/delegation-flow.svg)
 
