@@ -6,7 +6,8 @@ import type { KeySet, KeySetKey, SignatureAlgorithm } from "../types/keyset.js";
 export const SIGNING_DOMAINS = {
   AUTH_V1: "OXDEAI_AUTH_V1",
   ENVELOPE_V1: "OXDEAI_ENVELOPE_V1",
-  CHECKPOINT_V1: "OXDEAI_CHECKPOINT_V1"
+  CHECKPOINT_V1: "OXDEAI_CHECKPOINT_V1",
+  DELEGATION_V1: "OXDEAI_DELEGATION_V1"
 } as const;
 
 /** @public */

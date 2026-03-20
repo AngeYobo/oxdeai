@@ -1,6 +1,6 @@
 {
   "name": "@oxdeai/core",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Deterministic execution authorization engine for AI agents. Evaluates proposed actions against policy state and emits cryptographically verifiable authorization artifacts before execution.",
   "license": "Apache-2.0",
   "type": "module",

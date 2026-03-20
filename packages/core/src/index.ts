@@ -3,6 +3,7 @@ export type * from "./types/state.js";
 export type * from "./types/policy.js";
 export type * from "./types/authorization.js";
 export type * from "./types/keyset.js";
+export type * from "./types/delegation.js";
 export type * from "./verification/types.js";
 export { encodeCanonicalState, decodeCanonicalState } from "./snapshot/CanonicalCodec.js";
 export { createCanonicalState, withModuleState } from "./snapshot/CanonicalState.js";
@@ -24,5 +25,14 @@ export { verifySnapshot } from "./verification/verifySnapshot.js";
 export { verifyAuditEvents } from "./verification/verifyAuditEvents.js";
 export { verifyEnvelope } from "./verification/verifyEnvelope.js";
 export { verifyAuthorization, signAuthorizationEd25519, authorizationSigningPayload } from "./verification/verifyAuthorization.js";
+export {
+  verifyDelegation,
+  verifyDelegationChain,
+  delegationParentHash,
+  delegationSigningPayload,
+} from "./verification/verifyDelegation.js";
+export type { VerifyDelegationOptions } from "./verification/verifyDelegation.js";
+export { createDelegation } from "./delegation/createDelegation.js";
+export type { CreateDelegationParams } from "./delegation/createDelegation.js";
 export { PolicyEngine } from "./policy/PolicyEngine.js";
 export { HashChainedLog } from "./audit/HashChainedLog.js";

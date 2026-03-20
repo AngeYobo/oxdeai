@@ -360,6 +360,16 @@ export class PolicyEngine {
     }
   }
 
+  /**
+   * IMPORTANT: The input `state` is assumed to be immutable for the duration
+   * of this call. Callers MUST NOT share a mutable state object across
+   * concurrent evaluations. Each invocation must receive an isolated snapshot
+   * (e.g. `structuredClone(state)`). Violating this breaks determinism:
+   * `deepMerge` accumulates module deltas via shallow merging, which mutates
+   * nested objects of the original state in place. A concurrent caller that
+   * reads the same reference mid-flight will observe a partially-applied
+   * delta and may produce non-deterministic budget or replay decisions.
+   */
   evaluatePure(intent: Intent, state: State, opts?: EngineEvalOptions): EvaluatePureOutput {
 
     const mode = opts?.mode ?? "fail-fast";
