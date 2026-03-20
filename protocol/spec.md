@@ -115,8 +115,30 @@ What this enables:
 | `inconclusive` (verification) | Structurally valid but insufficient strict anchors | Do not auto-approve; escalate/manual review or best-effort policy |
 | `ok` (verification) | Artifact verifies under selected mode | Accept/report as verified |
 
+### DelegationV1 failure codes
+
+| Code | Trigger |
+|---|---|
+| `DELEGATION_MISSING_FIELD` | Required field absent or wrong type |
+| `DELEGATION_ALG_UNSUPPORTED` | `alg` is not `Ed25519` |
+| `DELEGATION_EXPIRED` | `now >= delegation.expiry` |
+| `DELEGATION_PARENT_EXPIRED` | `now >= parent.expiry` |
+| `DELEGATION_PARENT_HASH_MISMATCH` | `parent_auth_hash` does not match `SHA256(canonical_json(parent))` |
+| `DELEGATION_DELEGATOR_MISMATCH` | `delegation.delegator != parent.audience` |
+| `DELEGATION_POLICY_ID_MISMATCH` | `delegation.policy_id != parent.policy_id` |
+| `DELEGATION_EXPIRY_EXCEEDS_PARENT` | `delegation.expiry > parent.expiry` |
+| `DELEGATION_MULTIHOP_DENIED` | Parent is a `DelegationV1` (has `delegation_id`) |
+| `DELEGATION_AUDIENCE_MISMATCH` | `delegatee` does not match `expectedDelegatee` |
+| `DELEGATION_POLICY_MISMATCH` | `policy_id` does not match `expectedPolicyId` |
+| `DELEGATION_REPLAY` | `delegation_id` already in `consumedDelegationIds` |
+| `DELEGATION_SCOPE_VIOLATION` | Child scope exceeds parent scope |
+| `DELEGATION_TRUST_MISSING` | `requireSignatureVerification=true` but no `trustedKeySets` |
+| `DELEGATION_KID_UNKNOWN` | `kid` not found in `trustedKeySets` for issuer/alg |
+| `DELEGATION_SIGNATURE_INVALID` | Ed25519 signature verification failed |
+
 Operational policy tip:
 - strict environments SHOULD treat `inconclusive` as non-pass for settlement/compliance decisions.
+- DelegationV1 checks MUST fail closed — any violation rejects the delegation path entirely.
 
 ---
 
@@ -194,6 +216,20 @@ Recommendations:
 2. Define drift tolerance policy at system boundary (e.g., max accepted skew).
 3. In strict deterministic contexts, inject `now` explicitly; avoid implicit wall clock reads in verification/evidence pipelines.
 4. Keep replay window and velocity window parameters explicit in state/policy.
+
+---
+
+## 8.1 DelegationV1 execution path
+
+When a child agent presents a `DelegationV1` instead of a direct `AuthorizationV1`:
+
+1. Child calls `verifyDelegationChain(parent, delegation, opts)` at the PEP.
+2. Chain checks run in order: multi-hop guard → parent hash binding → parent expiry → delegator match → policy binding → expiry ceiling.
+3. Inner `verifyDelegation()` runs: field validation → alg → delegation expiry → scope narrowing → replay → Ed25519 (if `trustedKeySets` provided).
+4. On any violation: fail closed, no side effect, no `setState`.
+5. On success: execute within the granted scope.
+
+`setState` MUST be skipped on the delegation path — the delegation does not mutate the parent's policy state.
 
 ---
 

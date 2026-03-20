@@ -484,6 +484,12 @@ Conformance suites MUST check deterministic equivalence, including:
 - deterministic violation ordering
 - replay/verification consistency across processes/runtimes
 
+DelegationV1 conformance (v1.3+) additionally requires:
+- `delegation_parent_hash = SHA256(canonical_json(AuthorizationV1))` — key-order invariant
+- `verifyDelegation()` field/structural checks — no crypto required
+- `verifyDelegationChain()` — hash recomputation, chain structural checks
+- Ed25519 signature path — via test key material in `opts.trustedKeySets`
+
 Reference vectors are distributed in `@oxdeai/conformance`.
 
 ---
