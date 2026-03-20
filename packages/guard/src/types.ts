@@ -1,4 +1,4 @@
-import type { Authorization, Intent, PolicyEngine, State } from "@oxdeai/core";
+import type { Authorization, AuthorizationV1, DelegationV1, Intent, KeySet, PolicyEngine, State } from "@oxdeai/core";
 
 /**
  * A runtime-agnostic description of an action an agent wants to perform.
@@ -20,11 +20,38 @@ export type ProposedAction = {
   timestampSeconds?: number;
 };
 
+/**
+ * Delegation credentials presented by a child agent to execute within a
+ * delegated scope. The guard verifies the full chain before execution.
+ */
+export type GuardDelegationInput = {
+  /** The DelegationV1 artifact issued by the parent agent. */
+  delegation: DelegationV1;
+  /** The parent AuthorizationV1 that the delegation was derived from. */
+  parentAuth: AuthorizationV1;
+};
+
+/**
+ * Per-call options passed as the optional third argument to the guard function.
+ * When `delegation` is present, the guard takes the delegation verification path
+ * instead of the standard policy-evaluation path.
+ */
+export type GuardCallOptions = {
+  /**
+   * Delegation credentials for child-agent execution.
+   * When provided, the guard skips engine.evaluatePure() and instead
+   * verifies the delegation chain locally.
+   */
+  delegation?: GuardDelegationInput;
+};
+
 /** Structured record of the guard's decision, passed to the onDecision hook. */
 export type GuardDecisionRecord = {
   action: ProposedAction;
   decision: "ALLOW" | "DENY";
   authorization?: Authorization;
+  /** Present when the decision was made via the delegation verification path. */
+  delegation?: DelegationV1;
   reasons?: string[];
 };
 
@@ -63,4 +90,24 @@ export type OxDeAIGuardConfig = {
    * cause a hard failure. Defaults to false.
    */
   strict?: boolean;
+
+  /**
+   * KeySets used to verify Ed25519 signatures on DelegationV1 artifacts.
+   * When absent, signature verification is skipped (unless
+   * requireDelegationSignatureVerification is true, which will fail-closed).
+   */
+  trustedKeySets?: KeySet | readonly KeySet[];
+
+  /**
+   * When true, the guard fails closed if no trustedKeySets are provided
+   * for delegation path verification. Defaults to false.
+   */
+  requireDelegationSignatureVerification?: boolean;
+
+  /**
+   * Set of delegation_ids already consumed in this session.
+   * Used for replay protection on the delegation path.
+   * Tracking across calls is the caller's responsibility.
+   */
+  consumedDelegationIds?: readonly string[];
 };

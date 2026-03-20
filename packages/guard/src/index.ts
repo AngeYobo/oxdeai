@@ -12,7 +12,14 @@ export { defaultNormalizeAction } from "./normalizeAction.js";
 export {
   OxDeAIDenyError,
   OxDeAIAuthorizationError,
+  OxDeAIDelegationError,
   OxDeAIGuardConfigurationError,
   OxDeAINormalizationError,
 } from "./errors.js";
-export type { ProposedAction, OxDeAIGuardConfig, GuardDecisionRecord } from "./types.js";
+export type {
+  ProposedAction,
+  OxDeAIGuardConfig,
+  GuardDecisionRecord,
+  GuardDelegationInput,
+  GuardCallOptions,
+} from "./types.js";

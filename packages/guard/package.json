@@ -1,6 +1,6 @@
 {
   "name": "@oxdeai/guard",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "Apache-2.0",
   "description": "Universal execution authorization guard (PEP boundary) for OxDeAI",
   "keywords": [
@@ -30,6 +30,6 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "rm -rf dist && tsc -p tsconfig.json",
-    "test": "pnpm build && node --test \"dist/test/guard.test.js\" \"dist/test/guard.property.test.js\""
+    "test": "pnpm build && node --test \"dist/test/guard.test.js\" \"dist/test/guard.property.test.js\" \"dist/test/guard.delegation.test.js\" \"dist/test/guard.delegation.matrix.test.js\" \"dist/test/guard.delegation.property.test.js\""
   }
 }

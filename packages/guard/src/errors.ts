@@ -44,3 +44,26 @@ export class OxDeAINormalizationError extends Error {
     this.name = "OxDeAINormalizationError";
   }
 }
+
+/**
+ * Thrown when DelegationV1 verification fails at the guard boundary.
+ * Extends OxDeAIAuthorizationError so existing catch blocks remain valid.
+ * The `violations` field carries structured delegation-specific failure codes.
+ *
+ * Common violation codes:
+ *   DELEGATION_SIGNATURE_INVALID  — Ed25519 signature check failed
+ *   DELEGATION_PARENT_HASH_MISMATCH — parentAuth hash does not match
+ *   DELEGATION_SCOPE_VIOLATION    — child scope exceeds parent scope
+ *   DELEGATION_EXPIRED            — delegation has expired
+ *   DELEGATION_AUDIENCE_MISMATCH  — delegatee does not match expectedDelegatee
+ *   DELEGATION_MULTIHOP_DENIED    — parent is itself a DelegationV1
+ */
+export class OxDeAIDelegationError extends OxDeAIAuthorizationError {
+  readonly violations: readonly string[];
+
+  constructor(violations: readonly string[]) {
+    super(`Delegation verification failed: [${violations.join(", ")}]. Execution blocked.`);
+    this.name = "OxDeAIDelegationError";
+    this.violations = Object.freeze([...violations]);
+  }
+}
