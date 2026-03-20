@@ -168,13 +168,13 @@ Delivered:
 - `DelegationV1` as a first-class protocol artifact (`SPEC.md` v1.3.0, Section 5)
 - `createDelegation()`, `verifyDelegation()`, `verifyDelegationChain()` in `@oxdeai/core`
 - strictly narrowing scope enforcement: `tools`, `max_amount`, `max_actions`, `max_depth`
-- single-hop constraint — `DelegationV1` cannot be re-delegated
-- local chain verification at the PEP — no control-plane call required
-- guard integration (`@oxdeai/guard`) — fail-closed, `setState` skipped on delegation path
-- full delegation test matrix — 9 cases across core + guard, including determinism checks
-- `examples/delegation` — end-to-end demo using `@oxdeai/core`, produces `ALLOW`, `ALLOW`, `DENY`, `DENY`
+- single-hop constraint - `DelegationV1` cannot be re-delegated
+- local chain verification at the PEP - no control-plane call required
+- guard integration (`@oxdeai/guard`) - fail-closed, `setState` skipped on delegation path
+- full delegation test matrix - 9 cases across core + guard, including determinism checks
+- `examples/delegation` - end-to-end demo using `@oxdeai/core`, produces `ALLOW`, `ALLOW`, `DENY`, `DENY`
 - frozen conformance vectors for `DelegationV1`: parent-hash, verification, chain, signature (139 assertions)
-- Go harness + Python adapter with independent Ed25519 verification — no lookup oracle for chain/sig cases
+- Go harness + Python adapter with independent Ed25519 verification - no lookup oracle for chain/sig cases
 - `delegation_parent_hash`, `verify_delegation`, `verify_delegation_chain`, `verify_delegation_signature` adapter ops
 
 Out of scope for this release:

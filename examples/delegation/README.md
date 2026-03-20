@@ -1,4 +1,4 @@
-# OxDeAI — DelegationV1 Demo
+# OxDeAI - DelegationV1 Demo
 
 Demonstrates how a parent agent delegates strictly narrowed authority to a child agent using `DelegationV1`.
 
@@ -27,11 +27,11 @@ pnpm -C examples/delegation start
 
 ## What It Demonstrates
 
-- **Scope narrowing** — delegation cannot expand parent authority
-- **Tool allowlist** — child can only call tools explicitly delegated
-- **Expiry enforcement** — expired delegation is rejected at the PEP
-- **Local verification** — no control plane required at execution time
-- **Cryptographic binding** — delegation is Ed25519-signed, bound to parent auth hash
+- **Scope narrowing** - delegation cannot expand parent authority
+- **Tool allowlist** - child can only call tools explicitly delegated
+- **Expiry enforcement** - expired delegation is rejected at the PEP
+- **Local verification** - no control plane required at execution time
+- **Cryptographic binding** - delegation is Ed25519-signed, bound to parent auth hash
 
 ## Architecture
 
@@ -51,4 +51,4 @@ child-agent
 
 - Spec: [`docs/spec/delegation-v1.md`](../../docs/spec/delegation-v1.md)
 - Implementation plan: [`docs/spec/delegation-v1-implementation.md`](../../docs/spec/delegation-v1-implementation.md)
-- Roadmap milestone: `v2.x — Delegated Agent Authorization`
+- Roadmap milestone: `v2.x - Delegated Agent Authorization`
