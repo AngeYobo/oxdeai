@@ -140,11 +140,32 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0
 
+  packages/compat:
+    devDependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../core
+      '@oxdeai/crewai':
+        specifier: workspace:*
+        version: link:../crewai
+      '@oxdeai/guard':
+        specifier: workspace:*
+        version: link:../guard
+      '@oxdeai/langgraph':
+        specifier: workspace:*
+        version: link:../langgraph
+      '@oxdeai/openai-agents':
+        specifier: workspace:*
+        version: link:../openai-agents
+      '@oxdeai/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+
   packages/conformance:
     dependencies:
       '@oxdeai/core':
-        specifier: ^1.3.0
-        version: 1.3.0
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       ts-node:
         specifier: ^10.9.0
