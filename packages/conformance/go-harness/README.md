@@ -56,6 +56,7 @@ Error response:
 
 ## Required `op` values
 
+### Core protocol
 - `intent_hash`
 - `evaluate_authorization`
 - `encode_snapshot`
@@ -66,6 +67,12 @@ Error response:
 - `verify_envelope_case`
 - `verify_authorization_signature_case`
 - `verify_envelope_signature_case`
+
+### DelegationV1
+- `delegation_parent_hash`
+- `verify_delegation`
+- `verify_delegation_chain_case`
+- `verify_delegation_signature_case`
 
 ## Output fields by operation
 
@@ -94,6 +101,28 @@ Error response:
   - `status`
   - `violations`
   - optional: `policyId`, `stateHash`, `auditHeadHash` when relevant
+
+### `delegation_parent_hash`
+- input: `{ parent: AuthorizationV1 }`
+- output: `{ parent_auth_hash: "<sha256 hex>" }`
+
+### `verify_delegation`
+- input: `{ delegation: DelegationV1, opts: VerifyDelegationOptions }`
+- output: `{ status, violations, policyId }`
+
+### `verify_delegation_chain`
+- input: `{ parent: AuthorizationV1, delegation: DelegationV1, opts }` (inline from vector)
+- output: `{ status, violations }`
+- Adapter independently recomputes `SHA256(canonical_json(parent))` and runs all chain-level structural checks
+
+### `verify_delegation_signature`
+- input: `{ parent: AuthorizationV1, delegation: DelegationV1, opts }` (inline, opts includes `trustedKeySets`)
+- output: `{ status, violations }`
+- Adapter runs chain checks then performs Ed25519 verification using `opts.trustedKeySets`
+
+### `verify_delegation_chain_case` / `verify_delegation_signature_case`
+- input: `{ id: "<case-id>" }`
+- output: `{ status, violations }` (lookup against frozen vector file, retained for compatibility)
 
 ## Notes
 

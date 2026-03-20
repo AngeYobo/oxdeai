@@ -108,6 +108,10 @@ func main() {
 	runEnvelopeVerification(ctx, adapter, absVectors)
 	runAuthorizationSignatureVerification(ctx, adapter, absVectors)
 	runEnvelopeSignatureVerification(ctx, adapter, absVectors)
+	runDelegationParentHash(ctx, adapter, absVectors)
+	runDelegationVerification(ctx, adapter, absVectors)
+	runDelegationChainVerification(ctx, adapter, absVectors)
+	runDelegationSignatureVerification(ctx, adapter, absVectors)
 
 	if len(ctx.Failures) > 0 {
 		fmt.Fprintln(os.Stderr, "")
@@ -337,6 +341,78 @@ func runEnvelopeSignatureVerification(ctx *assertionCtx, adapter adapterClient, 
 		resp, err := adapter.call("verify_envelope_signature_case", map[string]interface{}{"id": id, "mode": mode})
 		if err != nil {
 			fail(ctx, fmt.Sprintf("%s verify_envelope_signature_case failed: %v", id, err))
+			continue
+		}
+		eq(ctx, id+" status", getString(resp, "status"), getString(exp, "status"))
+		eq(ctx, id+" violations", normalizeJSON(resp["violations"]), normalizeJSON(exp["violations"]))
+	}
+}
+
+func runDelegationParentHash(ctx *assertionCtx, adapter adapterClient, vectorsDir string) {
+	vf := loadVectorFile(vectorsDir, "delegation-parent-hash.json")
+	seen := map[string]string{}
+	for _, v := range vf.Vectors {
+		id := getString(v, "id")
+		input := getMap(v, "input")
+		resp, err := adapter.call("delegation_parent_hash", input)
+		if err != nil {
+			fail(ctx, fmt.Sprintf("%s delegation_parent_hash failed: %v", id, err))
+			continue
+		}
+		hash := getString(resp, "parent_auth_hash")
+		eq(ctx, id+" parent_auth_hash", hash, getString(getMap(v, "expected"), "parent_auth_hash"))
+		seen[id] = hash
+		if inv, ok := v["invariant"].(string); ok && inv != "" {
+			if refID, ok := parseInvariantEquals(inv); ok {
+				if refHash, found := seen[refID]; found {
+					eq(ctx, id+" invariant", hash, refHash)
+				}
+			}
+		}
+	}
+}
+
+func runDelegationVerification(ctx *assertionCtx, adapter adapterClient, vectorsDir string) {
+	vf := loadVectorFile(vectorsDir, "delegation-verification.json")
+	for _, v := range vf.Vectors {
+		id := getString(v, "id")
+		input := getMap(v, "input")
+		exp := getMap(v, "expected")
+		resp, err := adapter.call("verify_delegation", input)
+		if err != nil {
+			fail(ctx, fmt.Sprintf("%s verify_delegation failed: %v", id, err))
+			continue
+		}
+		eq(ctx, id+" status", getString(resp, "status"), getString(exp, "status"))
+		eq(ctx, id+" violations", normalizeJSON(resp["violations"]), normalizeJSON(exp["violations"]))
+	}
+}
+
+func runDelegationChainVerification(ctx *assertionCtx, adapter adapterClient, vectorsDir string) {
+	vf := loadVectorFile(vectorsDir, "delegation-chain-verification.json")
+	for _, v := range vf.Vectors {
+		id := getString(v, "id")
+		exp := getMap(v, "expected")
+		input := getMap(v, "input")
+		resp, err := adapter.call("verify_delegation_chain", input)
+		if err != nil {
+			fail(ctx, fmt.Sprintf("%s verify_delegation_chain failed: %v", id, err))
+			continue
+		}
+		eq(ctx, id+" status", getString(resp, "status"), getString(exp, "status"))
+		eq(ctx, id+" violations", normalizeJSON(resp["violations"]), normalizeJSON(exp["violations"]))
+	}
+}
+
+func runDelegationSignatureVerification(ctx *assertionCtx, adapter adapterClient, vectorsDir string) {
+	vf := loadVectorFile(vectorsDir, "delegation-signature-verification.json")
+	for _, v := range vf.Vectors {
+		id := getString(v, "id")
+		exp := getMap(v, "expected")
+		input := getMap(v, "input")
+		resp, err := adapter.call("verify_delegation_signature", input)
+		if err != nil {
+			fail(ctx, fmt.Sprintf("%s verify_delegation_signature failed: %v", id, err))
 			continue
 		}
 		eq(ctx, id+" status", getString(resp, "status"), getString(exp, "status"))
