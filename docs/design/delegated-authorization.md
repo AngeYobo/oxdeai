@@ -1,15 +1,15 @@
 # Delegated Authorization Design
 
-> **Status: Superseded — implemented as DelegationV1 (v1.3+)**
+> **Status: Superseded - implemented as DelegationV1 (v1.3+)**
 >
 > This document was a pre-implementation design note for delegated agent authorization.
 > All open questions and proposed implementation steps below have been resolved and shipped.
 >
 > For the current normative specification, see:
-> - [`SPEC.md §5`](../../SPEC.md) — DelegationV1 artifact definition and verification rules
-> - [`docs/spec/delegation-v1.md`](../spec/delegation-v1.md) — detailed implementation spec
-> - [`packages/core/src/delegation/`](../../packages/core/src/delegation/) — reference implementation
-> - [`packages/conformance/vectors/`](../../packages/conformance/vectors/) — conformance vectors
+> - [`SPEC.md §5`](../../SPEC.md) - DelegationV1 artifact definition and verification rules
+> - [`docs/spec/delegation-v1.md`](../spec/delegation-v1.md) - detailed implementation spec
+> - [`packages/core/src/delegation/`](../../packages/core/src/delegation/) - reference implementation
+> - [`packages/conformance/vectors/`](../../packages/conformance/vectors/) - conformance vectors
 
 ---
 

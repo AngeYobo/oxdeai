@@ -32,10 +32,10 @@ For each target adapter demo:
 
 The delegation demo is verified separately with different expected output (`ALLOW`, `ALLOW`, `DENY`, `DENY`):
 
-1. **Delegation chain check** — `verifyDelegationChain` passes for valid scope + unexpired delegation
-2. **Scope enforcement** — DENY when child requests a tool not in delegated scope
-3. **Expiry enforcement** — DENY when delegation has expired at verification time
-4. **setState skip** — state is not mutated on the delegation execution path
+1. **Delegation chain check** - `verifyDelegationChain` passes for valid scope + unexpired delegation
+2. **Scope enforcement** - DENY when child requests a tool not in delegated scope
+3. **Expiry enforcement** - DENY when delegation has expired at verification time
+4. **setState skip** - state is not mutated on the delegation execution path
 
 ### Cross-adapter invariant tests (`@oxdeai/compat`)
 
