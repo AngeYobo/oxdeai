@@ -88,6 +88,33 @@ That artifact binds the authorization decision to:
 
 It is not a post-fact report. It is the pre-execution artifact used at the authorization boundary.
 
+## Delegated Authorization
+
+Multi-agent systems often need one agent to authorize constrained action by another — a planner delegating to a worker, an orchestrator granting limited authority to a specialized executor.
+
+OxDeAI addresses this with `DelegationV1`: a signed artifact that binds a child agent's authority to a parent `AuthorizationV1` while enforcing strictly narrowing scope.
+
+Key properties:
+
+- delegated scope cannot exceed the parent's granted scope (`tools`, `max_amount`, `max_actions`, `max_depth`)
+- delegation expiry cannot exceed parent authorization expiry
+- the chain is verified locally at the PEP — no control-plane round-trip required
+- single-hop only — `DelegationV1` cannot be re-delegated
+- fail-closed: any chain violation rejects the delegation path, `setState` is never called
+
+The delegation execution path replaces the direct `AuthorizationV1` path for child agents. The parent authorization remains the root authority source.
+
+```text
+parent agent receives AuthorizationV1
+  -> calls createDelegation() with bounded scope + expiry
+  -> child agent receives DelegationV1
+  -> child PEP calls verifyDelegationChain(parent, delegation, opts)
+  -> chain checks pass: hash binding, delegator match, scope, expiry ceiling
+  -> child executes within delegated scope
+```
+
+See [`docs/spec/delegation-v1.md`](../spec/delegation-v1.md) for the full artifact specification.
+
 ## Verification Evidence
 
 OxDeAI also preserves a verification path after execution or refusal:
@@ -145,11 +172,19 @@ That scenario demonstrates:
 
 The demos differ by runtime shape, not by OxDeAI semantics.
 
+The delegation demo (`examples/delegation`) extends this with a child agent path:
+
+- parent receives `AuthorizationV1` — `ALLOW`
+- parent delegates to child with bounded scope — `ALLOW`
+- child requests tool outside delegated scope — `DENY` (scope violation)
+- child uses expired delegation — `DENY` (expiry)
+
 ## Related References
 
 - [`README.md`](../../README.md)
 - [`PROTOCOL.md`](../../PROTOCOL.md)
 - [`SPEC.md`](../../SPEC.md)
+- [`docs/spec/delegation-v1.md`](../spec/delegation-v1.md)
 - [`docs/adapter-contract.md`](../adapter-contract.md)
 - [`docs/pep-production-guide.md`](../pep-production-guide.md)
 - [`docs/integrations/README.md`](../integrations/README.md)
