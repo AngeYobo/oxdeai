@@ -126,6 +126,26 @@ All of that lives in `@oxdeai/guard`.
 
 ---
 
+## Cross-adapter validation
+
+This adapter is cross-validated by `@oxdeai/compat` against the LangGraph
+and OpenAI Agents SDK adapters. Equivalent intents produce identical decisions,
+authorization artifacts, and denial reasons across all three runtimes.
+
+| Test | What it proves |
+|------|----------------|
+| CA-1 | Same intent + isolated state → same ALLOW/DENY decision across all adapters |
+| CA-6 | Per-action cap boundary: `amount == cap` → ALLOW (inclusive) |
+| CA-7 | Per-action cap exceeded: `amount > cap` → DENY + `PER_ACTION_CAP_EXCEEDED` |
+| CA-8 | PBT sweep: seeded variation, same decision + evidence across all adapters |
+| CA-9 | Nonce replay → DENY + `REPLAY_NONCE` across all adapters |
+| CA-10 | Concurrent isolation: 30 parallel calls, all ALLOW with isolated state |
+
+See [`packages/compat/src/test/cross-adapter.test.ts`](../compat/src/test/cross-adapter.test.ts)
+and [`docs/testing/delegation-pbt.md`](../../docs/testing/delegation-pbt.md).
+
+---
+
 ## See also
 
 - [CrewAI integration guide](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/crewai.md)

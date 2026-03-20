@@ -95,6 +95,12 @@ Deterministic binary representation of the policy state.
 
 Hash-chained sequence of execution events.
 
+### DelegationV1
+
+Chain-of-trust delegation from a principal authorization to a sub-agent scope.
+A delegation narrows the parent's scope (budget ceiling, tool allowlist, expiry)
+and is cryptographically bound to the parent `auth_id`.
+
 ### Verification Envelope
 
 Portable artifact combining:
@@ -186,6 +192,7 @@ Deterministic invariants enforced and tested:
 * I3 Decision equivalence across import/export
 * I4 Replay verification determinism
 * I5 Cross-process determinism
+* I6 Evaluation isolation — concurrent evaluations must not share mutable state (`getState: () => structuredClone(state)`)
 
 * `policyId` - content-addressed engine configuration
 * `stateHash` - canonical snapshot hash
@@ -396,7 +403,7 @@ const rel = engine.evaluatePure(releaseIntent, out.nextState);
 * Sorted key hashing
 * Hash-chained audit log
 * Strict-mode clock injection
-* Property-based determinism tests (seeded, no deps)
+* Property-based determinism tests (seeded, no deps): I1–I5 (`property.test.ts`), delegation chain D-P1–D-P5 (`delegation.property.test.ts`), cross-adapter CA-1–CA-10 (`@oxdeai/compat`)
 
 ---
 
@@ -543,9 +550,16 @@ Stateless verification layer for protocol artifacts.
 * improved quickstart and architecture explainer
 * cross-links between protocol, integrations, and cases
 
-### v2.x - Delegated Agent Authorization (next)
+### v1.6 - Delegated Agent Authorization (shipped)
 
-### v3.x - Verifiable Execution Infrastructure (planned)
+* `DelegationV1` — chain-of-trust delegation from principal to sub-agent
+* Scope narrowing enforcement (budget ceiling, tool allowlist, expiry ceiling)
+* `verifyDelegation()` stateless verifier
+* `delegationParentHash` — cryptographic binding to parent `auth_id`
+* Property-based coverage: D-P1 through D-P5 (`delegation.property.test.ts`)
+* Cross-adapter delegation guard tests: G-D1 through G-D3 (`@oxdeai/guard`)
+
+### v2.x - Verifiable Execution Infrastructure (planned)
 
 - deterministic execution receipts
 - binary Merkle batching of receipt hashes

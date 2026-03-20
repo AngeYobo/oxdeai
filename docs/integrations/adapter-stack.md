@@ -12,14 +12,14 @@ This document describes the full adapter layer model and the complete set of run
 
 Protocol reference implementation. Provides:
 
-- `PolicyEngine` — deterministic policy evaluation
-- `AuthorizationV1` — cryptographically verifiable authorization artifact
-- `buildAuditChain`, `buildSnapshot`, `buildEnvelope` — tamper-evident evidence
-- `verifyEnvelope` — offline stateless verification
+- `PolicyEngine` - deterministic policy evaluation
+- `AuthorizationV1` - cryptographically verifiable authorization artifact
+- `buildAuditChain`, `buildSnapshot`, `buildEnvelope` - tamper-evident evidence
+- `verifyEnvelope` - offline stateless verification
 
 ### `@oxdeai/guard`
 
-Universal PEP package. Provides `OxDeAIGuard(config)` — a factory that:
+Universal PEP package. Provides `OxDeAIGuard(config)` - a factory that:
 
 - accepts a `ProposedAction`
 - evaluates policy via the supplied `engine`
@@ -58,7 +58,7 @@ const guard = create<Runtime>Guard({
   mapActionToIntent,  // override intent mapping
   beforeExecute,      // callback before execution (receives authorization artifact)
   onDecision,         // callback on any decision
-  strict,             // boolean — strict mode
+  strict,             // boolean - strict mode
 });
 
 const result = await guard(toolCall, async () => {

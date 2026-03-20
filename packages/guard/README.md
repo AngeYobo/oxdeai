@@ -128,6 +128,9 @@ OxDeAIGuard({
 | `verifyAuthorization` fails | `OxDeAIAuthorizationError` thrown |
 | Normalization fails | `OxDeAINormalizationError` thrown |
 | `evaluatePure` throws | `OxDeAIAuthorizationError` thrown (fail-closed) |
+| Delegation chain verification fails | `OxDeAIDelegationError` thrown — execute not called |
+| Delegation scope widens or expiry exceeds parent | `OxDeAIDelegationError` thrown |
+| In-scope delegation action | `execute` called; `setState` not called on delegation path |
 
 **There is no code path that executes without a valid, verified authorization.**
 
@@ -141,6 +144,30 @@ OxDeAIGuard({
 | `OxDeAIAuthorizationError` | Missing/invalid authorization artifact |
 | `OxDeAIGuardConfigurationError` | Misconfigured guard (programming error) |
 | `OxDeAINormalizationError` | ProposedAction cannot be converted to an Intent |
+| `OxDeAIDelegationError` | Delegation chain invalid, expired, out-of-scope, or parent hash mismatch |
+
+---
+
+## Delegation execution path
+
+When a sub-agent presents a `DelegationV1` chain, pass it in `opts.delegation`:
+
+```typescript
+const result = await guard(action, execute, { delegation: delegationChain });
+```
+
+The guard verifies the full delegation chain before policy evaluation:
+
+- Parent `auth_id` hash matches `delegationParentHash`
+- Scope does not widen relative to parent (budget, tools, expiry)
+- Signatures are valid at every link
+
+On any violation, `OxDeAIDelegationError` is thrown and `execute` is never
+called. `setState` is also not called on the delegation path — the scope is
+committed by the parent authorization.
+
+Property-based coverage: G-D1 (allow path), G-D2 (all invalid classes fail
+closed), G-D3 (wrong parent hash mismatch).
 
 ---
 

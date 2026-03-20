@@ -1,4 +1,4 @@
-# OxDeAI Specification (v1.2.0)
+# OxDeAI Specification (v1.3.0)
 
 This document defines the OxDeAI execution authorization protocol.
 
@@ -44,6 +44,7 @@ These artifacts are language-independent and MUST be interpreted identically acr
 - Intent
 - CanonicalState snapshot
 - AuthorizationV1
+- DelegationV1
 - Audit events (hash chained)
 - VerificationEnvelopeV1
 - VerificationResult
@@ -58,6 +59,53 @@ For identical `(intent, state, policy configuration)` inputs, a conformant imple
 Implementations MUST use canonical encoding for signed and hashed payloads.
 Verification ordering and violation ordering MUST be deterministic.
 Policy-critical logic MUST NOT depend on ambient randomness.
+
+### 3.1 Evaluation Semantics
+
+The core evaluation model is:
+
+```
+(intent, state, policy) → deterministic decision
+```
+
+The following requirements govern this model:
+
+- `state` MUST be an explicit, discrete input to evaluation.
+- `state` MUST be deterministic for a given evaluation: the same `state` value MUST produce the same decision when paired with the same `intent` and `policy`.
+- Evaluation MUST NOT depend on implicit or external mutable context.
+- Evaluation MUST be side-effect-free with respect to the input `state`.
+
+Implementations MAY maintain an internal mutable working copy of `state` during evaluation to accumulate module deltas. Implementations MUST NOT mutate the input `state` object through any such internal working state.
+
+### 3.2 Policy Version Consistency
+
+`state.policy_version` MUST equal the `policy_version` under which evaluation is performed.
+
+If a mismatch is detected, evaluation MUST fail with:
+
+```
+POLICY_VERSION_MISMATCH
+```
+
+This check MUST be performed before any policy module runs. A `POLICY_VERSION_MISMATCH` denial is a structural evaluation failure, not a policy decision.
+
+This invariant ensures that authorization artifacts are issued only under the policy version that was in effect when the intent was evaluated, preventing replay of artifacts across incompatible policy versions.
+
+### 3.3 Invariant I5 — Evaluation Isolation
+
+Concurrent evaluations MUST NOT share a mutable state object.
+
+The `state` input to evaluation MUST be treated as an immutable snapshot for the duration of that evaluation. Implementations MUST ensure that each evaluation receives an isolated state instance. Sharing a mutable state object across concurrent evaluations is a protocol violation.
+
+**Rationale.** Evaluation semantics are defined as a pure function of `(intent, state, policy)`. If multiple concurrent evaluations share and mutate the same state object, the outcome of each evaluation becomes dependent on execution order and timing, violating the determinism requirement in Section 3.
+
+**Implications:**
+
+- Implementations MAY internally derive a working copy of state per evaluation.
+- Callers MUST provide an isolated snapshot per evaluation call.
+- Concurrent evaluations MUST NOT produce cross-call side effects on shared state.
+
+Violation of this invariant results in undefined behavior: evaluations may produce non-deterministic decisions for identical inputs.
 
 ## Multi-Language Implementation Profile
 
@@ -224,20 +272,188 @@ Public-key verifiable `AuthorizationV1` is the preferred v1.2 form.
 }
 ```
 
-## 5. Non-Forgeable Verification (v1.2)
+## 5. Delegation Artifact (DelegationV1)
 
-### 5.1 Algorithm Profile
+`DelegationV1` is a signed delegation artifact that allows a principal holding a valid `AuthorizationV1` to delegate a strictly narrowed subset of that authority to a child agent.
+
+`DelegationV1` is locally verifiable without any control-plane interaction.
+It is cryptographically bound to the parent `AuthorizationV1` by hash and MUST be verified as a complete chain by the relying party.
+
+`DelegationV1` extends the OxDeAI protocol with delegated agent authorization.
+It does not replace `AuthorizationV1`; it derives from it.
+
+### 5.1 Purpose
+
+`DelegationV1` enables a principal that has been authorized by the PDP to sub-authorize a child agent for a narrower set of actions, within the same policy context and time window, without requiring a new PDP evaluation.
+
+The relying party verifies the complete chain - parent `AuthorizationV1` and child `DelegationV1` - before permitting execution.
+
+### 5.2 Mandatory Fields
+
+A `DelegationV1` artifact MUST include all of the following fields:
+
+- `delegation_id`
+- `issuer`
+- `audience`
+- `parent_auth_hash`
+- `delegator`
+- `delegatee`
+- `scope`
+- `policy_id`
+- `issued_at`
+- `expiry`
+- `alg`
+- `kid`
+- `signature`
+
+### 5.3 Field Semantics
+
+- `delegation_id`: Unique identifier for this delegation artifact instance.
+- `issuer`: Identifier of the principal issuing the delegation. MUST equal `parent.audience`.
+- `audience`: Intended audience for the delegation (typically the delegatee identifier).
+- `parent_auth_hash`: SHA-256 hex digest of the canonical parent `AuthorizationV1`, including its `signature` field. Used for cryptographic hash binding to the parent.
+- `delegator`: Identifier of the principal granting authority. MUST equal `parent.audience`.
+- `delegatee`: Identifier of the agent receiving delegated authority.
+- `scope`: Constrained authority granted to the delegatee. MUST be a strict subset of the parent authorization scope. Sub-fields are defined in Section 5.4.
+- `policy_id`: Policy context identifier. MUST equal `parent.policy_id`.
+- `issued_at`: Issuance time as Unix timestamp (seconds).
+- `expiry`: Expiration time as Unix timestamp (seconds). MUST be less than or equal to `parent.expiry`.
+- `alg`: Signature algorithm identifier. MUST be `Ed25519` in v1.3.
+- `kid`: Key identifier used to select the verification key.
+- `signature`: Ed25519 signature over the canonical delegation payload, using the `OXDEAI_DELEGATION_V1` signing domain.
+
+### 5.4 Scope Sub-Fields
+
+The `scope` object MAY carry any combination of the following sub-fields:
+
+- `tools`: array of permitted tool or action names. If present, the child agent MUST only execute actions whose name appears in this array.
+- `max_amount`: maximum permitted amount for a single action (bigint). MUST be less than or equal to any `max_amount` in the parent scope if both are present.
+- `max_actions`: maximum number of actions permitted under this delegation. MUST be less than or equal to any `max_actions` in the parent scope if both are present.
+- `max_depth`: maximum recursion or nesting depth permitted. MUST be less than or equal to any `max_depth` in the parent scope if both are present.
+
+An absent scope sub-field imposes no constraint for that dimension from the delegation artifact itself.
+A relying party MAY enforce additional scope constraints beyond those carried in the artifact.
+
+### 5.5 Security Properties
+
+`DelegationV1` has the following protocol properties:
+
+- Single-use: `delegation_id` MUST be treated as consumable exactly once by the relying party.
+- Issuer-bound: validity is scoped to the delegating principal identified by `issuer`.
+- Audience-bound: validity is scoped to the designated `delegatee`.
+- Parent-bound: validity is cryptographically bound to a specific parent `AuthorizationV1` via `parent_auth_hash`. A delegation presented with a mismatched parent MUST be rejected.
+- Policy-bound: `policy_id` MUST equal `parent.policy_id`. Cross-policy delegation is prohibited.
+- Narrowing-only: delegated scope MUST NOT exceed the parent authorization scope in any dimension.
+- Short-lived: `expiry` MUST be less than or equal to `parent.expiry`. A delegation cannot outlive its parent.
+- Non-forgeable: `signature` MUST validate under the `OXDEAI_DELEGATION_V1` signing domain and the delegating principal's key.
+
+These properties are mandatory protocol constraints, not operational recommendations.
+
+### 5.6 Narrowing-Only Invariant
+
+A `DelegationV1` MUST narrow authority relative to the parent authorization.
+
+The following narrowing invariants MUST hold when both child and parent values are present:
+
+- `scope.tools`: child set MUST be a subset of parent set. A tool not present in the parent scope MUST NOT appear in the child scope.
+- `scope.max_amount`: child value MUST be less than or equal to parent value.
+- `scope.max_actions`: child value MUST be less than or equal to parent value.
+- `scope.max_depth`: child value MUST be less than or equal to parent value.
+- `expiry`: MUST be less than or equal to `parent.expiry`.
+
+Verifiers MUST enforce these invariants. Scope widening is a protocol violation and MUST be rejected.
+
+When the parent scope is not explicitly known to the verifier, the narrowing invariant for that dimension is the deployer's responsibility.
+Verifiers SHOULD require explicit parent scope when scope enforcement is a security requirement.
+
+### 5.7 One-Hop Constraint
+
+`DelegationV1` is a single-hop delegation mechanism.
+
+A `DelegationV1` parent MUST be an `AuthorizationV1`.
+A `DelegationV1` MUST NOT be used as the parent of another `DelegationV1`.
+Re-delegation chains are not permitted in this protocol version.
+
+Verifiers MUST detect and reject multi-hop delegation attempts.
+Specifically, a verifier MUST reject any `DelegationV1` whose presented parent artifact contains a `delegation_id` field, as this indicates the parent is itself a `DelegationV1`.
+
+### 5.8 Normative Verifier Obligations
+
+A relying party verifying a `DelegationV1` MUST perform all of the following checks in order.
+If any check fails, execution MUST NOT occur.
+
+**Chain integrity checks (evaluated against the parent `AuthorizationV1`):**
+
+1. Verify the parent `AuthorizationV1` is itself a valid `AuthorizationV1` artifact (all Section 4 relying-party obligations apply to the parent).
+2. Verify the parent artifact is an `AuthorizationV1` and not a `DelegationV1` (one-hop enforcement).
+3. Compute the SHA-256 hex digest of the canonical parent `AuthorizationV1` (including its `signature` field) and verify it equals `delegation.parent_auth_hash`.
+4. Verify `delegation.delegator` equals `parent.audience`.
+5. Verify `delegation.policy_id` equals `parent.policy_id`.
+6. Verify `delegation.expiry` is less than or equal to `parent.expiry`.
+7. Verify the parent has not expired at the time of verification.
+
+**Delegation-level checks:**
+
+8. Verify `delegation.expiry` is strictly greater than the current verification time. An artifact where `expiry <= now` MUST be rejected.
+9. Verify `delegation.delegatee` matches the expected delegatee for the current execution context, when a specific delegatee is required.
+10. Verify the delegation scope does not exceed the parent scope (narrowing-only invariant, Section 5.6).
+11. Verify `delegation.alg` is `Ed25519` and is permitted by local algorithm policy.
+12. Resolve a trusted verification key from `(delegation.issuer, delegation.kid, delegation.alg)` using the key selection rules in Section 11.
+13. Verify `delegation.signature` over the canonical delegation payload using the `OXDEAI_DELEGATION_V1` signing domain (Section 8.4).
+14. Verify `delegation_id` has not already been consumed (replay protection).
+
+**Fail-closed behavior:**
+
+If verification state is ambiguous, if required trusted key material is absent, or if any check produces an indeterminate result, the verifier MUST fail closed.
+Execution MUST NOT proceed unless all checks succeed.
+
+### 5.9 Compatibility Note
+
+`DelegationV1` is an optional artifact in the v1.3 protocol profile.
+Relying parties that do not implement delegation support MAY reject `DelegationV1` artifacts.
+Implementations that do support delegation MUST implement the full verification obligations in Section 5.8.
+
+`DelegationV1` extends `AuthorizationV1` without replacing it.
+A deployment that does not use delegation continues to use `AuthorizationV1` exclusively.
+`DelegationV1` verification is additive and does not alter the semantics of `AuthorizationV1`.
+
+### 5.10 Minimal Artifact Example
+
+```json
+{
+  "delegation_id": "del_01JZ4X9K2V8QM7R3P5T0Y6W1U2",
+  "issuer": "agent-A",
+  "audience": "agent-B",
+  "parent_auth_hash": "9a3f5c8b2d1e4f7a9c0b3e6d8f2a5c7e9b1d4f6a8c0e2b5d7f9a1c3e5b7d9f1a3",
+  "delegator": "agent-A",
+  "delegatee": "agent-B",
+  "scope": {
+    "tools": ["provision_gpu"],
+    "max_amount": 300000000
+  },
+  "policy_id": "policy_prod_infra_v7",
+  "issued_at": 1770001200,
+  "expiry": 1770001260,
+  "alg": "Ed25519",
+  "kid": "agent-a-key-2026-01",
+  "signature": "4rQ9Xm2kPzJv7wN5aT8sL3cF1bY6eH0dU9oR4iW2nK8="
+}
+```
+
+## 6. Non-Forgeable Verification (v1.2)
+
+### 6.1 Algorithm Profile
 
 `Ed25519` is the preferred public-key verification algorithm for v1.2 artifacts.
 New v1.2 signed artifacts MUST include `alg`, `kid`, and `signature`.
 
-### 5.2 Signed Payload Rules
+### 6.2 Signed Payload Rules
 
 The signed payload MUST use canonical encoding.
 The `signature` field MUST NOT be included in its own signing payload.
 Any mutation of signed fields MUST invalidate signature verification.
 
-### 5.3 Verifier Fail-Closed Requirements
+### 6.3 Verifier Fail-Closed Requirements
 
 Verifiers MUST fail closed on:
 
@@ -252,13 +468,13 @@ Verifiers MUST fail closed on:
 
 A verifier MUST NOT accept ambiguous trust state.
 
-### 5.4 Legacy Compatibility Path
+### 6.4 Legacy Compatibility Path
 
 Legacy shared-secret artifacts MAY be supported for backward compatibility.
 If supported, verifier mode MUST be explicit and documented as legacy.
 Public-key verification SHOULD be used for third-party verification.
 
-## 6. Domain Separation
+## 7. Domain Separation
 
 Signatures for different artifact classes MUST use distinct signing domains.
 At minimum, implementations MUST support distinct domains:
@@ -266,6 +482,7 @@ At minimum, implementations MUST support distinct domains:
 - `OXDEAI_AUTH_V1`
 - `OXDEAI_ENVELOPE_V1`
 - `OXDEAI_CHECKPOINT_V1`
+- `OXDEAI_DELEGATION_V1`
 
 A signer MUST compute signature input as:
 
@@ -274,7 +491,7 @@ A signer MUST compute signature input as:
 Artifact classes MUST NOT share signing domains.
 This prevents cross-artifact signature confusion.
 
-## 7. Canonical Signing Format
+## 8. Canonical Signing Format
 
 Canonical signing ensures cross-language interoperability.
 
@@ -288,9 +505,10 @@ Cross-language signature interoperability depends on this property.
 
 ### 2. Signed Artifact Classes
 
-The following artifact classes are signed in v1.2:
+The following artifact classes are signed in v1.3:
 
 - `AuthorizationV1`
+- `DelegationV1`
 - `VerificationEnvelopeV1`
 
 Checkpoint artifacts MAY be signed when that profile is enabled.
@@ -316,14 +534,17 @@ Canonical payload requirements:
 
 The following domain strings are mandatory:
 
-- `OXDEAI_AUTH_V1`
-- `OXDEAI_ENVELOPE_V1`
+- `OXDEAI_AUTH_V1` - for `AuthorizationV1` artifacts
+- `OXDEAI_ENVELOPE_V1` - for `VerificationEnvelopeV1` artifacts
+- `OXDEAI_DELEGATION_V1` - for `DelegationV1` artifacts
 
 If checkpoint signing is used, `OXDEAI_CHECKPOINT_V1` MUST be used for that class.
 
 Signatures for different artifact classes MUST use different domain strings.
 A verifier MUST reject a signature when the domain does not match the artifact class.
 Domain separation prevents cross-artifact signature confusion.
+
+In particular, a `DelegationV1` signature MUST NOT be accepted as a valid `AuthorizationV1` signature, and vice versa.
 
 ### 5. Signing Input Construction
 
@@ -345,6 +566,7 @@ The `signature` field MUST NOT be included in the canonical payload that is sign
 
 All required artifact fields other than `signature` MUST be included in the signed payload.
 For v1.2 `AuthorizationV1`, this includes `alg` and `kid`.
+For `DelegationV1`, this includes all mandatory fields defined in Section 5.2 except `signature`.
 
 Transport-specific metadata not defined by this protocol MUST NOT be included in the signed payload.
 
@@ -406,19 +628,34 @@ Conceptual signing input construction:
 UTF8("OXDEAI_AUTH_V1") || 0x0A || UTF8(<canonical-json-payload-above>)
 ```
 
-## 8. Verification Envelope Signing
+Example artifact class: `DelegationV1`
+
+Domain string:
+
+```text
+OXDEAI_DELEGATION_V1
+```
+
+Conceptual signing input construction:
+
+```text
+UTF8("OXDEAI_DELEGATION_V1") || 0x0A || UTF8(<canonical-delegation-payload>)
+```
+
+## 9. Verification Envelope Signing
 
 VerificationEnvelopeV1 MAY carry signature metadata (`issuer`, `alg`, `kid`, `signature`).
 If signature metadata is present, verifiers MUST validate it under the same fail-closed rules.
 If a verifier runs in signature-required mode, missing envelope signature MUST fail closed.
 
-## 9. Relying Party Contract
+## 10. Relying Party Contract
 
 A Relying Party, also referred to as a Policy Enforcement Point (PEP), is the system responsible for executing external actions after verifying an authorization artifact.
 
 The relying party enforces the OxDeAI execution authorization boundary.
 
 Before executing any action, the relying party MUST verify the authorization artifact according to the rules defined in this section.
+This section covers both direct `AuthorizationV1` verification and delegated `DelegationV1` chain verification.
 
 ### 1. Definition
 
@@ -428,7 +665,9 @@ Examples include tool wrappers, compute provisioning services, payment gateways,
 The relying party is the enforcement boundary for OxDeAI authorization decisions.
 It MUST enforce this contract before action execution.
 
-### 2. Verification Requirements
+### 2. Verification Requirements - Direct Authorization Path
+
+When the relying party receives an `AuthorizationV1` artifact without a `DelegationV1`:
 
 Before executing any action, a relying party MUST verify:
 
@@ -446,29 +685,61 @@ Before executing any action, a relying party MUST verify:
 
 If any verification step fails, the relying party MUST reject the action.
 
-### 3. Authorization Consumption
+### 3. Verification Requirements - Delegation Path
+
+When the relying party receives a `DelegationV1` artifact and its associated parent `AuthorizationV1`:
+
+The relying party MUST perform the full chain verification sequence defined in Section 5.8.
+
+In addition to the chain verification, the relying party MUST verify that the proposed action falls within the delegation scope:
+
+- If `scope.tools` is present, the action name MUST appear in `scope.tools`.
+- If `scope.max_amount` is present, the action amount MUST NOT exceed `scope.max_amount`.
+
+If any chain or scope check fails, the relying party MUST reject the action.
+
+The delegation path is a local, control-plane-free verification.
+The relying party MUST NOT require a live call to the PDP to verify a `DelegationV1` chain.
+
+### 4. Authorization Consumption
 
 `AuthorizationV1` MUST be treated as single-use.
 
 After successful execution, the relying party MUST record `auth_id` as consumed in durable or equivalently reliable replay state.
 Any subsequent attempt to reuse the same `auth_id` MUST be rejected.
 
+`delegation_id` MUST be treated as single-use.
+
+After successful execution under a `DelegationV1`, the relying party MUST record `delegation_id` as consumed.
+Any subsequent attempt to reuse the same `delegation_id` MUST be rejected.
+
 Single-use consumption is required to prevent replay and reduce time-of-check/time-of-use (TOCTOU) abuse.
 
-### 4. Execution Preconditions
+### 5. Execution Preconditions
 
 Execution MUST NOT occur unless all of the following are true:
+
+**For direct authorization:**
 
 - Authorization verification succeeds.
 - Authorization is not expired at decision time.
 - Verified `intent_hash` matches the intended action.
 - Verified `audience` matches the current relying party.
 
+**For delegation:**
+
+- All chain verification checks pass (Section 5.8).
+- The proposed action is within the delegation scope.
+- Parent `AuthorizationV1` is valid and not expired.
+- Delegation is not expired.
+
 Authorization MUST be verified immediately before execution.
 
-### 5. Failure Handling
+### 6. Failure Handling
 
 The relying party MUST treat each of the following as authorization failure:
+
+**Direct authorization failures:**
 
 - malformed authorization artifact
 - unknown issuer
@@ -480,22 +751,50 @@ The relying party MUST treat each of the following as authorization failure:
 - intent mismatch
 - audience mismatch
 
+**Delegation-specific failures:**
+
+- malformed delegation artifact
+- `parent_auth_hash` mismatch
+- `delegator` does not match `parent.audience`
+- `policy_id` mismatch with parent
+- delegation `expiry` exceeds `parent.expiry`
+- delegation expired
+- delegatee mismatch
+- scope violation (action not in `scope.tools`, amount exceeds `scope.max_amount`)
+- invalid delegation signature
+- multi-hop delegation attempt (`DELEGATION_MULTIHOP_DENIED`)
+- reused `delegation_id`
+- unknown delegation signing key
+
 Authorization ambiguity MUST result in denial (fail closed).
 
-### 6. Security Considerations
+### 7. Security Considerations
 
 This contract enforces:
 
-- replay protection via single-use `auth_id`
+- replay protection via single-use `auth_id` and `delegation_id`
 - intent binding via `intent_hash`
 - state binding via `state_hash`
 - trust boundaries via `issuer` and `audience`
 - forgery resistance via signature verification
 - reduced reuse window via short TTL (`issued_at`/`expiry`)
+- scope confinement via delegation narrowing invariants
+- chain integrity via `parent_auth_hash` binding
+- depth confinement via one-hop enforcement
 
-These checks collectively mitigate replay attacks, authorization forgery, and TOCTOU drift between verification and execution.
+These checks collectively mitigate replay attacks, authorization forgery, scope escalation, and TOCTOU drift between verification and execution.
 
-### 7. Minimal Verification Flow
+#### State Isolation and Concurrency
+
+Sharing mutable state across concurrent evaluations can lead to:
+
+- non-deterministic authorization decisions
+- cross-request interference
+- incorrect DENY outcomes due to cross-call budget or replay mutations
+
+Implementations MUST enforce state isolation per evaluation to preserve the protocol guarantees in Section 3.3. Each evaluation call MUST receive an isolated state snapshot.
+
+### 8. Minimal Verification Flow - Direct Authorization
 
 ```text
 1. Receive AuthorizationV1 artifact.
@@ -509,7 +808,28 @@ These checks collectively mitigate replay attacks, authorization forgery, and TO
 9. Mark auth_id as consumed.
 ```
 
-## 10. KeySet and Key Rotation Model
+### 9. Minimal Verification Flow - Delegation Path
+
+```text
+1. Receive DelegationV1 artifact and its parent AuthorizationV1.
+2. Verify parent AuthorizationV1 (all steps in flow above, steps 1–7).
+3. Verify parent is AuthorizationV1, not DelegationV1 (one-hop enforcement).
+4. Compute SHA-256 of canonical parent AuthorizationV1 and compare to delegation.parent_auth_hash.
+5. Verify delegation.delegator == parent.audience.
+6. Verify delegation.policy_id == parent.policy_id.
+7. Verify delegation.expiry <= parent.expiry.
+8. Verify delegation.expiry > now.
+9. Verify delegation.delegatee matches expected agent.
+10. Verify scope narrowing constraints (Section 5.6).
+11. Resolve delegation signing key from (delegation.issuer, delegation.kid, delegation.alg).
+12. Verify delegation.signature using OXDEAI_DELEGATION_V1 domain.
+13. Verify proposed action is within scope (tools, max_amount).
+14. Check delegation_id is not consumed.
+15. Execute action.
+16. Mark delegation_id as consumed.
+```
+
+## 11. KeySet and Key Rotation Model
 
 The KeySet model provides deterministic resolution of verification keys for authorization artifacts.
 
@@ -590,6 +910,9 @@ Verification MUST fail if:
 
 These conditions are fail-closed requirements.
 
+For `DelegationV1` verification, the `issuer` in the artifact is the delegating principal (equal to `parent.audience`), not the original PDP issuer.
+The verifier MUST hold a trusted KeySet for this delegation issuer separately from the PDP KeySet.
+
 ### 5. Issuer Trust Model
 
 Issuer trust is an external security decision made by the verifier environment.
@@ -656,7 +979,7 @@ Ambiguity MUST NOT be treated as success.
 }
 ```
 
-## 11. KeySet Distribution (v1 baseline)
+## 12. KeySet Distribution (v1 baseline)
 
 Key distribution is external to the core protocol.
 
@@ -683,7 +1006,7 @@ Dynamic discovery is OPTIONAL and not required for protocol compliance.
 
 ---
 
-## 12. Cross-Organization Verification Model
+## 13. Cross-Organization Verification Model
 
 OxDeAI supports verification across trust boundaries.
 
@@ -705,25 +1028,29 @@ Verification ambiguity MUST result in denial.
 
 ---
 
-## 13. Replay and TOCTOU Resistance
+## 14. Replay and TOCTOU Resistance
 
 OxDeAI artifacts are designed to minimize replay and time-of-check/time-of-use (TOCTOU) risks in distributed execution environments.
 
 OxDeAI mitigates replay and check/use drift by combining:
 
-- single-use `auth_id`
+- single-use `auth_id` and `delegation_id`
 - short TTL (`issued_at`/`expiry`)
 - intent binding (`intent_hash`)
 - state binding (`state_hash`)
 - issuer and audience binding
+- parent hash binding (`parent_auth_hash`) for delegated authorization
 
 Relying parties MUST enforce single-use state for `auth_id`.
+Relying parties that support delegation MUST enforce single-use state for `delegation_id`.
 Relying parties SHOULD minimize check-to-execute latency.
 If execution context changes after verification, execution SHOULD be re-verified.
 
-## 14. Compatibility and Upgrade Notes
+## 15. Compatibility and Upgrade Notes
 
 v1.2 adds non-forgeable public-key verification as the preferred path.
+
+v1.3 adds `DelegationV1` as an optional, backward-compatible protocol artifact for delegated agent authorization.
 
 Compatibility requirements:
 
@@ -732,7 +1059,17 @@ Compatibility requirements:
 - Public-key mode SHOULD be default for third-party verification.
 - Future versions MAY strengthen envelope-signing and key-distribution requirements.
 
-## 15. Conformance Requirement
+### DelegationV1 Compatibility
+
+`DelegationV1` is an optional, backward-compatible artifact introduced in v1.3.
+
+- Relying parties that do not implement delegation support MAY reject `DelegationV1` artifacts without violating protocol conformance for v1.2 and earlier profiles.
+- Implementations claiming v1.3 delegation support MUST implement the full verification obligations defined in Section 5.8.
+- `DelegationV1` does not alter the semantics or structure of `AuthorizationV1`. Existing v1.2 compliant implementations continue to operate correctly without modification.
+- A verifier that accepts `DelegationV1` MUST also hold appropriate trusted KeySets for delegation issuers, which are distinct from PDP-issuer KeySets.
+- Multi-hop delegation (chaining `DelegationV1` from `DelegationV1`) is explicitly not supported in v1.3. Implementations MUST NOT support or accept multi-hop chains.
+
+## 16. Conformance Requirement
 
 Protocol conformance is determined by artifact compatibility and verification behavior.
 
@@ -740,3 +1077,5 @@ An implementation is compliant if it reproduces the protocol artifacts defined i
 
 A conformant implementation MUST reproduce expected conformance vectors for its targeted profile.
 Violation ordering in `VerificationResult` MUST be deterministic.
+
+For v1.3 delegation conformance, implementations MUST additionally satisfy delegation-specific conformance vectors covering the narrowing-only invariant, one-hop enforcement, parent hash binding, and fail-closed behavior for all `DELEGATION_*` violation codes.

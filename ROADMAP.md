@@ -1,16 +1,17 @@
 # OxDeAI Roadmap Status
 
-Last updated: 2026-03-15
+Last updated: 2026-03-20
 
 ## Version Snapshot
 
 Protocol stack:
-- `@oxdeai/core`: `1.3.1`
+- `@oxdeai/core`: `1.6.0`
 - `@oxdeai/sdk`: `1.3.1`
-- `@oxdeai/conformance`: `1.3.1`
+- `@oxdeai/conformance`: `1.4.0`
 
-Adapter packages (all `1.0.0`):
-- `@oxdeai/guard`, `@oxdeai/langgraph`, `@oxdeai/openai-agents`, `@oxdeai/crewai`, `@oxdeai/autogen`, `@oxdeai/openclaw`
+Adapter packages:
+- `@oxdeai/guard`: `1.0.2`
+- `@oxdeai/langgraph`, `@oxdeai/openai-agents`, `@oxdeai/crewai`, `@oxdeai/autogen`, `@oxdeai/openclaw`: `1.0.1`
 
 Tooling:
 - `@oxdeai/cli`: `0.2.4` (independent tooling line)
@@ -19,7 +20,7 @@ Tooling:
 
 - [x] `pnpm build` passes
 - [x] `pnpm -r test` passes (all adapter tests)
-- [x] `pnpm -C packages/conformance validate` passes (`94` assertions)
+- [x] `pnpm -C packages/conformance validate` passes (`139` assertions)
 - [x] `node scripts/validate-adapters.mjs` passes (6/6 adapters)
 - [x] `examples/openai-tools` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
 - [x] `examples/langgraph` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
@@ -27,6 +28,7 @@ Tooling:
 - [x] `examples/openai-agents-sdk` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
 - [x] `examples/autogen` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
 - [x] `examples/openclaw` passes (`ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`)
+- [x] `examples/delegation` passes (`ALLOW`, `ALLOW`, `DENY`, `DENY`)
 
 ## Architecture Doctrine
 
@@ -160,33 +162,31 @@ References:
 - [`docs/architecture/why-oxdeai.md`](./docs/architecture/why-oxdeai.md)
 
 ### v2.x - Delegated Agent Authorization
-Status: `In Progress`
+Status: `Done`
 
-Scope:
-- bounded delegation for multi-agent systems
-- parent agent can delegate reduced authority to child agents
-- delegated authority remains bounded by parent authorization constraints
+Delivered:
+- `DelegationV1` as a first-class protocol artifact (`SPEC.md` v1.3.0, Section 5)
+- `createDelegation()`, `verifyDelegation()`, `verifyDelegationChain()` in `@oxdeai/core`
+- strictly narrowing scope enforcement: `tools`, `max_amount`, `max_actions`, `max_depth`
+- single-hop constraint — `DelegationV1` cannot be re-delegated
+- local chain verification at the PEP — no control-plane call required
+- guard integration (`@oxdeai/guard`) — fail-closed, `setState` skipped on delegation path
+- full delegation test matrix — 9 cases across core + guard, including determinism checks
+- `examples/delegation` — end-to-end demo using `@oxdeai/core`, produces `ALLOW`, `ALLOW`, `DENY`, `DENY`
+- frozen conformance vectors for `DelegationV1`: parent-hash, verification, chain, signature (139 assertions)
+- Go harness + Python adapter with independent Ed25519 verification — no lookup oracle for chain/sig cases
+- `delegation_parent_hash`, `verify_delegation`, `verify_delegation_chain`, `verify_delegation_signature` adapter ops
 
-Possible future artifact:
-- `DelegatedAuthorizationV1`
+Out of scope for this release:
+- multi-hop delegation (chaining `DelegationV1` from `DelegationV1`)
+- federation (delegating authority across organizational trust boundaries)
+- cross-org trust discovery
+- revocation mesh
 
-Design preparation:
-- [`docs/design/delegated-authorization.md`](./docs/design/delegated-authorization.md)
-
-#### Advanced Authorization Semantics
-
-Future exploration areas:
-
-- context-aware policy evaluation patterns
-- execution path policy modeling
-- delegated authorization primitives
-- safe multi-agent authority propagation
-
-These evolutions preserve the core protocol contract:
-
-`(intent, state, policy) -> deterministic decision`
-
-They MUST avoid introducing non-deterministic evaluation behavior.
+References:
+- Protocol spec: [`SPEC.md §5`](./SPEC.md)
+- Artifact spec: [`docs/spec/delegation-v1.md`](./docs/spec/delegation-v1.md)
+- Demo: [`examples/delegation`](./examples/delegation)
 
 ### v3.x - Verifiable Execution Infrastructure
 Status: `Planned`

@@ -323,6 +323,10 @@ Latest local validation (2026-03-15):
 
 Adapter validation references: [adapter-validation.md](./docs/integrations/adapter-validation.md) · [adoption-checklist.md](./docs/integrations/adoption-checklist.md)
 
+Protocol invariants are mapped to implementation tests and property-based coverage in [docs/invariants.md](./docs/invariants.md).
+
+Cross-adapter behavior is validated at boundary conditions, replay protection, and concurrency isolation.
+
 ---
 
 OxDeAI is designed as a protocol with a reference implementation: runtimes propose actions, policy decides deterministically, and relying parties verify authorization artifacts before execution.

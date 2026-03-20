@@ -33,7 +33,7 @@ Relevant packages:
 
 - `@oxdeai/core`
 - `@oxdeai/langgraph` (thin adapter binding)
-- `@oxdeai/guard` (universal PEP — delegated to by `@oxdeai/langgraph`)
+- `@oxdeai/guard` (universal PEP - delegated to by `@oxdeai/langgraph`)
 
 ## Minimal Quickstart
 
@@ -64,7 +64,7 @@ The `@oxdeai/langgraph` package is a **thin binding only**. It:
 - maps `toolCall.id` → `context.intent_id`
 - passes the resulting `ProposedAction` to `@oxdeai/guard`
 
-Everything else — policy evaluation, authorization verification, state persistence, fail-closed behavior — happens inside `@oxdeai/guard`.
+Everything else - policy evaluation, authorization verification, state persistence, fail-closed behavior - happens inside `@oxdeai/guard`.
 
 Adapters are integration components.
 They are not part of the protocol.
