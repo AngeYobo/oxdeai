@@ -1,0 +1,20 @@
+{
+  "name": "@oxdeai/compat",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Cross-adapter compatibility and invariant tests for OxDeAI",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "test": "pnpm build && node --test \"dist/test/cross-adapter.test.js\""
+  },
+  "devDependencies": {
+    "@oxdeai/core": "workspace:*",
+    "@oxdeai/guard": "workspace:*",
+    "@oxdeai/sdk": "workspace:*",
+    "@oxdeai/langgraph": "workspace:*",
+    "@oxdeai/openai-agents": "workspace:*",
+    "@oxdeai/crewai": "workspace:*"
+  }
+}
