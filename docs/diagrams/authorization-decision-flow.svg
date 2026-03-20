@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="240" viewBox="0 0 860 240" role="img" aria-label="OxDeAI - Authorization Decision Flow">
+
+  <defs>
+    <filter id="shadow-sm" x="-8%" y="-8%" width="116%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.07"/>
+    </filter>
+    <linearGradient id="pdp-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0fdf4"/>
+      <stop offset="100%" stop-color="#dcfce7"/>
+    </linearGradient>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="860" height="240" fill="#f8fafc"/>
+
+  <!-- Node: Agent -->
+  <rect x="20" y="80" width="90" height="40" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="65" y="105" font-family="Inter, Arial, sans-serif" font-size="13" fill="#1e293b" font-weight="600" text-anchor="middle">Agent</text>
+
+  <!-- Arrow: Agent → Propose Action -->
+  <line x1="110" y1="100" x2="148" y2="100" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Node: Propose Action -->
+  <rect x="150" y="80" width="132" height="40" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="216" y="105" font-family="Inter, Arial, sans-serif" font-size="13" fill="#1e293b" font-weight="600" text-anchor="middle">Propose Action</text>
+
+  <!-- Arrow: Propose Action → Policy Check -->
+  <line x1="282" y1="100" x2="318" y2="100" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Node: Policy Check (PDP) -->
+  <rect x="320" y="78" width="144" height="44" rx="10" fill="url(#pdp-grad)" stroke="#16a34a" stroke-width="2" filter="url(#shadow-sm)"/>
+  <text x="392" y="98" font-family="Inter, Arial, sans-serif" font-size="12" fill="#14532d" font-weight="800" text-anchor="middle">Policy Check</text>
+  <text x="392" y="113" font-family="Inter, Arial, sans-serif" font-size="9" fill="#166534" font-weight="500" text-anchor="middle">deterministic · fail-closed</text>
+
+  <!-- Arrow: Policy Check → Signed Authorization (ALLOW) -->
+  <line x1="464" y1="100" x2="502" y2="100" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <rect x="464" y="87" width="38" height="16" rx="8" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+  <text x="483" y="99" font-family="Inter, Arial, sans-serif" font-size="9" fill="#16a34a" font-weight="700" text-anchor="middle">ALLOW</text>
+
+  <!-- Node: Signed Authorization -->
+  <rect x="504" y="78" width="172" height="44" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="590" y="98" font-family="Inter, Arial, sans-serif" font-size="12" fill="#166534" font-weight="700" text-anchor="middle">Signed Authorization</text>
+  <text x="590" y="113" font-family="Inter, Arial, sans-serif" font-size="9" fill="#4ade80" text-anchor="middle">AuthorizationV1 · Ed25519</text>
+
+  <!-- Arrow: Signed Authorization → Execute -->
+  <line x1="676" y1="100" x2="714" y2="100" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr-green)"/>
+
+  <!-- Node: Execute -->
+  <rect x="716" y="80" width="100" height="40" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="766" y="105" font-family="Inter, Arial, sans-serif" font-size="13" fill="#166534" font-weight="700" text-anchor="middle">Execute</text>
+
+  <!-- Arrow: Policy Check → Blocked (DENY) -->
+  <path d="M 392 122 L 392 162" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arr-red)" fill="none"/>
+  <rect x="360" y="132" width="38" height="16" rx="8" fill="#fee2e2" stroke="#fca5a5" stroke-width="1"/>
+  <text x="379" y="144" font-family="Inter, Arial, sans-serif" font-size="9" fill="#dc2626" font-weight="700" text-anchor="middle">DENY</text>
+
+  <!-- Node: Blocked -->
+  <rect x="320" y="164" width="144" height="40" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5" filter="url(#shadow-sm)"/>
+  <text x="392" y="189" font-family="Inter, Arial, sans-serif" font-size="13" fill="#dc2626" font-weight="700" text-anchor="middle">Blocked</text>
+
+  <!-- Caption -->
+  <text x="430" y="228" font-family="Inter, Arial, sans-serif" font-size="10" fill="#94a3b8" text-anchor="middle" font-style="italic">No valid authorization, no execution.</text>
+
+</svg>
