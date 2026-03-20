@@ -1,120 +1,97 @@
 # OxDeAI
 
-Deterministic execution authorization for AI agents.
+A deterministic execution authorization protocol for AI agents.
 
-OxDeAI is the execution boundary between AI agents and real-world side effects.
-
-Before an agent executes an external action (API call, infrastructure provisioning, payment, or tool execution), OxDeAI evaluates whether that action is allowed under a deterministic policy state.
-
-If denied, the action never executes.
-If allowed, OxDeAI emits a cryptographically verifiable authorization artifact.
+Before an agent executes an external action — API call, cloud provisioning, payment, tool invocation — OxDeAI evaluates whether that action is allowed under the current policy state. If denied, the action never executes. If allowed, it emits a cryptographically verifiable `AuthorizationV1` artifact that the enforcement point must verify before any side effect occurs.
 
 > Control execution, not just behavior.
 
 ![Agent execution boundary](./docs/diagrams/agent-execution-boundary.svg)
 
-The LLM cannot execute anything directly.
-It must pass through a deterministic authorization boundary.
-
 ---
 
 ## TL;DR
 
-Agents propose actions.
-OxDeAI decides if they are allowed to execute.
+Agents propose actions. OxDeAI decides if they execute. No valid authorization — no execution.
 
-No valid authorization => no execution.
-
-This is enforced deterministically and verified locally.
+```text
+agent proposes action
+  → OxDeAI evaluates (intent, state, policy)
+  → ALLOW: emits AuthorizationV1 → PEP verifies → execution
+  → DENY:  blocked before any side effect
+```
 
 ---
 
-## Execution Boundary
+## What This Looks Like
 
-![Execution boundary](./docs/diagrams/execution-boundary-simple.svg)
+```bash
+pnpm -C examples/openclaw start
+```
+
+```
+[1] ALLOW  provision_gpu  budget=320/1000
+[2] ALLOW  query_db       budget=640/1000
+[3] DENY   provision_gpu  BUDGET_EXCEEDED
+verifyEnvelope() => ok
+```
+
+Two actions authorized. Third refused before execution. Evidence packaged and verified offline.
+
+---
+
+## Why Devs Care
+
+- **Prevents unintended side effects** — execution is gated on policy, not model output
+- **Makes decisions reproducible** — same `(intent, state)` always produces the same decision, across runtimes
+- **Works across agent frameworks** — LangGraph, OpenAI Agents SDK, CrewAI, AutoGen, OpenClaw all share one enforcement layer
 
 ---
 
 ## What OxDeAI Is
 
 - A deterministic execution authorization protocol for autonomous systems
-- The verifiable authorization layer for AI agents and agent runtimes
-- A protocol that evaluates whether a proposed action is allowed before any side effect occurs
-- A protocol that emits a cryptographically verifiable authorization artifact on every allowed action
-- A protocol focused on pre-execution authorization, fail-closed gating, offline verification, and tamper-evident evidence
-
----
+- Pre-execution authorization: no side effect without a verified `AuthorizationV1` artifact
+- Fail-closed execution gating: `ALLOW` without a valid artifact throws `OxDeAIAuthorizationError`
+- Tamper-evident audit chains and offline-verifiable evidence via `VerificationEnvelopeV1`
 
 ## What OxDeAI Is Not
 
-OxDeAI is not primarily:
+- A billing system, metering pipeline, or pricing proxy
+- A prompt guardrail or output filter
+- A runtime or orchestration engine
 
-- a billing system
-- a metering pipeline
-- a provider pricing proxy
-- a reservation or settlement ledger
-
-OxDeAI can enforce spend, velocity, concurrency, replay, and capability policies, but its core role is execution authorization, not downstream accounting.
+OxDeAI can enforce spend, velocity, concurrency, replay, and capability policies — but its core role is execution authorization, not downstream accounting.
 
 ---
 
 ## Why OxDeAI Exists
 
-Most AI safety systems focus on prompts or model outputs.
+Prompt guardrails, output filters, and observability all operate outside the execution path. They are probabilistic (p < 1): they reduce risk but cannot guarantee a side effect is blocked.
 
-- Prompt guardrails shape model behavior.
-- Output filters review responses.
-- Observability and post-execution monitoring record what happened.
+OxDeAI enforces a deterministic boundary (p = 1): execution either passes the policy gate or it does not.
 
-None of these prevent a side effect from occurring.
-
-OxDeAI focuses on the execution authorization boundary - the moment before an agent calls an external system.
-
-The critical question is deterministic:
-
-> Is this action allowed to execute under the current policy state?
-
-OxDeAI evaluates `(intent, state)` and emits a cryptographically verifiable `AuthorizationV1` artifact before any external action occurs. The policy enforcement point executes only when a valid artifact is present.
+```text
+Prompt guardrails     →  shape model behavior     →  p < 1
+Execution authorization  →  gate the side effect  →  p = 1
+```
 
 > Logs are narratives. Authorization artifacts are proofs.
 
-OxDeAI is designed for authorization decisions that must be deterministic, fail-closed, and independently verifiable.
+The critical question is deterministic: **is this action allowed to execute under the current policy state?** OxDeAI answers it with a signed, verifiable artifact — before any side effect occurs.
 
 ![Policy invariants](./docs/diagrams/policy-invariants.svg)
 
 ---
 
-## Why This Exists
+## Correctness Guarantees
 
-Most agent safety systems operate inside the model:
+- **Deterministic evaluation** — `(intent, state, policy) → decision` is pure and side-effect-free; same inputs always produce the same result
+- **Fail-closed execution** — no execution path bypasses the authorization gate; missing or invalid artifact throws immediately
+- **Evaluation isolation** — each evaluation receives a `structuredClone` of shared state; concurrent calls cannot corrupt each other's policy context (invariant I6)
+- **Cross-adapter equivalence** — identical normalized intent + identical policy state produces identical decisions across all maintained adapters (validated by `@oxdeai/compat`, CA-1–CA-10)
 
-- prompt guardrails
-- output filtering
-- observability
-
-These are probabilistic (p < 1).
-
-OxDeAI enforces a deterministic boundary (p = 1):
-execution either passes the policy or it does not.
-
----
-
-## The Missing Layer
-
-Distributed systems solved:
-
-- rate limits
-- authorization
-- retries
-
-Agents still lack: **execution authorization**.
-
-OxDeAI provides that layer.
-
-```text
-Prompt guardrails  →  p < 1
-Execution authorization  →  p = 1
-```
+Covered by 139 frozen conformance assertions (`pnpm -C packages/conformance validate`) and property-based tests (D-P1–D-P5, G-D1–G-D3) across core and guard. DelegationV1 cases include independent Ed25519 verification in Go and Python harnesses.
 
 ---
 
@@ -308,10 +285,10 @@ Full benchmark methodology: [`bench/README.md`](./bench/README.md) · Run write-
 
 ## Validation Snapshot
 
-Latest local validation (2026-03-15):
+Latest local validation (2026-03-20):
 
 - `pnpm build` - pass
-- `pnpm -C packages/conformance validate` - pass (94 assertions)
+- `pnpm -C packages/conformance validate` - pass (139 assertions)
 - `pnpm -r test` - pass (all adapter tests pass)
 - `node scripts/validate-adapters.mjs` - pass (6/6 adapters)
 - `pnpm -C examples/openai-tools start` - `ALLOW`, `ALLOW`, `DENY`, envelope `ok`
@@ -320,6 +297,9 @@ Latest local validation (2026-03-15):
 - `pnpm -C examples/openai-agents-sdk start` - `ALLOW`, `ALLOW`, `DENY`, envelope `ok`
 - `pnpm -C examples/autogen start` - `ALLOW`, `ALLOW`, `DENY`, envelope `ok`
 - `pnpm -C examples/openclaw start` - `ALLOW`, `ALLOW`, `DENY`, envelope `ok`
+- `pnpm -C examples/delegation start` - `ALLOW`, `ALLOW`, `DENY`, `DENY`
+
+DelegationV1 conformance vectors include independent Ed25519 verification in Go and Python harnesses — no oracle/lookup pattern.
 
 Adapter validation references: [adapter-validation.md](./docs/integrations/adapter-validation.md) · [adoption-checklist.md](./docs/integrations/adoption-checklist.md)
 
@@ -443,7 +423,7 @@ OxDeAI artifacts are portable protocol artifacts: Rust, Go, and Python developer
 | `v1.3` Guard Adapter + Integration Surface | complete |
 | `v1.4` Ecosystem Adoption | complete |
 | `v1.5` Developer Experience | complete |
-| `v2.x` Delegated Agent Authorization | in progress |
+| `v2.x` Delegated Agent Authorization | complete |
 | `v3.x` Verifiable Execution Infrastructure | planned |
 
 ### v1.4 - Ecosystem Adoption
@@ -474,9 +454,9 @@ Full roadmap: [`ROADMAP.md`](./ROADMAP.md) · Release policy: [`RELEASE.md`](./R
 
 ### Version
 
-Protocol stack: `@oxdeai/core` `1.5.0` · `@oxdeai/sdk` `1.3.1` · `@oxdeai/conformance` `1.3.1`
+Protocol stack: `@oxdeai/core` `1.6.0` · `@oxdeai/sdk` `1.3.1` · `@oxdeai/conformance` `1.4.0`
 
-Adapter packages (all `1.0.1`): `@oxdeai/guard` · `@oxdeai/langgraph` · `@oxdeai/openai-agents` · `@oxdeai/crewai` · `@oxdeai/autogen` · `@oxdeai/openclaw`
+Adapter packages: `@oxdeai/guard` `1.0.2` · `@oxdeai/langgraph` `1.0.1` · `@oxdeai/openai-agents` `1.0.1` · `@oxdeai/crewai` `1.0.1` · `@oxdeai/autogen` `1.0.1` · `@oxdeai/openclaw` `1.0.1`
 
 Tooling: `@oxdeai/cli` `0.2.4`
 
