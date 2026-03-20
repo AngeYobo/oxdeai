@@ -2,31 +2,23 @@
 
 > Control execution, not just behavior.
 
-## Introduction
+OxDeAI enforces deterministic authorization at the execution boundary of autonomous systems. It is not a runtime, orchestration engine, or prompt guardrail layer. It is the protocol and reference stack that decides whether a proposed external action is allowed to execute under the current policy state.
 
-OxDeAI exists to enforce deterministic authorization at the execution boundary of autonomous systems.
+---
 
-It is not a runtime, orchestration engine, or prompt guardrail layer. It is the protocol and reference stack that decides whether a proposed external action is allowed to execute under the current policy state.
+## The Problem
 
-## The Agent Execution Problem
+Modern agent runtimes can trigger real side effects: external API calls, cloud provisioning, payments, workflow actions, command execution.
 
-Modern agent runtimes can trigger real side effects:
-
-- external API calls
-- cloud provisioning
-- payments
-- workflow actions
-- command execution
-
-These actions are where economic and operational risk becomes real. A model output is not yet a side effect. A provider call, infrastructure action, or paid tool invocation is.
+A model output is not yet a side effect. A provider call, infrastructure action, or paid tool invocation is. That gap — between what a model proposes and what the runtime executes — is where economic and operational risk becomes real. Existing layers do not close it.
 
 ## Why Prompt Guardrails Are Insufficient
 
-Prompt and output guardrails operate upstream from execution. They may reduce unsafe content or shape responses, but they do not themselves guarantee that a side effect will be blocked before execution.
+Prompt and output guardrails operate upstream from execution. They may reduce unsafe content or shape responses, but they do not guarantee that a side effect is blocked before it occurs.
 
-An autonomous system can still produce action proposals that look valid to the runtime and continue to cross tool or provider boundaries unless an execution gate exists.
+An autonomous system can produce action proposals that look valid to the runtime and continue to cross tool or provider boundaries unless a dedicated execution gate exists. Guardrails address model behavior. They do not address execution authorization.
 
-OxDeAI addresses that narrower problem: whether a proposed action is authorized to execute now.
+OxDeAI addresses the narrower, harder problem: whether a proposed action is authorized to execute **now**, against the current policy state, with a verifiable artifact to prove it.
 
 ## The Execution Authorization Boundary
 
@@ -36,13 +28,15 @@ OxDeAI sits between the runtime and the external system.
 
 The control point is pre-execution:
 
-- `DENY` means the side effect does not execute
-- `ALLOW` may emit `AuthorizationV1`
-- the PEP verifies that authorization before the side effect occurs
+- `DENY` — the side effect does not execute
+- `ALLOW` — the engine emits `AuthorizationV1`
+- the PEP verifies that authorization artifact before the side effect occurs
 
-## OxDeAI Architecture
+No execution happens without a verified `ALLOW`. No `AuthorizationV1` exists without a prior deterministic evaluation.
 
-The architecture separates policy evaluation from execution enforcement.
+## Architecture
+
+The architecture separates policy evaluation (PDP) from execution enforcement (PEP).
 
 ```text
 raw action surface
@@ -59,34 +53,32 @@ raw action surface
 
 Key roles:
 
-- adapter: maps a runtime-specific action surface into deterministic intent
-- PDP: evaluates `(intent, state, policy)` deterministically
-- PEP: verifies authorization before side effects
-- evidence path: preserves snapshot, audit events, and verification envelope for later verification
+- **adapter** — maps a runtime-specific action surface into a deterministic intent
+- **PDP** — evaluates `(intent, state, policy)` and returns `ALLOW` or `DENY`
+- **PEP** — verifies `AuthorizationV1` (or `DelegationV1`) before any side effect
+- **evidence path** — preserves snapshot, audit events, and verification envelope for independent verification
 
 ## Deterministic Evaluation Model
 
-The protocol contract is:
+```
+(intent, state, policy) -> deterministic decision
+```
 
-`(intent, state, policy) -> deterministic decision`
+The same evaluated situation always produces the same semantic result. The protocol depends on deterministic serialization (canonical JSON), stable verification semantics, and explicit state transitions.
 
-That means the same evaluated situation produces the same semantic result. The protocol depends on deterministic serialization, stable verification behavior, and explicit state transitions.
-
-The current line does not require one universal raw action schema. It does require deterministic normalization within each integration.
+OxDeAI does not require a single universal raw action schema. It requires deterministic normalization within each integration: the adapter's job is to map framework-specific surfaces into a stable intent before evaluation.
 
 ## Authorization Artifacts
 
-On `ALLOW`, the engine may emit `AuthorizationV1`.
+On `ALLOW`, the engine emits `AuthorizationV1`. That artifact binds the authorization decision to:
 
-That artifact binds the authorization decision to:
-
-- the evaluated intent
-- the policy identity
+- the evaluated intent (`intent_hash`)
+- the policy identity (`policy_id`)
 - the state snapshot hash
 - issuer and audience context
-- expiry and signature metadata
+- expiry and Ed25519 signature metadata
 
-It is not a post-fact report. It is the pre-execution artifact used at the authorization boundary.
+`AuthorizationV1` is not a post-fact report. It is the pre-execution artifact verified at the PEP boundary before any side effect is permitted.
 
 ## Delegated Authorization
 
@@ -98,88 +90,86 @@ Key properties:
 
 - delegated scope cannot exceed the parent's granted scope (`tools`, `max_amount`, `max_actions`, `max_depth`)
 - delegation expiry cannot exceed parent authorization expiry
-- the chain is verified locally at the PEP — no control-plane round-trip required
-- single-hop only — `DelegationV1` cannot be re-delegated
-- fail-closed: any chain violation rejects the delegation path, `setState` is never called
-
-The delegation execution path replaces the direct `AuthorizationV1` path for child agents. The parent authorization remains the root authority source.
+- chain verification runs locally at the PEP — no control-plane round-trip required
+- single-hop only — `DelegationV1` cannot itself be re-delegated
+- fail-closed: any chain violation rejects the path; `setState` is never called on the delegation path
 
 ```text
 parent agent receives AuthorizationV1
   -> calls createDelegation() with bounded scope + expiry
   -> child agent receives DelegationV1
   -> child PEP calls verifyDelegationChain(parent, delegation, opts)
-  -> chain checks pass: hash binding, delegator match, scope, expiry ceiling
+  -> chain checks: hash binding, delegator match, scope narrowing, expiry ceiling
   -> child executes within delegated scope
 ```
 
-See [`docs/spec/delegation-v1.md`](../spec/delegation-v1.md) for the full artifact specification.
+See [`docs/spec/delegation-v1.md`](../spec/delegation-v1.md) for the full artifact specification and chain verification rules.
 
 ## Verification Evidence
 
-OxDeAI also preserves a verification path after execution or refusal:
+OxDeAI preserves a verification path independent of the live runtime:
 
-- snapshot captures the evaluated state
-- audit events record proposed actions, decisions, and execution or refusal
-- verification envelope packages snapshot plus audit evidence
+- **snapshot** — canonical encoding of evaluated policy state
+- **audit events** — hash-chained record of proposed actions, decisions, and execution or refusal
+- **verification envelope** — packages snapshot plus audit evidence into a portable artifact
 
-`verifyEnvelope()` provides stateless verification of that packaged evidence under the selected mode.
+`verifyEnvelope()` provides stateless verification of that packaged evidence. It does not require access to the live engine or policy state.
 
-This evidence path is useful for:
+This evidence path supports:
 
-- reproducible integration demos
-- relying-party review
-- independent verification
+- relying-party and auditor verification
+- independent compliance review across org boundaries
 - post-execution reasoning about what was evaluated and what was refused
 
-## Integration Architecture
+## Integration Model
 
-OxDeAI is interface-agnostic. Upstream action surfaces may include:
+OxDeAI is interface-agnostic. Action surfaces may include structured tool calls, CLI-style command execution, workflow nodes, MCP-mediated invocation, or framework-specific adapters. Those surfaces are not the protocol. Integrations normalize them into intent before evaluation.
 
-- structured tool calls
-- CLI-style command execution
-- workflow nodes
-- MCP-mediated invocation
-- framework-specific adapters
+Practical integration sequence:
 
-Those action surfaces are not the protocol. Integrations normalize them into intent before evaluation.
-
-Practical integration shape:
-
-1. runtime proposes action
-2. adapter normalizes action into deterministic intent
-3. current state is supplied to the PDP
+1. Runtime proposes action
+2. Adapter normalizes into deterministic intent
+3. Current policy state is supplied to the PDP
 4. PDP returns `ALLOW` or `DENY`
-5. on `ALLOW`, `AuthorizationV1` may be emitted
+5. On `ALLOW`, `AuthorizationV1` is emitted
 6. PEP verifies authorization before execution
-7. audit and verification artifacts remain available for later checks
+7. Audit and verification artifacts remain available for later checks
 
-## Example Execution Flow
+## Canonical Demo Flow
 
-The maintained demos use a shared canonical scenario:
+The maintained adapter demos share a single canonical scenario:
 
-- first action: `ALLOW`
-- second action: `ALLOW`
-- third action: `DENY`
-- `verifyEnvelope() => ok`
-
-That scenario demonstrates:
-
-- deterministic evaluation under the same policy model
-- authorization at the execution boundary
-- explicit refusal on `DENY`
-- reproducible verification evidence
-
-The demos differ by runtime shape, not by OxDeAI semantics.
+```text
+action 1  ->  ALLOW
+action 2  ->  ALLOW
+action 3  ->  DENY   (budget exceeded)
+verifyEnvelope() => ok
+```
 
 The delegation demo (`examples/delegation`) extends this with a child agent path:
 
-- parent receives `AuthorizationV1` — `ALLOW`
-- parent delegates to child with bounded scope — `ALLOW`
-- child requests tool outside delegated scope — `DENY` (scope violation)
-- child uses expired delegation — `DENY` (expiry)
+```text
+parent receives AuthorizationV1           ->  ALLOW
+parent delegates bounded scope to child   ->  ALLOW
+child requests tool outside scope         ->  DENY  (scope violation)
+child presents expired delegation         ->  DENY  (expiry)
+```
 
-## Related References
+The demos differ by runtime surface, not by OxDeAI semantics. Each produces the same protocol outcomes under the same policy model.
+
+## Positioning
+
+| Layer | What it does | OxDeAI? |
+|---|---|---|
+| Prompt guardrails | Shape or filter model outputs | No |
+| Agent runtimes / orchestrators | Manage agent lifecycle and tool routing | No |
+| OxDeAI PDP | Evaluate proposed actions against policy state | **Yes** |
+| OxDeAI PEP | Gate execution against verified authorization | **Yes** |
+| OxDeAI evidence path | Preserve verifiable audit artifacts | **Yes** |
+
+OxDeAI does not replace runtimes, orchestration engines, or prompt layers. It enforces the boundary that those layers do not: whether a proposed action is authorized to produce a side effect, with a signed and verifiable artifact as proof.
+
+## References
 
 - [`README.md`](../../README.md)
 - [`PROTOCOL.md`](../../PROTOCOL.md)
