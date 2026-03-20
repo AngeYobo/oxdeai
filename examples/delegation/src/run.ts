@@ -2,28 +2,32 @@
  * run.ts — DelegationV1 Demo
  *
  * Scenario:
- *   parent-agent holds full authority: tools=[provision_gpu, query_db], budget=1000
+ *   parent-agent holds full authority (ALLOW authorization from PDP).
  *   parent delegates LIMITED scope to child-agent:
- *     tools=[provision_gpu], max_amount=300, expiry=now+60s
+ *     tools=[provision_gpu], max_amount=300n units, expiry=now+60s
  *
  *   child call 1: provision_gpu, amount=200  → ALLOW  (within scope)
  *   child call 2: provision_gpu, amount=200  → ALLOW  (within scope)
- *   child call 3: query_db,      amount=200  → DENY   (tool not in delegation)
+ *   child call 3: query_db,      amount=200  → DENY   (tool not in delegation scope)
  *   child call 4: provision_gpu, amount=200  → DENY   (delegation expired)
+ *
+ * Uses @oxdeai/core — no inline implementation.
  *
  * Usage:
  *   pnpm -C examples/delegation start
  */
 
 import { pathToFileURL } from "node:url";
+import { generateKeyPairSync } from "node:crypto";
 import {
-  generateDemoKeyPair,
+  signAuthorizationEd25519,
   createDelegation,
-  verifyDelegation,
-  hashParentAuth,
-  type ParentAuth,
-  type DelegationScope,
-} from "./delegation.js";
+  verifyDelegationChain,
+  delegationParentHash,
+  type AuthorizationV1,
+  type DelegationV1,
+  type KeySet,
+} from "@oxdeai/core";
 
 // ── ANSI helpers ──────────────────────────────────────────────────────────────
 
@@ -49,11 +53,17 @@ const c = (col: string, t: string) => `${col}${t}${C.reset}`;
 const POLICY_ID    = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
 const PARENT_AGENT = "parent-agent";
 const CHILD_AGENT  = "child-agent";
+const KID          = "demo-key-1";
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 async function runDemo(log = (m: string) => console.log(m)): Promise<void> {
-  const now = Date.now();
+  // All timestamps in unix seconds
+  const T_NOW     = Math.floor(Date.now() / 1000);
+  const T_ISSUED  = T_NOW - 60;
+  const T_PAR_EXP = T_NOW + 3600;  // parent auth expires in 1 hour
+  const T_DEL_EXP = T_NOW + 60;    // delegation expires in 60s
+  const T_EXPIRED = T_NOW - 5;     // already-expired delegation
 
   // ── Header ────────────────────────────────────────────────────────────────
   log(c(C.cyan,  "╔══════════════════════════════════════════════════════════════════╗"));
@@ -62,130 +72,165 @@ async function runDemo(log = (m: string) => console.log(m)): Promise<void> {
   log(c(C.cyan,  "╚══════════════════════════════════════════════════════════════════╝"));
 
   // ── Step 1: Generate signing key pair ─────────────────────────────────────
+  // In production: the parent agent holds this key pair, issued by a key authority.
+  // The same key is registered in the parent's KeySet so delegation signatures can
+  // be verified at the PEP without a control-plane call.
   log(`\n${c(C.dim, "── Setup ────────────────────────────────────────────────────────────")}`);
-  const keyPair = generateDemoKeyPair("demo-key-1");
-  log(`   ${c(C.dim, "key:")}    ${c(C.bCyan, keyPair.kid)} (Ed25519, demo-only)`);
+  const keys = generateKeyPairSync("ed25519", {
+    privateKeyEncoding: { format: "pem", type: "pkcs8" },
+    publicKeyEncoding:  { format: "pem", type: "spki" },
+  });
+  log(`   ${c(C.dim, "key:")}    ${c(C.bCyan, KID)} (Ed25519, demo-only)`);
 
-  // ── Step 2: Parent AuthorizationV1 (simulated PDP output) ─────────────────
-  // In production: produced by engine.evaluatePure() after policy evaluation.
-  // Here: constructed directly to isolate the delegation layer.
-
-  const parentAuth: ParentAuth = {
-    auth_id:       "auth-parent-001",
-    issuer:        "oxdeai-pdp",
-    audience:      PARENT_AGENT,
-    policy_id:     POLICY_ID,
-    allowed_tools: ["provision_gpu", "query_db"],
-    max_amount:    1000,
-    expiry:        now + 3_600_000,  // 1 hour
+  // KeySet for delegation signature verification.
+  // issuer = parent.audience = PARENT_AGENT (the delegating principal, not the PDP).
+  const keySet: KeySet = {
+    issuer: PARENT_AGENT,
+    version: "1",
+    keys: [{ kid: KID, alg: "Ed25519", public_key: keys.publicKey }],
   };
+
+  // ── Step 2: Parent AuthorizationV1 ────────────────────────────────────────
+  // In production: produced by PolicyEngine.evaluatePure() after PDP evaluation.
+  // Here: constructed directly to isolate the delegation layer.
+  const parentAuth: AuthorizationV1 = signAuthorizationEd25519(
+    {
+      auth_id:     "f".repeat(64),
+      issuer:      "oxdeai-pdp",
+      audience:    PARENT_AGENT,
+      intent_hash: "a".repeat(64),
+      state_hash:  "b".repeat(64),
+      policy_id:   POLICY_ID,
+      decision:    "ALLOW",
+      issued_at:   T_ISSUED,
+      expiry:      T_PAR_EXP,
+      kid:         KID,
+    },
+    keys.privateKey
+  );
 
   log(`\n${c(C.dim, "── Parent authorization ─────────────────────────────────────────────")}`);
   log(`   ${c(C.dim, "agent:")}   ${c(C.bCyan, PARENT_AGENT)}`);
-  log(`   ${c(C.dim, "tools:")}   ${c(C.yellow, parentAuth.allowed_tools.join(", "))}`);
-  log(`   ${c(C.dim, "budget:")}  ${c(C.yellow, String(parentAuth.max_amount))} units`);
-  log(`   ${c(C.dim, "hash:")}    ${c(C.dim, hashParentAuth(parentAuth).slice(0, 32) + "...")}`);
+  log(`   ${c(C.dim, "auth:")}    ${c(C.yellow, parentAuth.decision)} (issued by ${c(C.dim, parentAuth.issuer)})`);
+  log(`   ${c(C.dim, "hash:")}    ${c(C.dim, delegationParentHash(parentAuth).slice(0, 32) + "...")}`);
 
   // ── Step 3: Create delegation for child agent ─────────────────────────────
-  const delegationScope: DelegationScope = {
-    tools:      ["provision_gpu"],   // query_db excluded — narrowed
-    max_amount: 300,                  // 1000 → 300 — narrowed
-  };
-
-  const delegation = createDelegation(
+  // Scope is strictly narrowed from parent: only provision_gpu, max 300 units.
+  const delegation: DelegationV1 = createDelegation(
     parentAuth,
-    CHILD_AGENT,
-    delegationScope,
-    now + 60_000,   // expires in 60s
-    keyPair,
-    now
+    {
+      delegatee:  CHILD_AGENT,
+      scope:      { tools: ["provision_gpu"], max_amount: 300n },
+      expiry:     T_DEL_EXP,
+      kid:        KID,
+    },
+    keys.privateKey
   );
 
-  // Properly signed delegation with expiry already in the past (for scenario 4)
-  const expiredDelegation = createDelegation(
+  // Properly signed delegation that is already expired (for scenario 4)
+  const expiredDelegation: DelegationV1 = createDelegation(
     parentAuth,
-    CHILD_AGENT,
-    delegationScope,
-    now - 5_000,    // expired 5s ago
-    keyPair,
-    now - 10_000    // issued 10s ago
+    {
+      delegatee:  CHILD_AGENT,
+      scope:      { tools: ["provision_gpu"], max_amount: 300n },
+      expiry:     T_EXPIRED,
+      kid:        KID,
+      issuedAt:   T_ISSUED - 10,
+    },
+    keys.privateKey
   );
 
   log(`\n${c(C.dim, "── Delegation created ───────────────────────────────────────────────")}`);
   log(`   ${c(C.dim, "from:")}    ${c(C.bCyan, PARENT_AGENT)} → ${c(C.magenta, CHILD_AGENT)}`);
-  log(`   ${c(C.dim, "tools:")}   ${c(C.yellow, delegation.scope.tools.join(", "))} ${c(C.dim, "(query_db excluded)")}`);
-  log(`   ${c(C.dim, "budget:")}  ${c(C.yellow, String(delegation.scope.max_amount))} units max ${c(C.dim, "(was 1000)")}`);
+  log(`   ${c(C.dim, "tools:")}   ${c(C.yellow, delegation.scope.tools?.join(", ") ?? "(any)")} ${c(C.dim, "(query_db excluded)")}`);
+  log(`   ${c(C.dim, "budget:")}  ${c(C.yellow, String(delegation.scope.max_amount ?? "(unlimited)"))} units max`);
   log(`   ${c(C.dim, "expiry:")}  60 seconds`);
   log(`   ${c(C.dim, "id:")}      ${c(C.dim, delegation.delegation_id.slice(0, 24) + "...")}`);
 
   // ── Step 4: Child executes actions ────────────────────────────────────────
 
-  const decisions: string[] = [];
-
-  const scenarios: Array<{
+  type Scenario = {
     label:         string;
     tool:          string;
-    amount:        number;
-    useDelegation: typeof delegation;
+    amount:        bigint;
+    useDelegation: DelegationV1;
     now:           number;
-    expectNote:    string;
-  }> = [
+  };
+
+  const scenarios: Scenario[] = [
     {
       label:         "provision_gpu / amount=200",
       tool:          "provision_gpu",
-      amount:        200,
+      amount:        200n,
       useDelegation: delegation,
-      now,
-      expectNote:    "within scope",
+      now:           T_NOW,
     },
     {
       label:         "provision_gpu / amount=200",
       tool:          "provision_gpu",
-      amount:        200,
+      amount:        200n,
       useDelegation: delegation,
-      now,
-      expectNote:    "within scope",
+      now:           T_NOW,
     },
     {
       label:         "query_db / amount=200",
       tool:          "query_db",
-      amount:        200,
+      amount:        200n,
       useDelegation: delegation,
-      now,
-      expectNote:    "tool not in delegation scope",
+      now:           T_NOW,
     },
     {
       label:         "provision_gpu / amount=200 (expired delegation)",
       tool:          "provision_gpu",
-      amount:        200,
+      amount:        200n,
       useDelegation: expiredDelegation,
-      now,
-      expectNote:    "delegation expired",
+      now:           T_NOW,
     },
   ];
 
   log(`\n${c(C.dim, "── Child agent proposals ────────────────────────────────────────────")}`);
 
+  const decisions: string[] = [];
+
   for (const s of scenarios) {
-    const result = verifyDelegation(
-      s.useDelegation,
-      parentAuth,
-      CHILD_AGENT,
-      s.tool,
-      s.amount,
-      keyPair.publicKeyPem,
-      s.now
-    );
+    // 1. Verify delegation chain integrity (signature, expiry, hash binding, etc.)
+    const chain = verifyDelegationChain(s.useDelegation, parentAuth, {
+      now:                        s.now,
+      expectedDelegatee:          CHILD_AGENT,
+      trustedKeySets:             keySet,
+      requireSignatureVerification: true,
+    });
+
+    // 2. If chain is valid, enforce scope at the action level
+    let decision: "ALLOW" | "DENY" = "ALLOW";
+    let reason = "";
+
+    if (!chain.ok) {
+      decision = "DENY";
+      reason = chain.violations.map((v) => v.message).join("; ");
+    } else {
+      const tools = s.useDelegation.scope.tools;
+      if (tools && !tools.includes(s.tool)) {
+        decision = "DENY";
+        reason = `tool '${s.tool}' not in delegation scope: [${tools.join(", ")}]`;
+      } else if (
+        s.useDelegation.scope.max_amount !== undefined &&
+        s.amount > s.useDelegation.scope.max_amount
+      ) {
+        decision = "DENY";
+        reason = `amount ${s.amount} exceeds delegation max_amount ${s.useDelegation.scope.max_amount}`;
+      }
+    }
 
     log(`\n┌─ ${c(C.dim, "Child proposes:")} ${s.label}`);
 
-    if (result.ok) {
+    if (decision === "ALLOW") {
       decisions.push("ALLOW");
       log(`│  ${c(C.bGreen, "ALLOW")}  delegation verified`);
       log(`└─ ${c(C.dim, "EXECUTED:")} ${s.tool}(amount=${s.amount})`);
     } else {
       decisions.push("DENY");
-      log(`│  ${c(C.bRed, "DENY")}   ${result.reason}`);
+      log(`│  ${c(C.bRed, "DENY")}   ${reason}`);
       log(`└─ ${c(C.dim, "BLOCKED — tool did not execute")}`);
     }
   }
@@ -206,7 +251,7 @@ async function runDemo(log = (m: string) => console.log(m)): Promise<void> {
   log("");
   log(`  ${c(C.bWhite, "What just happened:")}`);
   log(`  ${c(C.cyan, "┌─────────────────────────────────────────────────────────────────┐")}`);
-  log(`  ${c(C.cyan, "│")} ${c(C.bCyan, "PARENT")}  Held full authority: tools + 1000-unit budget.           ${c(C.cyan, "│")}`);
+  log(`  ${c(C.cyan, "│")} ${c(C.bCyan, "PARENT")}  Received ALLOW from PDP (AuthorizationV1).              ${c(C.cyan, "│")}`);
   log(`  ${c(C.cyan, "│")}         Delegated ${c(C.yellow, "narrowed")} scope to child — 1 tool, 300 units. ${c(C.cyan, "│")}`);
   log(`  ${c(C.cyan, "│")}                                                                 ${c(C.cyan, "│")}`);
   log(`  ${c(C.cyan, "│")} ${c(C.bCyan, "CHILD")}   Called provision_gpu twice → ${c(C.bGreen, "ALLOW")} (within scope).     ${c(C.cyan, "│")}`);
