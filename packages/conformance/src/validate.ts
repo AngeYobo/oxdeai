@@ -11,9 +11,12 @@ import {
   verifyAuthorization,
   verifyAuditEvents,
   verifyEnvelope,
-  verifySnapshot
+  verifySnapshot,
+  createDelegation,
+  verifyDelegation,
+  verifyDelegationChain,
 } from "@oxdeai/core";
-import type { AuthorizationV1, Intent, KeySet, State, VerificationResult } from "@oxdeai/core";
+import type { AuthorizationV1, Intent, KeySet, State, VerificationResult, DelegationV1, DelegationScope, VerifyDelegationOptions } from "@oxdeai/core";
 import {
   TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
   TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
@@ -387,6 +390,273 @@ function validateAuthorizationVerificationVectors(ctx: CheckCtx, adapter: Confor
     const expected = asRecord(v.expected);
     const got = adapter.verifyAuthorization(auth, opts);
 
+    eq(ctx, `${id} status`, got.status, String(expected.status));
+    eq(ctx, `${id} violations`, got.violations, expected.violations ?? []);
+  }
+}
+
+// ── Delegation conformance helpers ────────────────────────────────────────────
+
+const DELEGATION_T_ISSUED  = 1_000_000;
+const DELEGATION_T_NOW     = 1_001_000;
+const DELEGATION_T_DEL_EXP = 1_002_000;
+const DELEGATION_T_PAR_EXP = 1_003_000;
+
+// Delegation signatures are verified against the delegating principal's KeySet.
+// issuer = parent.audience = "parent-agent" (not the PDP issuer).
+const DELEGATION_TEST_KEYSET: KeySet = {
+  issuer: "parent-agent",
+  version: "1",
+  keys: [{
+    kid: "2026-01",
+    alg: "Ed25519",
+    public_key: TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
+  }],
+};
+
+function makeParentAuth(): AuthorizationV1 {
+  return signAuthorizationEd25519(
+    {
+      auth_id:     "f".repeat(64),
+      issuer:      "oxdeai.policy-engine",
+      audience:    "parent-agent",
+      intent_hash: "a".repeat(64),
+      state_hash:  "b".repeat(64),
+      policy_id:   "c".repeat(64),
+      decision:    "ALLOW",
+      issued_at:   DELEGATION_T_ISSUED,
+      expiry:      DELEGATION_T_PAR_EXP,
+      kid:         "2026-01",
+    },
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
+  );
+}
+
+function makeSignedDelegationBase(parent: AuthorizationV1): DelegationV1 {
+  return createDelegation(
+    parent,
+    {
+      delegatee:    "child-agent",
+      scope:        { tools: ["provision_gpu"] },
+      expiry:       DELEGATION_T_DEL_EXP,
+      kid:          "2026-01",
+      delegationId: "d1d1d1d1-0000-0000-0000-c0nf0rm4nce",
+      issuedAt:     DELEGATION_T_ISSUED,
+    },
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
+  );
+}
+
+function parseDelegationScope(input: unknown): DelegationScope {
+  if (input === undefined || input === null) return {};
+  const r = asRecord(input);
+  const scope: DelegationScope = {};
+  if (r.tools !== undefined) scope.tools = r.tools as string[];
+  if (r.max_amount !== undefined) scope.max_amount = BigInt(String(r.max_amount));
+  if (r.max_actions !== undefined) scope.max_actions = Number(r.max_actions);
+  if (r.max_depth !== undefined) scope.max_depth = Number(r.max_depth);
+  return scope;
+}
+
+function parseDelegationInput(input: unknown): DelegationV1 {
+  const r = asRecord(input);
+  return {
+    delegation_id:    String(r.delegation_id),
+    issuer:           String(r.issuer),
+    audience:         String(r.audience),
+    parent_auth_hash: String(r.parent_auth_hash),
+    delegator:        String(r.delegator),
+    delegatee:        String(r.delegatee),
+    scope:            parseDelegationScope(r.scope),
+    policy_id:        String(r.policy_id),
+    issued_at:        Number(r.issued_at),
+    expiry:           Number(r.expiry),
+    alg:              "Ed25519",
+    kid:              String(r.kid),
+    signature:        String(r.signature),
+  };
+}
+
+function validateDelegationParentHashVectors(ctx: CheckCtx): void {
+  const file = loadJson<VectorFile>("delegation-parent-hash.json");
+  const seen: Record<string, string> = {};
+
+  for (const v of file.vectors) {
+    const id = String(v.id);
+    const input = asRecord(v.input);
+    const parent = asRecord(input.parent);
+    const hash = hexSha256Utf8(canonicalJson(parent));
+    const expected = String(asRecord(v.expected).parent_auth_hash);
+    eq(ctx, `${id} parent_auth_hash`, hash, expected);
+    seen[id] = hash;
+
+    if (v.invariant) {
+      const inv = String(v.invariant);
+      if (inv.startsWith("equals ")) {
+        const refId = inv.slice("equals ".length);
+        if (refId in seen) {
+          eq(ctx, `${id} invariant`, hash, seen[refId]);
+        }
+      }
+    }
+  }
+}
+
+function validateDelegationVerificationVectors(ctx: CheckCtx): void {
+  const file = loadJson<VectorFile>("delegation-verification.json");
+
+  for (const v of file.vectors) {
+    const id = String(v.id);
+    const input = asRecord(v.input);
+    const delegation = parseDelegationInput(input.delegation);
+    const optsRaw = input.opts ? asRecord(input.opts) : {};
+
+    const opts: VerifyDelegationOptions = {};
+    if (optsRaw.now !== undefined) opts.now = Number(optsRaw.now);
+    if (optsRaw.expectedDelegatee !== undefined) opts.expectedDelegatee = String(optsRaw.expectedDelegatee);
+    if (optsRaw.expectedPolicyId !== undefined) opts.expectedPolicyId = String(optsRaw.expectedPolicyId);
+    if (optsRaw.requireSignatureVerification !== undefined) opts.requireSignatureVerification = Boolean(optsRaw.requireSignatureVerification);
+    if (optsRaw.consumedDelegationIds !== undefined) opts.consumedDelegationIds = optsRaw.consumedDelegationIds as string[];
+    if (optsRaw.parentScope !== undefined) opts.parentScope = parseDelegationScope(optsRaw.parentScope);
+
+    const got = verifyDelegation(delegation, opts);
+    const expected = asRecord(v.expected);
+    eq(ctx, `${id} status`, got.status, String(expected.status));
+    eq(ctx, `${id} violations`, got.violations, expected.violations ?? []);
+  }
+}
+
+function buildDelegationChainCases(): Array<VerificationResult> {
+  const parent = makeParentAuth();
+  const delegation = makeSignedDelegationBase(parent);
+  const opts = { now: DELEGATION_T_NOW };
+
+  // valid
+  const valid = verifyDelegationChain(delegation, parent, opts);
+
+  // parent-hash-mismatch: different parent with same audience/policy so only hash differs
+  const otherParent = signAuthorizationEd25519(
+    {
+      auth_id:     "e".repeat(64),  // different → different hash
+      issuer:      "oxdeai.policy-engine",
+      audience:    "parent-agent",  // same → delegator check passes
+      intent_hash: "a".repeat(64),
+      state_hash:  "b".repeat(64),
+      policy_id:   "c".repeat(64),  // same → policy check passes
+      decision:    "ALLOW",
+      issued_at:   DELEGATION_T_ISSUED,
+      expiry:      DELEGATION_T_PAR_EXP,
+      kid:         "2026-01",
+    },
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
+  );
+  const hashMismatch = verifyDelegationChain(delegation, otherParent, opts);
+
+  // delegator-mismatch: tamper delegator field after signing (chain check catches before sig)
+  const delegatorMismatch = verifyDelegationChain(
+    { ...delegation, delegator: "wrong-agent" },
+    parent,
+    opts
+  );
+
+  // parent-expired: now === parent.expiry → DELEGATION_PARENT_EXPIRED
+  const parentExpired = verifyDelegationChain(delegation, parent, { now: DELEGATION_T_PAR_EXP });
+
+  // expiry-exceeds-parent: delegation.expiry > parent.expiry
+  const exceedsDelegation = createDelegation(
+    parent,
+    {
+      delegatee: "child-agent",
+      scope:     {},
+      expiry:    DELEGATION_T_PAR_EXP + 1,
+      kid:       "2026-01",
+      issuedAt:  DELEGATION_T_ISSUED,
+    },
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
+  );
+  const expiryExceeds = verifyDelegationChain(exceedsDelegation, parent, opts);
+
+  // multi-hop: delegation passed as its own parent (has delegation_id field)
+  const multiHop = verifyDelegationChain(delegation, delegation as unknown as AuthorizationV1, opts);
+
+  // policy-id-mismatch: tamper policy_id after signing (chain check catches before sig)
+  const policyMismatch = verifyDelegationChain(
+    { ...delegation, policy_id: "d".repeat(64) },
+    parent,
+    opts
+  );
+
+  return [valid, hashMismatch, delegatorMismatch, parentExpired, expiryExceeds, multiHop, policyMismatch];
+}
+
+function validateDelegationChainVectors(ctx: CheckCtx): void {
+  const file = loadJson<VectorFile>("delegation-chain-verification.json");
+  const actual = buildDelegationChainCases();
+
+  for (let i = 0; i < file.vectors.length; i++) {
+    const id = String(file.vectors[i].id);
+    const expected = asRecord(file.vectors[i].expected);
+    const got = actual[i];
+    eq(ctx, `${id} status`, got.status, String(expected.status));
+    eq(ctx, `${id} violations`, got.violations, expected.violations ?? []);
+  }
+}
+
+function buildDelegationSignatureCases(): Array<VerificationResult> {
+  const parent = makeParentAuth();
+  const delegation = makeSignedDelegationBase(parent);
+  const chainOpts = {
+    now:                          DELEGATION_T_NOW,
+    trustedKeySets:               DELEGATION_TEST_KEYSET,
+    requireSignatureVerification: true,
+  };
+
+  // valid
+  const valid = verifyDelegationChain(delegation, parent, chainOpts);
+
+  // tampered-signature: corrupt last bytes
+  const tamperedSig = verifyDelegationChain(
+    { ...delegation, signature: delegation.signature.slice(0, -4) + "AAAA" },
+    parent, chainOpts
+  );
+
+  // wrong-kid: key not found in trustedKeySets
+  const wrongKid = verifyDelegationChain(
+    { ...delegation, kid: "unknown-kid" },
+    parent, chainOpts
+  );
+
+  // tampered-field: mutate delegatee after signing → sig covers original payload
+  const tamperedField = verifyDelegationChain(
+    { ...delegation, delegatee: "evil-agent" },
+    parent, chainOpts
+  );
+
+  // expired: correctly signed but expiry already past
+  const expiredDelegation = createDelegation(
+    parent,
+    {
+      delegatee: "child-agent",
+      scope:     {},
+      expiry:    DELEGATION_T_NOW - 1,
+      kid:       "2026-01",
+      issuedAt:  DELEGATION_T_ISSUED,
+    },
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
+  );
+  const expired = verifyDelegationChain(expiredDelegation, parent, chainOpts);
+
+  return [valid, tamperedSig, wrongKid, tamperedField, expired];
+}
+
+function validateDelegationSignatureVectors(ctx: CheckCtx): void {
+  const file = loadJson<VectorFile>("delegation-signature-verification.json");
+  const actual = buildDelegationSignatureCases();
+
+  for (let i = 0; i < file.vectors.length; i++) {
+    const id = String(file.vectors[i].id);
+    const expected = asRecord(file.vectors[i].expected);
+    const got = actual[i];
     eq(ctx, `${id} status`, got.status, String(expected.status));
     eq(ctx, `${id} violations`, got.violations, expected.violations ?? []);
   }
@@ -816,6 +1086,10 @@ function main(): void {
   validateAuditVerificationVectors(ctx, adapter);
   validateEnvelopeVectors(ctx, adapter);
   validateEnvelopeSignatureVectors(ctx, adapter);
+  validateDelegationParentHashVectors(ctx);
+  validateDelegationVerificationVectors(ctx);
+  validateDelegationChainVectors(ctx);
+  validateDelegationSignatureVectors(ctx);
 
   if (ctx.failures.length > 0) {
     console.error(`\nConformance failed: ${ctx.failures.length} assertion(s)`);

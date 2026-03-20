@@ -1,6 +1,6 @@
 # Conformance Crypto Fixtures
 
-TEST ONLY — DO NOT USE IN PRODUCTION.
+TEST ONLY - DO NOT USE IN PRODUCTION.
 
 This directory contains deterministic cryptographic fixtures used only for conformance vector generation/validation.
 

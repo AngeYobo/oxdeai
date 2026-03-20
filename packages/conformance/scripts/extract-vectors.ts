@@ -14,9 +14,15 @@ import {
   verifySnapshot,
   verifyEnvelope,
   encodeEnvelope,
-  PolicyEngine
+  PolicyEngine,
+  signAuthorizationEd25519,
+  createDelegation,
 } from "@oxdeai/core";
-import type { Intent, State, Authorization } from "@oxdeai/core";
+import type { Intent, State, Authorization, AuthorizationV1, DelegationV1 } from "@oxdeai/core";
+import {
+  TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
+  TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
+} from "../src/fixtures/ed25519.test-only.fixture.js";
 type ExecuteIntent = Extract<Intent, { type?: "EXECUTE" }>;
 type EnvelopeEvent = Parameters<typeof encodeEnvelope>[0]["events"][number];
 
@@ -450,6 +456,230 @@ async function extractEnvelopeVerification(): Promise<void> {
   });
 }
 
+// ── Delegation test-fixture constants (match validate.ts) ─────────────────────
+const DELEGATION_T_ISSUED  = 1_000_000;
+const DELEGATION_T_NOW     = 1_001_000;
+const DELEGATION_T_DEL_EXP = 1_002_000;
+const DELEGATION_T_PAR_EXP = 1_003_000;
+
+const DELEGATION_TEST_KEYSET = {
+  issuer: "parent-agent",
+  version: "1",
+  keys: [{
+    kid: "2026-01",
+    alg: "Ed25519",
+    public_key: TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
+  }],
+};
+
+function makeParentAuth(): AuthorizationV1 {
+  return signAuthorizationEd25519(
+    {
+      auth_id:     "f".repeat(64),
+      issuer:      "oxdeai.policy-engine",
+      audience:    "parent-agent",
+      intent_hash: "a".repeat(64),
+      state_hash:  "b".repeat(64),
+      policy_id:   "c".repeat(64),
+      decision:    "ALLOW",
+      issued_at:   DELEGATION_T_ISSUED,
+      expiry:      DELEGATION_T_PAR_EXP,
+      kid:         "2026-01",
+    },
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
+  );
+}
+
+function makeBaseDelegation(parent: AuthorizationV1): DelegationV1 {
+  return createDelegation(
+    parent,
+    {
+      delegatee:    "child-agent",
+      scope:        { tools: ["provision_gpu"] },
+      expiry:       DELEGATION_T_DEL_EXP,
+      kid:          "2026-01",
+      delegationId: "d1d1d1d1-0000-0000-0000-c0nf0rm4nce",
+      issuedAt:     DELEGATION_T_ISSUED,
+    },
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
+  );
+}
+
+async function extractDelegationChainVerificationInputs(): Promise<void> {
+  const parent = makeParentAuth();
+  const delegation = makeBaseDelegation(parent);
+
+  // chain-002: different parent — different auth_id → hash mismatch
+  const otherParent = signAuthorizationEd25519(
+    {
+      auth_id:     "e".repeat(64),
+      issuer:      "oxdeai.policy-engine",
+      audience:    "parent-agent",
+      intent_hash: "a".repeat(64),
+      state_hash:  "b".repeat(64),
+      policy_id:   "c".repeat(64),
+      decision:    "ALLOW",
+      issued_at:   DELEGATION_T_ISSUED,
+      expiry:      DELEGATION_T_PAR_EXP,
+      kid:         "2026-01",
+    },
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
+  );
+
+  // chain-005: delegation whose expiry exceeds parent
+  const exceedsDelegation = createDelegation(
+    parent,
+    {
+      delegatee:    "child-agent",
+      scope:        {},
+      expiry:       DELEGATION_T_PAR_EXP + 1,
+      kid:          "2026-01",
+      delegationId: "d1d1d1d1-0000-0000-0000-ex1ry0verrun",
+      issuedAt:     DELEGATION_T_ISSUED,
+    },
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
+  );
+
+  // Read existing file to preserve version/description, then rewrite with input fields added
+  const existing = JSON.parse(
+    fs.readFileSync(path.resolve(process.cwd(), "vectors", "delegation-chain-verification.json"), "utf8")
+  ) as { version: string; description: string; vectors: Record<string, unknown>[] };
+
+  const inputsByMode: Record<string, { parent: unknown; delegation: unknown; opts: unknown }> = {
+    "valid":                 { parent, delegation, opts: { now: DELEGATION_T_NOW } },
+    "parent-hash-mismatch":  { parent: otherParent, delegation, opts: { now: DELEGATION_T_NOW } },
+    "delegator-mismatch":    { parent, delegation: { ...delegation, delegator: "wrong-agent" }, opts: { now: DELEGATION_T_NOW } },
+    "parent-expired":        { parent, delegation, opts: { now: DELEGATION_T_PAR_EXP } },
+    "expiry-exceeds-parent": { parent, delegation: exceedsDelegation, opts: { now: DELEGATION_T_NOW } },
+    "multi-hop":             { parent: delegation, delegation, opts: { now: DELEGATION_T_NOW } },
+    "policy-id-mismatch":    { parent, delegation: { ...delegation, policy_id: "d".repeat(64) }, opts: { now: DELEGATION_T_NOW } },
+  };
+
+  const updated = {
+    ...existing,
+    vectors: existing.vectors.map((v) => {
+      const mode = String(v["mode"]);
+      const inp = inputsByMode[mode];
+      if (!inp) return v;
+      return { ...v, input: inp };
+    }),
+  };
+
+  writeVector("delegation-chain-verification.json", updated);
+}
+
+async function extractDelegationSignatureVerificationInputs(): Promise<void> {
+  const parent = makeParentAuth();
+  const delegation = makeBaseDelegation(parent);
+
+  // sig-005: expired delegation (correctly signed, expiry in the past)
+  const expiredDelegation = createDelegation(
+    parent,
+    {
+      delegatee:    "child-agent",
+      scope:        {},
+      expiry:       DELEGATION_T_NOW - 1,
+      kid:          "2026-01",
+      delegationId: "d1d1d1d1-0000-0000-0000-exp1r3d00000",
+      issuedAt:     DELEGATION_T_ISSUED,
+    },
+    TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION
+  );
+
+  const chainOpts = {
+    now: DELEGATION_T_NOW,
+    requireSignatureVerification: true,
+    trustedKeySets: DELEGATION_TEST_KEYSET,
+  };
+
+  const existing = JSON.parse(
+    fs.readFileSync(path.resolve(process.cwd(), "vectors", "delegation-signature-verification.json"), "utf8")
+  ) as { version: string; description: string; vectors: Record<string, unknown>[] };
+
+  const inputsByMode: Record<string, { parent: unknown; delegation: unknown; opts: unknown }> = {
+    "valid":            { parent, delegation, opts: chainOpts },
+    "tampered-signature": {
+      parent,
+      delegation: { ...delegation, signature: delegation.signature.slice(0, -4) + "AAAA" },
+      opts: chainOpts,
+    },
+    "wrong-kid":        { parent, delegation: { ...delegation, kid: "unknown-kid" }, opts: chainOpts },
+    "tampered-field":   { parent, delegation: { ...delegation, delegatee: "evil-agent" }, opts: chainOpts },
+    "expired":          { parent, delegation: expiredDelegation, opts: chainOpts },
+  };
+
+  const updated = {
+    ...existing,
+    vectors: existing.vectors.map((v) => {
+      const mode = String(v["mode"]);
+      const inp = inputsByMode[mode];
+      if (!inp) return v;
+      return { ...v, input: inp };
+    }),
+  };
+
+  writeVector("delegation-signature-verification.json", updated);
+}
+
+async function extractDelegationParentHash(): Promise<void> {
+  const parent = {
+    auth_id: "f".repeat(64),
+    issuer: "oxdeai.policy-engine",
+    audience: "parent-agent",
+    intent_hash: "a".repeat(64),
+    state_hash: "b".repeat(64),
+    policy_id: "c".repeat(64),
+    decision: "ALLOW",
+    issued_at: 1_000_000,
+    expiry: 1_003_000,
+    alg: "Ed25519",
+    kid: "2026-01",
+    signature: "placeholder",
+  };
+
+  // Same object with keys in reverse insertion order — canonical JSON must produce identical output.
+  const parentReordered = {
+    signature: parent.signature,
+    kid: parent.kid,
+    alg: parent.alg,
+    expiry: parent.expiry,
+    issued_at: parent.issued_at,
+    decision: parent.decision,
+    policy_id: parent.policy_id,
+    state_hash: parent.state_hash,
+    intent_hash: parent.intent_hash,
+    audience: parent.audience,
+    issuer: parent.issuer,
+    auth_id: parent.auth_id,
+  };
+
+  const hash1 = sha256hexUtf8(canonicalJson(parent));
+  const hash2 = sha256hexUtf8(canonicalJson(parentReordered));
+
+  writeVector("delegation-parent-hash.json", {
+    version: "1.3.0",
+    description:
+      "Vectors for delegation_parent_hash = SHA256(canonical_json(AuthorizationV1)). Key insertion order must not affect the result (invariant I1).",
+    hash_algorithm: "SHA256-utf8",
+    vectors: [
+      {
+        id: "delegation-ph-001",
+        description: "parent hash of a baseline AuthorizationV1 object",
+        input: { parent },
+        expected: { parent_auth_hash: hash1 },
+      },
+      {
+        id: "delegation-ph-002",
+        description:
+          "same parent with keys in different insertion order - hash must be identical (I1)",
+        input: { parent: parentReordered },
+        invariant: "equals delegation-ph-001",
+        expected: { parent_auth_hash: hash2 },
+      },
+    ],
+  });
+}
+
 async function main(): Promise<void> {
   console.log("Extracting conformance vectors against @oxdeai/core@1.0.0");
   await extractIntentHash();
@@ -457,6 +687,9 @@ async function main(): Promise<void> {
   await extractSnapshotHash();
   await extractAuditChain();
   await extractEnvelopeVerification();
+  await extractDelegationParentHash();
+  await extractDelegationChainVerificationInputs();
+  await extractDelegationSignatureVerificationInputs();
   console.log("done");
 }
 

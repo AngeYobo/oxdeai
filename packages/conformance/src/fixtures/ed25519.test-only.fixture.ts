@@ -1,5 +1,5 @@
 /**
- * TEST ONLY — DO NOT USE IN PRODUCTION.
+ * TEST ONLY - DO NOT USE IN PRODUCTION.
  *
  * Deterministic Ed25519 fixture for conformance vectors/validation.
  * This keypair is intentionally public test material and not a deployable secret.
