@@ -15,3 +15,4 @@ bench/bench/
 bench/results/
 bench/outputs/graphs/
 *.tar.gz
+git.md
