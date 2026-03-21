@@ -188,6 +188,63 @@ References:
 - Artifact spec: [`docs/spec/delegation-v1.md`](./docs/spec/delegation-v1.md)
 - Demo: [`examples/delegation`](./examples/delegation)
 
+### v2.5 - Adoption & Execution Pressure
+Status: `Planned`
+
+This phase turns OxDeAI from a protocol and reference implementation into a production-adoptable execution control layer. 
+The focus is not new core semantics, it is making OxDeAI easier to try, integrate, pressure-test, and compare against real agent failure modes.
+
+Scope:
+- production failure playbooks mapping real failure modes to OxDeAI mitigations
+- drop-in guard integration paths for all maintained adapters
+- opinionated policy presets for common execution constraints
+- failure demos showing agent behavior without boundary vs. with OxDeAI enforcing it
+- lightweight structured event hooks around authorization decisions (ALLOW / DENY / VERIFY)
+- adoption pressure testing across maintained adapters under realistic execution patterns
+
+Focus:
+- publish concrete case studies:
+  - API budget exhaustion
+  - unintended tool chaining
+  - stale state execution
+  - permission leakage across delegated agents
+- first successful integration achievable in under 5 minutes from docs
+- reusable policy presets for common controls:
+  - budget limits
+  - tool allowlists
+  - replay protection
+  - concurrency limits
+- one "break your agent" failure demo: no boundary vs. OxDeAI hard stop, reproducible from docs
+- structured decision events documented and consumable by external tooling without requiring a full observability platform
+
+Not the goal of v2.5:
+- no new core artifact semantics
+- no federation
+- no multi-hop delegation
+- no on-chain execution path
+- no full observability platform
+- no runtime or orchestration framework expansion
+
+Completion criteria:
+- at least 3 production-style failure playbooks published
+- all maintained adapters have copy-paste quickstarts
+- failure demo reproducible from docs in under 2 minutes
+- policy presets exist for common execution controls
+- structured decision events documented and consumable by external tooling
+- at least one external builder can adopt OxDeAI without reading core source deeply
+
+Planned references:
+- [`docs/cases/README.md`](./docs/cases/README.md)
+- [`docs/cases/api-budget-exhaustion.md`](./docs/cases/api-budget-exhaustion.md)
+- [`docs/cases/unintended-tool-chaining.md`](./docs/cases/unintended-tool-chaining.md)
+- [`docs/cases/stale-state-execution.md`](./docs/cases/stale-state-execution.md)
+- [`docs/integrations/`](./docs/integrations/)
+- [`docs/presets/`](./docs/presets/)
+- [`examples/failure-demo`](./examples/failure-demo)
+- [`docs/observability-hooks.md`](./docs/observability-hooks.md)
+
+---
+
 ### v3.x - Verifiable Execution Infrastructure
 Status: `Planned`
 

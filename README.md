@@ -255,10 +255,10 @@ p = 1 → authorization
 
 See:
 
-* CONTRIBUTING.md
-* SPEC.md
-* docs/invariants.md
-* packages/conformance
+* [CONTRIBUTING.md](./CONTRIBUTING.md)
+* [SPEC.md](./SPEC.md)
+* [docs/invariants.md](./docs/invariants.md)
+* [packages/conformance](./packages/conformance)
 
 ---
 
