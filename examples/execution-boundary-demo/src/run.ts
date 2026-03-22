@@ -1,5 +1,5 @@
 /**
- * run.ts — Terminal two-panel visualization of the execution boundary demo.
+ * run.ts - Terminal two-panel visualization of the execution boundary demo.
  *
  * Renders the same scenario as the browser demo but in the terminal:
  *   Left panel:  Agent Logs
@@ -102,27 +102,32 @@ function toDisplayRows(steps: ScenarioStep[], reveal: number, blinkOn: boolean):
       leftMain = `${icon} ${label}`;
     }
 
-    // Authorization (right) — badge blinks via software toggle
+    // Authorization (right) - badge blinks via software toggle
     let rightMain = "";
     let rightSub  = "";
 
     if (step.auth) {
-      const { decision, reason, authId } = step.auth;
+      const { decision, reason, intentId, executionStatus } = step.auth;
       if (decision === "ALLOW") {
-        // Badge visible on blinkOn, blank (same width) on blinkOff
         rightMain = blinkOn
           ? c(C.bGreen, "✓ ALLOW")
           : "       ";  // 7 spaces = vlen("✓ ALLOW")
-        rightSub = authId
-          ? c(C.dim, `  auth: ${authId.slice(0, COL - 10)}`)
-          : c(C.dim, `  ${reason.slice(0, COL - 2)}`);
+        rightSub = c(C.dim, `  intent: ${intentId.slice(0, COL - 10)}`);
       } else {
         const reasonShort = reason.slice(0, COL - 10);
         rightMain = blinkOn
           ? c(C.bRed, "✗ DENY") + "  " + c(C.red, reasonShort)
-          : "        " + c(C.dim, reasonShort);  // 8 spaces = vlen("✗ DENY  ")
-        rightSub = c(C.dim, "  execution blocked at boundary");
+          : "        " + c(C.dim, reasonShort);
+        rightSub = c(C.dim, `  intent: ${intentId.slice(0, COL - 10)}`);
       }
+      // Execution status row - explicit "tool not invoked" on DENY
+      const execLine = executionStatus === "executed"
+        ? c(C.green,  "  executed  ·  side effect committed")
+        : c(C.red,    "  tool not invoked  ·  no side effect");
+      rows.push({ left: leftMain, right: rightMain });
+      rows.push({ left: leftSub,  right: rightSub });
+      rows.push({ left: "",       right: execLine });
+      continue;
     }
 
     rows.push({ left: leftMain, right: rightMain });
@@ -151,8 +156,8 @@ function render(
   out.push("\x1b[2J\x1b[H");
 
   out.push(TOP);
-  out.push(full(center(c(C.bWhite, "OxDeAI  —  Execution Boundary Demo"), W - 4)));
-  out.push(full(c(C.dim, "  charge_wallet(user_123, 10) · replay protection · deterministic authorization")));
+  out.push(full(center(c(C.bWhite, "OxDeAI  -  Execution Boundary Demo"), W - 4)));
+  out.push(full(c(C.dim, "  same intent  ·  changed state  →  different authorization decision")));
   out.push(MID);
   out.push(row(c(C.bCyan, "AGENT"), c(C.bCyan, "AUTHORIZATION (PDP)")));
   out.push(MID);
@@ -199,7 +204,7 @@ async function run(): Promise<void> {
   process.on("SIGINT",  cleanup);
   process.on("SIGTERM", cleanup);
 
-  // Shared state — read by the blink ticker between step advances
+  // Shared state - read by the blink ticker between step advances
   let blinkOn        = true;
   let revealRef      = 0;
   let walletRef      = "100.00";

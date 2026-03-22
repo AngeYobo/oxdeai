@@ -1,12 +1,23 @@
 /**
  * scenario.ts - Deterministic demo scenario runner.
  *
- * Runs two charge_wallet proposals through the real OxDeAI engine:
- *   1. charge_wallet(user_123, 10) → ALLOW  (nonce 42: fresh)
- *   2. charge_wallet(user_123, 10) → DENY   (nonce 42: already recorded - REPLAY_DETECTED)
+ * The same charge_wallet proposal is evaluated twice by the real OxDeAI engine:
  *
- * Returns structured step data consumed by the UI.
- * The engine does real policy evaluation - no mocked decisions.
+ *   1. charge_wallet(user_123, 10) → ALLOW
+ *      State is consistent: no prior side effect recorded for this intent.
+ *      Side effect is committed. State updates.
+ *
+ *   2. charge_wallet(user_123, 10) → DENY
+ *      Same intent. Same tool. Same agent. Same capability.
+ *      State is no longer consistent: side effect is already recorded.
+ *      Engine denies before execution. Tool is never invoked.
+ *
+ * This demonstrates authorization semantics:
+ *   (intent + current state + policy) → ALLOW or DENY
+ * Not replay detection. The same logical proposal produces a different
+ * authorization decision because the state changed after the first execution.
+ *
+ * No mocked decisions. Real policy evaluation on every call.
  */
 
 import type { Authorization, State } from "@oxdeai/core";
@@ -26,10 +37,16 @@ export interface AgentLogEntry {
 export interface AuthDecision {
   tool: string;
   args: Record<string, string | number>;
+  /** Stable across both calls - proves this is the same logical proposal, not a new one */
+  intentId: string;
+  /** Human-readable description of the intended effect */
+  intentSummary: string;
   stateSnapshot: Record<string, string | number | boolean>;
   policyCheck: string;
   decision: "ALLOW" | "DENY";
   reason: string;
+  /** Whether the tool was actually invoked after this decision */
+  executionStatus: "executed" | "blocked_before_execution";
   authId?: string;
 }
 
@@ -49,6 +66,9 @@ export async function runScenario(): Promise<ScenarioStep[]> {
   const steps: ScenarioStep[] = [];
   let state: State = makeState();
   const ts = Math.floor(Date.now() / 1000);
+  // Single stable intent reused across both calls.
+  // Only the state changes between evaluations — not the proposal.
+  const chargeIntent = buildChargeIntent(ts);
 
   // ── Step 1: Agent receives task ──────────────────────────────────────────
   steps.push({
@@ -69,7 +89,7 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     getState: () => state,
     setState: (s: State) => { state = s; },
     // Use a fixed intent so the nonce is deterministic for both calls
-    mapActionToIntent: () => buildChargeIntent(ts),
+    mapActionToIntent: () => chargeIntent,
     beforeExecute(_action: unknown, authorization: Authorization) {
       firstAuthId = authorization.authorization_id;
       firstDecision = "ALLOW";
@@ -96,19 +116,22 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     agent: {
       type: "propose",
       label: "Proposing charge_wallet(user_123, 10)",
-      detail: "intent_id: charge-user123-order42 · nonce: 42",
+      detail: "intent: charge-user123-order42  ·  nonce: 42",
     },
     auth: {
       tool: "charge_wallet",
       args: { user: "user_123", amount: 10 },
+      intentId: "charge-user123-order42",
+      intentSummary: "charge wallet · user_123 · 10 units · nonce 42",
       stateSnapshot: {
         wallet_balance: `${WALLET_START}.00`,
-        nonce_42_used: false,
-        agent_budget_remaining: "ample",
+        side_effect_committed: false,
+        agent_budget: "ample",
       },
-      policyCheck: "action_type: ✓ · allowlist: ✓ · nonce_fresh: ✓",
+      policyCheck: "allowed_action: ✓  ·  intent_bound: ✓  ·  state_consistent: ✓",
       decision: firstDecision,
       reason: firstReason,
+      executionStatus: firstDecision === "ALLOW" ? "executed" : "blocked_before_execution",
       authId: firstAuthId,
     },
   });
@@ -133,7 +156,7 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     agent: {
       type: "thought",
       label: "Network timeout - uncertain if charge completed",
-      detail: "Agent retries same action with the same intent_id and nonce",
+      detail: "Same intent · same nonce · state has changed since first execution",
     },
   });
 
@@ -145,7 +168,7 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     engine,
     getState: () => state,
     setState: (s: State) => { state = s; },
-    mapActionToIntent: () => buildChargeIntent(ts + 1), // ts+1, same nonce
+    mapActionToIntent: () => chargeIntent,
     beforeExecute() {
       secondDecision = "ALLOW"; // should not be reached
       secondReason = "unexpectedly allowed";
@@ -171,19 +194,22 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     agent: {
       type: "propose",
       label: "Proposing charge_wallet(user_123, 10) [retry]",
-      detail: "Same intent_id: charge-user123-order42 · same nonce: 42",
+      detail: "intent: charge-user123-order42  ·  nonce: 42  ·  same logical proposal",
     },
     auth: {
       tool: "charge_wallet",
       args: { user: "user_123", amount: 10 },
+      intentId: "charge-user123-order42",         // same - identical logical proposal
+      intentSummary: "charge wallet · user_123 · 10 units · nonce 42",  // same
       stateSnapshot: {
         wallet_balance: `${WALLET_START - 10}.00`,
-        nonce_42_used: true, // recorded after first ALLOW
-        agent_budget_remaining: "ample",
+        side_effect_committed: true,              // state changed after first execution
+        agent_budget: "ample",
       },
-      policyCheck: "action_type: ✓ · allowlist: ✓ · nonce_fresh: ✗ (already recorded)",
+      policyCheck: "allowed_action: ✓  ·  intent_bound: ✓  ·  state_consistent: ✗",
       decision: secondDecision,
       reason: secondReason,
+      executionStatus: secondDecision === "ALLOW" ? "executed" : "blocked_before_execution",
     },
   });
 
@@ -192,7 +218,7 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     agent: {
       type: "blocked",
       label: "Blocked at authorization boundary",
-      detail: `Execution did not occur · wallet balance: ${WALLET_START - 10}.00 (charged exactly once)`,
+      detail: `Tool not invoked  ·  side effect never occurred  ·  wallet: ${WALLET_START - 10}.00`,
     },
     stateAfter: {
       walletBalance: `${WALLET_START - 10}.00`,

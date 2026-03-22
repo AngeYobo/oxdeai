@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OxDeAI — Execution Boundary Demo</title>
+  <title>OxDeAI - Execution Boundary Demo</title>
   <style>
     :root {
       --bg:           #f8fafc;
@@ -103,6 +103,64 @@
       .panels { grid-template-columns: 1fr; }
     }
 
+    /* ── Mobile (phones) ─────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      header {
+        padding: 10px 14px;
+        gap: 8px;
+      }
+
+      .brand { font-size: 13px; }
+
+      /* hide step counter — saves header space */
+      .step-counter { display: none; }
+
+      main {
+        padding: 12px 12px 20px;
+        gap: 12px;
+      }
+
+      /* panels grow naturally — no forced height on small screens */
+      .panel-body {
+        min-height: 0;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .panel-empty {
+        min-height: 100px;
+        font-size: 13px;
+      }
+
+      /* larger text for readability */
+      .log-label  { font-size: 14px; }
+      .log-detail { font-size: 12px; }
+
+      .auth-row { grid-template-columns: 72px 1fr; }
+      .auth-row-label { font-size: 10px; }
+      .auth-row-val   { font-size: 12px; }
+      .kv-item        { font-size: 12px; }
+      .auth-tool      { font-size: 14px; }
+      .decision-badge { font-size: 12px; padding: 4px 12px; }
+
+      /* proper touch targets (44px min) */
+      .btn {
+        padding: 11px 18px;
+        min-height: 44px;
+        font-size: 14px;
+      }
+
+      .speed-select {
+        padding: 10px 12px;
+        min-height: 44px;
+        font-size: 13px;
+      }
+
+      /* controls stack nicely */
+      .controls { gap: 8px; }
+
+      .result-banner { font-size: 13px; line-height: 1.65; }
+    }
+
     /* ── Panel ───────────────────────────────────────────────────────────── */
     .panel {
       background: var(--surface);
@@ -126,8 +184,7 @@
 
     .panel-body {
       flex: 1;
-      min-height: 380px;
-      max-height: 460px;
+      min-height: 480px;
       overflow-y: auto;
       padding: 10px;
       display: flex;
@@ -288,6 +345,8 @@
 
     .auth-row-val.allow-text { color: var(--allow); font-weight: 600; }
     .auth-row-val.deny-text  { color: var(--deny);  font-weight: 600; }
+    .auth-row-val.exec-ok      { color: var(--allow); font-weight: 600; }
+    .auth-row-val.exec-blocked { color: var(--deny);  font-weight: 600; }
 
     .kv-list { display: flex; flex-direction: column; gap: 2px; }
 
@@ -312,6 +371,7 @@
       border-radius: 7px;
       border: 1.5px solid transparent;
       cursor: pointer;
+      touch-action: manipulation;
       transition: background 0.12s, opacity 0.12s;
     }
 
@@ -361,6 +421,13 @@
     }
 
     .result-banner strong { font-weight: 700; }
+    .result-banner code {
+      font-family: var(--mono);
+      font-size: 0.9em;
+      background: rgba(0,0,0,0.06);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
     .result-banner.visible { display: block; }
   </style>
 </head>
@@ -376,7 +443,7 @@
     <span class="chip" id="chip-balance">wallet_balance: 100.00</span>
     <span class="chip" id="chip-charged">already_charged: false</span>
   </div>
-  <div class="step-counter" id="step-counter">0 / —</div>
+  <div class="step-counter" id="step-counter">0 / -</div>
 </header>
 
 <main>
@@ -384,22 +451,22 @@
   <div class="panels">
 
     <div class="panel">
-      <div class="panel-header">Agent Logs</div>
+      <div class="panel-header">Agent</div>
       <div class="panel-body" id="agent-log">
         <div class="panel-empty" id="agent-empty">
-          Press <strong>Next Step</strong> to begin the scenario.<br><br>
-          The agent will propose an action.<br>
-          Watch what happens when it retries.
+          The agent will propose <code>charge_wallet</code> twice.<br><br>
+          Same intent. Same capability. Changed state.<br>
+          Watch what the authorization layer decides each time.
         </div>
       </div>
     </div>
 
     <div class="panel">
-      <div class="panel-header">Authorization Decisions</div>
+      <div class="panel-header">Authorization (PDP)</div>
       <div class="panel-body" id="auth-panel">
         <div class="panel-empty" id="auth-empty">
-          Authorization decisions appear here when the agent proposes an action.<br><br>
-          Each card shows the evaluated state, policy check, and final decision.
+          Authorization decisions appear here.<br><br>
+          Each card shows the intent, relevant state, policy evaluation, and whether execution occurred.
         </div>
       </div>
     </div>
@@ -407,11 +474,12 @@
   </div>
 
   <div class="result-banner" id="result-banner">
-    <strong>Demo complete.</strong>
-    The agent proposed the charge twice. The authorization boundary allowed the first and blocked the second.
-    <strong>The wallet was charged exactly once.</strong>
-    The second execution never occurred — not because the tool was unavailable,
-    but because the authorization layer detected the duplicate intent before any side effect ran.
+    <strong>Same intent. Changed state. Different decision.</strong>
+    The first call was authorized: state was consistent, side effect committed.
+    The second call was denied: <code>state_consistent: ✗</code> - the side effect was already recorded.
+    <strong>The tool was never invoked on the second call.</strong>
+    Not because the capability was removed - because the authorization layer evaluated
+    (intent + state + policy) and blocked execution before any side effect could occur.
   </div>
 
   <div class="controls">
@@ -502,6 +570,9 @@
     const body = document.createElement('div');
     body.className = 'auth-card-body';
 
+    // Intent - same intentId for both calls makes the retry identity explicit
+    body.appendChild(makeRow('Intent', auth.intentId));
+
     // Args
     const argsStr = Object.entries(auth.args).map(([k, v]) => `${k}: ${v}`).join('  ·  ');
     body.appendChild(makeRow('Args', argsStr));
@@ -522,7 +593,7 @@
       key.textContent = k + ':';
       const val = document.createElement('span');
       // Flag nonce_used=true as a problem signal
-      const flagged = k === 'nonce_42_used' && v === true;
+      const flagged = k === 'side_effect_committed' && v === true;
       val.className = 'kv-val' + (flagged ? ' flagged' : '');
       val.textContent = String(v);
       item.appendChild(key);
@@ -545,6 +616,14 @@
     if (auth.authId) {
       body.appendChild(makeRow('auth_id', auth.authId.slice(0, 22) + '…'));
     }
+
+    // Execution status - makes "blocked before execution" explicit
+    const execRow = makeRow('Execution',
+      auth.executionStatus === 'executed' ? 'executed' : 'blocked before execution'
+    );
+    execRow.querySelector('.auth-row-val').className =
+      `auth-row-val ${auth.executionStatus === 'executed' ? 'exec-ok' : 'exec-blocked'}`;
+    body.appendChild(execRow);
 
     card.appendChild(body);
     return card;
