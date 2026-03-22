@@ -25,17 +25,9 @@ No valid authorization → no execution.
 
 ## What this looks like
 
-```bash
-pnpm -C examples/openclaw start
+![Terminal Demo](./docs/media/demo.gif)
 
-ALLOW  provision_gpu  budget=320/1000
-ALLOW  query_db       budget=640/1000
-DENY   provision_gpu  BUDGET_EXCEEDED
-
-verifyEnvelope() => ok
-```
-
-Two actions executed. Third blocked before execution. Result is verifiable.
+Agent proposed the same action twice. Executed exactly once. Replay blocked at the boundary before any side effect.
 
 ---
 
@@ -48,6 +40,17 @@ pnpm -C examples/openclaw start
 ```
 
 Runs in under 2 minutes. No config required.
+
+For a visual two-panel UI showing the authorization boundary in action:
+
+```bash
+pnpm -C examples/execution-boundary-demo start
+# open http://localhost:3001
+```
+
+Step through the scenario: agent proposes `charge_wallet(user_123, 10)` twice.
+First is allowed. Second is blocked at the authorization boundary before execution.
+Both panels update live showing agent intent vs. authorization decision.
 
 ---
 

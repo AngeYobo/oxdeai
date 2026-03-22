@@ -67,6 +67,19 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
+  examples/execution-boundary-demo:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@oxdeai/guard':
+        specifier: workspace:*
+        version: link:../../packages/guard
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   examples/gpu-guard: {}
 
   examples/langgraph:

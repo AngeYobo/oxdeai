@@ -1,0 +1,19 @@
+{
+  "name": "@oxdeai/example-execution-boundary-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OxDeAI execution boundary demo - two-panel UI showing pre-execution authorization",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "pnpm build && node dist/server.js",
+    "terminal": "pnpm build && node dist/run.js"
+  },
+  "dependencies": {
+    "@oxdeai/core": "workspace:*",
+    "@oxdeai/guard": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OxDeAI — Execution Boundary Demo</title>
+  <style>
+    :root {
+      --bg:           #f8fafc;
+      --surface:      #ffffff;
+      --border:       #e2e8f0;
+      --text:         #1e293b;
+      --muted:        #64748b;
+      --allow:        #16a34a;
+      --allow-bg:     #f0fdf4;
+      --allow-border: #86efac;
+      --deny:         #dc2626;
+      --deny-bg:      #fef2f2;
+      --deny-border:  #fca5a5;
+      --propose-fg:   #6d28d9;
+      --propose-bg:   #f5f3ff;
+      --propose-bd:   #ddd6fe;
+      --mono: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+      --sans: Inter, system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────────── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      white-space: nowrap;
+    }
+
+    .brand-name { color: var(--allow); font-family: var(--mono); }
+
+    .separator { color: var(--border); font-weight: 300; }
+
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    .chip {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+
+    .chip.charged {
+      background: var(--deny-bg);
+      border-color: var(--deny-border);
+      color: var(--deny);
+    }
+
+    .step-counter {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* ── Main layout ─────────────────────────────────────────────────────── */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 24px 24px;
+      gap: 16px;
+    }
+
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 840px) {
+      .panels { grid-template-columns: 1fr; }
+    }
+
+    /* ── Panel ───────────────────────────────────────────────────────────── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: #fafafa;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.9px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .panel-body {
+      flex: 1;
+      min-height: 380px;
+      max-height: 460px;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .panel-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 200px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      padding: 24px;
+      line-height: 1.6;
+    }
+
+    /* ── Agent log entries ───────────────────────────────────────────────── */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .log-entry {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 8px 10px;
+      border-radius: 7px;
+      border: 1px solid transparent;
+      animation: slideIn 0.22s ease;
+    }
+
+    .log-entry.thought  { background: #f8fafc; border-color: var(--border); }
+    .log-entry.propose  { background: var(--propose-bg); border-color: var(--propose-bd); }
+    .log-entry.execute  { background: var(--allow-bg); border-color: var(--allow-border); }
+    .log-entry.blocked  { background: var(--deny-bg); border-color: var(--deny-border); }
+
+    .log-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 1px;
+    }
+
+    .log-icon.thought { background: #e2e8f0; color: var(--muted); }
+    .log-icon.propose { background: var(--propose-bd); color: var(--propose-fg); }
+    .log-icon.execute { background: var(--allow-border); color: var(--allow); }
+    .log-icon.blocked { background: var(--deny-border); color: var(--deny); }
+
+    .log-body { flex: 1; min-width: 0; }
+
+    .log-label {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .log-entry.thought .log-label { color: var(--muted); }
+    .log-entry.propose .log-label { color: var(--propose-fg); }
+    .log-entry.execute .log-label { color: var(--allow); }
+    .log-entry.blocked .log-label { color: var(--deny); }
+
+    .log-detail {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--muted);
+      margin-top: 2px;
+      word-break: break-all;
+    }
+
+    /* ── Auth decision cards ─────────────────────────────────────────────── */
+    .auth-card {
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      overflow: hidden;
+      animation: slideIn 0.22s ease;
+    }
+
+    .auth-card.allow { border-color: var(--allow-border); }
+    .auth-card.deny  { border-color: var(--deny-border); }
+
+    .auth-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .auth-card.allow .auth-card-head {
+      background: var(--allow-bg);
+      border-color: var(--allow-border);
+    }
+
+    .auth-card.deny .auth-card-head {
+      background: var(--deny-bg);
+      border-color: var(--deny-border);
+    }
+
+    .auth-tool {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .decision-badge {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.7px;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .decision-badge.allow { background: var(--allow); color: #fff; }
+    .decision-badge.deny  { background: var(--deny);  color: #fff; }
+
+    .auth-card-body {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .auth-row {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 6px;
+      align-items: start;
+    }
+
+    .auth-row-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding-top: 1px;
+    }
+
+    .auth-row-val {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.55;
+      word-break: break-all;
+    }
+
+    .auth-row-val.allow-text { color: var(--allow); font-weight: 600; }
+    .auth-row-val.deny-text  { color: var(--deny);  font-weight: 600; }
+
+    .kv-list { display: flex; flex-direction: column; gap: 2px; }
+
+    .kv-item { display: flex; gap: 5px; font-family: var(--mono); font-size: 11px; }
+    .kv-key  { color: var(--muted); white-space: nowrap; }
+    .kv-val  { color: var(--text); }
+    .kv-val.flagged { color: var(--deny); font-weight: 700; }
+
+    /* ── Controls ────────────────────────────────────────────────────────── */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 7px;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      transition: background 0.12s, opacity 0.12s;
+    }
+
+    .btn-primary { background: #1e293b; color: #fff; border-color: #1e293b; }
+    .btn-primary:hover:not(:disabled) { background: #334155; }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-secondary { background: transparent; color: var(--muted); border-color: var(--border); }
+    .btn-secondary:hover { background: #f1f5f9; color: var(--text); }
+
+    .btn-play { background: #6d28d9; color: #fff; border-color: #6d28d9; }
+    .btn-play:hover:not(:disabled) { background: #7c3aed; }
+    .btn-play:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-play.playing { background: #475569; border-color: #475569; }
+
+    .speed-select {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 7px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .done-note {
+      font-size: 12px;
+      color: var(--allow);
+      font-weight: 600;
+      display: none;
+    }
+
+    .done-note.visible { display: block; }
+
+    /* ── Result banner ───────────────────────────────────────────────────── */
+    .result-banner {
+      background: var(--allow-bg);
+      border: 1.5px solid var(--allow-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 12.5px;
+      color: #166534;
+      font-weight: 500;
+      line-height: 1.6;
+      display: none;
+    }
+
+    .result-banner strong { font-weight: 700; }
+    .result-banner.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="brand-name">OxDeAI</span>
+    <span class="separator"> / </span>
+    Execution Boundary Demo
+  </div>
+  <div class="chips">
+    <span class="chip" id="chip-balance">wallet_balance: 100.00</span>
+    <span class="chip" id="chip-charged">already_charged: false</span>
+  </div>
+  <div class="step-counter" id="step-counter">0 / —</div>
+</header>
+
+<main>
+
+  <div class="panels">
+
+    <div class="panel">
+      <div class="panel-header">Agent Logs</div>
+      <div class="panel-body" id="agent-log">
+        <div class="panel-empty" id="agent-empty">
+          Press <strong>Next Step</strong> to begin the scenario.<br><br>
+          The agent will propose an action.<br>
+          Watch what happens when it retries.
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">Authorization Decisions</div>
+      <div class="panel-body" id="auth-panel">
+        <div class="panel-empty" id="auth-empty">
+          Authorization decisions appear here when the agent proposes an action.<br><br>
+          Each card shows the evaluated state, policy check, and final decision.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="result-banner" id="result-banner">
+    <strong>Demo complete.</strong>
+    The agent proposed the charge twice. The authorization boundary allowed the first and blocked the second.
+    <strong>The wallet was charged exactly once.</strong>
+    The second execution never occurred — not because the tool was unavailable,
+    but because the authorization layer detected the duplicate intent before any side effect ran.
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-play" id="btn-play" disabled>▶ Play</button>
+    <button class="btn btn-secondary" id="btn-reset">Reset</button>
+    <select class="speed-select" id="speed-select">
+      <option value="1800">slow</option>
+      <option value="1200" selected>normal</option>
+      <option value="700">fast</option>
+    </select>
+    <span class="done-note" id="done-note">Looping…</span>
+  </div>
+
+</main>
+
+<script>
+  // ── Icons for each agent step type ───────────────────────────────────────
+  const ICONS = { thought: '◉', propose: '→', execute: '✓', blocked: '✗' };
+
+  // ── DOM refs ─────────────────────────────────────────────────────────────
+  const agentLog     = document.getElementById('agent-log');
+  const authPanel    = document.getElementById('auth-panel');
+  const agentEmpty   = document.getElementById('agent-empty');
+  const authEmpty    = document.getElementById('auth-empty');
+  const btnPlay      = document.getElementById('btn-play');
+  const btnReset     = document.getElementById('btn-reset');
+  const speedSelect  = document.getElementById('speed-select');
+  const doneNote     = document.getElementById('done-note');
+  const stepCounter  = document.getElementById('step-counter');
+  const chipBalance  = document.getElementById('chip-balance');
+  const chipCharged  = document.getElementById('chip-charged');
+  const resultBanner = document.getElementById('result-banner');
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let steps = [];
+  let currentStep = 0;
+  let playTimer = null;
+
+  // ── Render: agent log entry ───────────────────────────────────────────────
+  function renderAgentEntry(step) {
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${step.agent.type}`;
+
+    const icon = document.createElement('div');
+    icon.className = `log-icon ${step.agent.type}`;
+    icon.textContent = ICONS[step.agent.type] || '•';
+
+    const body = document.createElement('div');
+    body.className = 'log-body';
+
+    const label = document.createElement('div');
+    label.className = 'log-label';
+    label.textContent = step.agent.label;
+    body.appendChild(label);
+
+    if (step.agent.detail) {
+      const detail = document.createElement('div');
+      detail.className = 'log-detail';
+      detail.textContent = step.agent.detail;
+      body.appendChild(detail);
+    }
+
+    entry.appendChild(icon);
+    entry.appendChild(body);
+    return entry;
+  }
+
+  // ── Render: auth decision card ────────────────────────────────────────────
+  function renderAuthCard(auth) {
+    const cls = auth.decision.toLowerCase();
+    const card = document.createElement('div');
+    card.className = `auth-card ${cls}`;
+
+    // Header
+    const head = document.createElement('div');
+    head.className = 'auth-card-head';
+    const toolEl = document.createElement('span');
+    toolEl.className = 'auth-tool';
+    toolEl.textContent = auth.tool;
+    const badge = document.createElement('span');
+    badge.className = `decision-badge ${cls}`;
+    badge.textContent = auth.decision;
+    head.appendChild(toolEl);
+    head.appendChild(badge);
+    card.appendChild(head);
+
+    // Body
+    const body = document.createElement('div');
+    body.className = 'auth-card-body';
+
+    // Args
+    const argsStr = Object.entries(auth.args).map(([k, v]) => `${k}: ${v}`).join('  ·  ');
+    body.appendChild(makeRow('Args', argsStr));
+
+    // State snapshot (key-value list)
+    const stateRow = document.createElement('div');
+    stateRow.className = 'auth-row';
+    const stateLabel = document.createElement('div');
+    stateLabel.className = 'auth-row-label';
+    stateLabel.textContent = 'State';
+    const kvList = document.createElement('div');
+    kvList.className = 'kv-list';
+    for (const [k, v] of Object.entries(auth.stateSnapshot)) {
+      const item = document.createElement('div');
+      item.className = 'kv-item';
+      const key = document.createElement('span');
+      key.className = 'kv-key';
+      key.textContent = k + ':';
+      const val = document.createElement('span');
+      // Flag nonce_used=true as a problem signal
+      const flagged = k === 'nonce_42_used' && v === true;
+      val.className = 'kv-val' + (flagged ? ' flagged' : '');
+      val.textContent = String(v);
+      item.appendChild(key);
+      item.appendChild(val);
+      kvList.appendChild(item);
+    }
+    stateRow.appendChild(stateLabel);
+    stateRow.appendChild(kvList);
+    body.appendChild(stateRow);
+
+    // Policy check
+    body.appendChild(makeRow('Check', auth.policyCheck));
+
+    // Decision reason
+    const reasonRow = makeRow('Reason', auth.reason);
+    reasonRow.querySelector('.auth-row-val').className = `auth-row-val ${cls}-text`;
+    body.appendChild(reasonRow);
+
+    // Auth ID (only on ALLOW)
+    if (auth.authId) {
+      body.appendChild(makeRow('auth_id', auth.authId.slice(0, 22) + '…'));
+    }
+
+    card.appendChild(body);
+    return card;
+  }
+
+  function makeRow(label, value) {
+    const row = document.createElement('div');
+    row.className = 'auth-row';
+    const l = document.createElement('div');
+    l.className = 'auth-row-label';
+    l.textContent = label;
+    const v = document.createElement('div');
+    v.className = 'auth-row-val';
+    v.textContent = value;
+    row.appendChild(l);
+    row.appendChild(v);
+    return row;
+  }
+
+  // ── Advance one step ──────────────────────────────────────────────────────
+  function advance() {
+    if (currentStep >= steps.length) return;
+    const step = steps[currentStep];
+
+    // Remove empty placeholders on first entry
+    if (agentEmpty.parentNode) agentEmpty.remove();
+    if (authEmpty.parentNode && step.auth) authEmpty.remove();
+
+    // Agent log
+    const agentEl = renderAgentEntry(step);
+    agentLog.appendChild(agentEl);
+    agentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Auth card (proposal steps only)
+    if (step.auth) {
+      const authEl = renderAuthCard(step.auth);
+      authPanel.appendChild(authEl);
+      authEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // State chip updates
+    if (step.stateAfter) {
+      const charged = step.stateAfter.alreadyCharged;
+      chipBalance.textContent = `wallet_balance: ${step.stateAfter.walletBalance}`;
+      chipCharged.textContent = `already_charged: ${charged}`;
+      chipBalance.className = 'chip' + (charged ? ' charged' : '');
+      chipCharged.className = 'chip' + (charged ? ' charged' : '');
+    }
+
+    currentStep++;
+    stepCounter.textContent = `${currentStep} / ${steps.length}`;
+
+    if (currentStep >= steps.length) {
+      doneNote.className = 'done-note visible';
+      resultBanner.className = 'result-banner visible';
+      // Pause on final state, then loop
+      playTimer = setTimeout(() => {
+        if (playTimer !== null) { reset(); startPlay(); }
+      }, parseInt(speedSelect.value, 10) * 3);
+    }
+  }
+
+  // ── Loop playback ─────────────────────────────────────────────────────────
+  function startPlay() {
+    const delay = parseInt(speedSelect.value, 10);
+    btnPlay.textContent = '■ Pause';
+    btnPlay.classList.add('playing');
+    doneNote.className = 'done-note';
+    function tick() {
+      if (playTimer === null) return; // stopped
+      if (currentStep >= steps.length) return; // handled in advance()
+      advance();
+      if (currentStep < steps.length) playTimer = setTimeout(tick, delay);
+    }
+    playTimer = setTimeout(tick, delay);
+  }
+
+  function stopPlay() {
+    clearTimeout(playTimer);
+    playTimer = null;
+    btnPlay.textContent = '▶ Play';
+    btnPlay.classList.remove('playing');
+  }
+
+  // ── Reset ─────────────────────────────────────────────────────────────────
+  function reset() {
+    clearTimeout(playTimer);
+    playTimer = null;
+    currentStep = 0;
+    agentLog.innerHTML = '';
+    authPanel.innerHTML = '';
+    agentLog.appendChild(agentEmpty);
+    authPanel.appendChild(authEmpty);
+    chipBalance.textContent = 'wallet_balance: 100.00';
+    chipCharged.textContent = 'already_charged: false';
+    chipBalance.className = 'chip';
+    chipCharged.className = 'chip';
+    stepCounter.textContent = `0 / ${steps.length}`;
+    doneNote.className = 'done-note';
+    resultBanner.className = 'result-banner';
+    btnPlay.textContent = '▶ Play';
+    btnPlay.classList.remove('playing');
+  }
+
+  // ── Bootstrap ─────────────────────────────────────────────────────────────
+  async function init() {
+    try {
+      const res = await fetch('/events');
+      steps = await res.json();
+      stepCounter.textContent = `0 / ${steps.length}`;
+      btnPlay.disabled = false;
+      startPlay(); // auto-start loop on load
+    } catch (err) {
+      btnNext.textContent = 'Failed to load';
+      console.error('Could not load scenario events:', err);
+    }
+  }
+
+  btnReset.addEventListener('click', reset);
+  btnPlay.addEventListener('click', () => playTimer ? stopPlay() : startPlay());
+
+  init();
+</script>
+
+</body>
+</html>

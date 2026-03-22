@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 500" width="920" height="500">
+  <style>
+    text { font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', Courier, monospace; font-size: 13px; }
+    .dim  { fill: #6272a4; }
+    .cyan { fill: #8be9fd; }
+    .grn  { fill: #50fa7b; }
+    .red  { fill: #ff5555; }
+    .ylw  { fill: #f1fa8c; }
+    .wht  { fill: #f8f8f2; }
+    .b    { font-weight: bold; }
+  </style>
+
+  <!-- ── window chrome ─────────────────────────────────────── -->
+  <rect width="920" height="500" rx="10" fill="#1e1f29"/>
+  <rect width="920" height="38"  rx="10" fill="#21222c"/>
+  <rect y="30"  width="920" height="8" fill="#21222c"/>
+  <circle cx="24" cy="19" r="6" fill="#ff5555"/>
+  <circle cx="44" cy="19" r="6" fill="#f1fa8c"/>
+  <circle cx="64" cy="19" r="6" fill="#50fa7b"/>
+  <text x="460" y="24" text-anchor="middle" class="dim" font-size="11.5">execution-boundary-demo — terminal</text>
+
+  <!-- ── outer box ─────────────────────────────────────────── -->
+  <rect x="18" y="48" width="884" height="436" rx="3" fill="none" stroke="#8be9fd" stroke-width="1.5"/>
+
+  <!-- section dividers -->
+  <line x1="18"  y1="98"  x2="902" y2="98"  stroke="#8be9fd" stroke-width="1"/>
+  <line x1="18"  y1="122" x2="902" y2="122" stroke="#8be9fd" stroke-width="1"/>
+  <line x1="18"  y1="426" x2="902" y2="426" stroke="#44475a" stroke-width="0.75" stroke-dasharray="3,4"/>
+
+  <!-- column separator -->
+  <line x1="460" y1="98"  x2="460" y2="484" stroke="#44475a" stroke-width="1"/>
+
+  <!-- ── header ────────────────────────────────────────────── -->
+  <text x="460" y="76" text-anchor="middle" class="wht b" font-size="15" font-weight="bold">OxDeAI  —  Execution Boundary Demo</text>
+  <text x="460" y="92" text-anchor="middle" class="dim" font-size="11">charge_wallet(user_123, 10)  ·  replay protection  ·  deterministic authorization</text>
+
+  <!-- ── column headers ───────────────────────────────────── -->
+  <text x="30"  y="114" class="cyan b" font-weight="bold">AGENT</text>
+  <text x="474" y="114" class="cyan b" font-weight="bold">AUTHORIZATION  (PDP)</text>
+
+  <!-- ── row 1 · thought ───────────────────────────────────── -->
+  <text x="30" y="146" class="dim">◆  Task received</text>
+  <text x="30" y="163" class="dim" font-size="12">   Charge user_123 wallet 10 units for order #42</text>
+
+  <!-- ── row 2 · propose → ALLOW ───────────────────────────── -->
+  <text x="30" y="189">
+    <tspan class="dim">→  </tspan><tspan fill="#8be9fd">charge_wallet(user_123, 10)</tspan>
+  </text>
+  <text x="30" y="206" class="dim" font-size="12">   intent: charge-user123-order42  ·  nonce: 42</text>
+
+  <!-- ALLOW badge -->
+  <rect x="472" y="176" width="82" height="20" rx="3" fill="#0d2b1a"/>
+  <text x="480" y="190" class="grn b" font-weight="bold">✓  ALLOW</text>
+  <text x="474" y="206" class="dim" font-size="12">   auth: a3f7dc81b2e94c...</text>
+
+  <!-- ── row 3 · execute ────────────────────────────────────── -->
+  <text x="30" y="232" class="grn">✓  Wallet charged  ·  balance: <tspan fill="#f1fa8c">90.00</tspan></text>
+  <text x="30" y="249" class="dim" font-size="12">   receipt: charge-receipt-001  ·  side effect committed</text>
+
+  <!-- ── row 4 · thought retry ─────────────────────────────── -->
+  <text x="30" y="275" class="dim">◆  Network timeout  —  uncertain if charge completed</text>
+  <text x="30" y="292" class="dim" font-size="12">   Retrying same action with same intent_id and nonce</text>
+
+  <!-- ── row 5 · propose [retry] → DENY ────────────────────── -->
+  <text x="30" y="318">
+    <tspan class="dim">→  </tspan><tspan fill="#8be9fd">charge_wallet(user_123, 10)</tspan><tspan fill="#6272a4">  [retry]</tspan>
+  </text>
+  <text x="30" y="335" class="dim" font-size="12">   same intent_id  ·  same nonce: 42</text>
+
+  <!-- DENY badge -->
+  <rect x="472" y="305" width="76" height="20" rx="3" fill="#2d0e0e"/>
+  <text x="480" y="319" class="red b" font-weight="bold">✗  DENY</text>
+  <text x="556" y="319" fill="#ff5555" font-size="12">  REPLAY_NONCE</text>
+  <text x="474" y="335" class="dim" font-size="12">   execution blocked at boundary</text>
+
+  <!-- ── row 6 · blocked ────────────────────────────────────── -->
+  <text x="30" y="361" class="red">✗  Blocked at authorization boundary</text>
+  <text x="30" y="378" class="dim" font-size="12">   Execution did not occur  ·  wallet: 90.00  (charged exactly once)</text>
+
+  <!-- ── status bar ─────────────────────────────────────────── -->
+  <text x="30"  y="450"><tspan class="dim">wallet_balance: </tspan><tspan fill="#f1fa8c">90.00</tspan></text>
+  <text x="474" y="450"><tspan class="dim">already_charged: </tspan><tspan fill="#50fa7b" font-weight="bold">true  ✓</tspan></text>
+</svg>
