@@ -126,10 +126,8 @@
         -webkit-overflow-scrolling: touch;
       }
 
-      .panel-empty {
-        min-height: 100px;
-        font-size: 13px;
-      }
+      .panel-empty { min-height: 100px; }
+      .panel-empty-inner { font-size: 14px; max-width: 100%; }
 
       /* larger text for readability */
       .log-label  { font-size: 14px; }
@@ -198,12 +196,19 @@
       justify-content: center;
       height: 100%;
       min-height: 200px;
-      color: var(--muted);
-      font-size: 12px;
-      text-align: center;
-      padding: 24px;
-      line-height: 1.6;
+      padding: 24px 28px;
     }
+
+    .panel-empty-inner {
+      max-width: 320px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.75;
+    }
+
+    .panel-empty-inner p { margin: 0 0 10px; }
+    .panel-empty-inner p:last-child { margin-bottom: 0; font-size: 12px; }
 
     /* ── Agent log entries ───────────────────────────────────────────────── */
     @keyframes slideIn {
@@ -454,9 +459,10 @@
       <div class="panel-header">Agent</div>
       <div class="panel-body" id="agent-log">
         <div class="panel-empty" id="agent-empty">
-          The agent will propose <code>charge_wallet</code> twice.<br><br>
-          Same intent. Same capability. Changed state.<br>
-          Watch what the authorization layer decides each time.
+          <div class="panel-empty-inner">
+            <p>The agent will propose <code>charge_wallet</code> twice.</p>
+            <p>Same intent. Same capability. Changed state.<br>Watch what the authorization layer decides each time.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -465,8 +471,10 @@
       <div class="panel-header">Authorization (PDP)</div>
       <div class="panel-body" id="auth-panel">
         <div class="panel-empty" id="auth-empty">
-          Authorization decisions appear here.<br><br>
-          Each card shows the intent, relevant state, policy evaluation, and whether execution occurred.
+          <div class="panel-empty-inner">
+            <p>Authorization decisions appear here.</p>
+            <p>Each card shows the intent, relevant state, policy evaluation, and whether execution occurred.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -592,7 +600,7 @@
       key.className = 'kv-key';
       key.textContent = k + ':';
       const val = document.createElement('span');
-      // Flag nonce_used=true as a problem signal
+      // Flag side_effect_committed: true — state is no longer consistent
       const flagged = k === 'side_effect_committed' && v === true;
       val.className = 'kv-val' + (flagged ? ' flagged' : '');
       val.textContent = String(v);

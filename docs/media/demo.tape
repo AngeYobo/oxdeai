@@ -40,12 +40,12 @@ Type "pnpm -C examples/execution-boundary-demo terminal"
 Enter
 
 # ── Scenario timing ───────────────────────────────────────────────────────────
-# 7 frames × 1000ms step delay  = 7.0s
-# 3500ms hold on final state    = 3.5s
-# total per loop                = ~10.5s
+# 7 frames × 1400ms step delay  = 9.8s
+# 8000ms hold on final state    = 8.0s
+# total per loop                = ~17.8s
 #
-# 16s: captures full loop, holds on DENY + "tool not invoked",
+# 20s: captures full loop, full 8s hold on DENY + "tool not invoked",
 #      shows loop 2 starting — proves it auto-repeats
-Sleep 16s
+Sleep 20s
 
 Ctrl+C

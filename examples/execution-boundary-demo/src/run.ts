@@ -190,8 +190,8 @@ function render(
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function run(): Promise<void> {
-  const STEP_MS  = 1000;
-  const LOOP_MS  = 3500;
+  const STEP_MS  = 1400;
+  const LOOP_MS  = 8000;
   const BLINK_MS = 450;
 
   const steps = await runScenario();

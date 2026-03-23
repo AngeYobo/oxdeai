@@ -88,12 +88,12 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     engine,
     getState: () => state,
     setState: (s: State) => { state = s; },
-    // Use a fixed intent so the nonce is deterministic for both calls
+    // chargeIntent is identical for both calls — only state differs
     mapActionToIntent: () => chargeIntent,
     beforeExecute(_action: unknown, authorization: Authorization) {
       firstAuthId = authorization.authorization_id;
       firstDecision = "ALLOW";
-      firstReason = "balance sufficient · nonce 42 not yet recorded";
+      firstReason = "state consistent · no prior side effect recorded for this intent";
     },
   });
 
@@ -116,13 +116,13 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     agent: {
       type: "propose",
       label: "Proposing charge_wallet(user_123, 10)",
-      detail: "intent: charge-user123-order42  ·  nonce: 42",
+      detail: "intent: charge-user123-order42  ·  logical operation: charge order #42",
     },
     auth: {
       tool: "charge_wallet",
       args: { user: "user_123", amount: 10 },
       intentId: "charge-user123-order42",
-      intentSummary: "charge wallet · user_123 · 10 units · nonce 42",
+      intentSummary: "charge wallet · user_123 · 10 units",
       stateSnapshot: {
         wallet_balance: `${WALLET_START}.00`,
         side_effect_committed: false,
@@ -156,11 +156,11 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     agent: {
       type: "thought",
       label: "Network timeout - uncertain if charge completed",
-      detail: "Same intent · same nonce · state has changed since first execution",
+      detail: "Same intent · state has changed since first execution",
     },
   });
 
-  // ── Step 5: Second proposal - expect DENY (replay) ──────────────────────
+  // ── Step 5: Second proposal - expect DENY (same intent, state now inconsistent) ──
   let secondDecision: "ALLOW" | "DENY" = "DENY" as "ALLOW" | "DENY";
   let secondReason = "unknown";
 
@@ -182,9 +182,8 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     );
   } catch (err) {
     if (err instanceof OxDeAIDenyError) {
-      const reasons = [...(err as OxDeAIDenyError).reasons];
       secondDecision = "DENY";
-      secondReason = reasons.join(", ");
+      secondReason = "state inconsistent · side effect already committed for this intent";
     } else {
       throw err;
     }
@@ -194,13 +193,13 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     agent: {
       type: "propose",
       label: "Proposing charge_wallet(user_123, 10) [retry]",
-      detail: "intent: charge-user123-order42  ·  nonce: 42  ·  same logical proposal",
+      detail: "intent: charge-user123-order42  ·  same logical proposal",
     },
     auth: {
       tool: "charge_wallet",
       args: { user: "user_123", amount: 10 },
       intentId: "charge-user123-order42",         // same - identical logical proposal
-      intentSummary: "charge wallet · user_123 · 10 units · nonce 42",  // same
+      intentSummary: "charge wallet · user_123 · 10 units",  // same
       stateSnapshot: {
         wallet_balance: `${WALLET_START - 10}.00`,
         side_effect_committed: true,              // state changed after first execution

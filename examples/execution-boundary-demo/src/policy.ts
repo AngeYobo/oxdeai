@@ -2,8 +2,8 @@
  * policy.ts - Engine + state setup for the execution boundary demo.
  *
  * Scenario: an agent charges a user wallet.
- * Both calls use the same nonce (42n) so the second call triggers REPLAY_DETECTED.
- * Budget is ample - replay protection is the limiting control, not spend limits.
+ * The same intent is evaluated twice. Budget is ample and the tool is always
+ * on the allowlist — only the execution state changes between evaluations.
  */
 
 import { PolicyEngine } from "@oxdeai/core";
@@ -14,7 +14,7 @@ export const POLICY_ID =
 
 export const AGENT_ID = "payment-agent-1";
 
-// Fixed nonce - both proposals use this value so the retry triggers replay detection.
+// Fixed nonce - same value across both calls, making the intent structurally identical.
 export const CHARGE_NONCE = 42n;
 
 // 10 units * 1_000_000 micro-units (matching defaultNormalizeAction convention)
@@ -53,7 +53,7 @@ export function makeState(): State {
     replay: {
       window_seconds: 3600,
       max_nonces_per_agent: 256,
-      nonces: {}, // nonce 42 will be recorded here after the first ALLOW
+      nonces: {}, // recorded after the first ALLOW; makes the second evaluation state-inconsistent
     },
     concurrency: {
       max_concurrent: { [AGENT_ID]: 5 },
@@ -82,7 +82,7 @@ export function buildChargeIntent(
     target: "user_123",
     timestamp: timestampSeconds,
     metadata_hash: "0".repeat(64),
-    nonce: CHARGE_NONCE, // same nonce for both calls - enables replay detection on retry
+    nonce: CHARGE_NONCE, // same across both calls — intent is structurally identical each time
     signature: "agent-sig-placeholder",
     tool: "charge_wallet",
     tool_call: true,
