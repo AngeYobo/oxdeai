@@ -16,8 +16,7 @@ Control execution, not just behavior.
 
 ## TL;DR
 
-Agents propose actions.
-OxDeAI decides if they execute.
+Agents propose actions. OxDeAI makes a deterministic decision before execution.
 
 No valid authorization → no execution.
 
@@ -92,6 +91,9 @@ OxDeAI evaluates:
 
 ```
 (intent, state, policy) → deterministic decision
+
+This evaluation is performed as an explicit decision phase,
+separate from execution and enforced before any side effect.
 ```
 
 * intent: proposed action
@@ -103,13 +105,33 @@ If DENY → nothing executes (fail-closed)
 
 ---
 
+## Decision Layer
+
+Inside OxDeAI, authorization is structured as an explicit decision phase:
+
+(intent + state) → ALLOW | DENY
+
+This is not an implicit check inside execution.
+It is a deterministic, standalone decision step evaluated before any side effect is reachable.
+
+Why this matters:
+
+- the same intent can produce different decisions as state evolves
+- retries do not bypass the decision boundary
+- decision logic does not drift into the agent loop or tool wrappers
+- authorization remains explainable and reproducible
+
+Execution only becomes reachable after this decision succeeds.
+
+---
+
 # How It Works
 
 1. Agent proposes an action
-2. OxDeAI evaluates (intent, state) deterministically
+2. OxDeAI evaluates (intent, state) in a deterministic decision phase
 3. ALLOW → AuthorizationV1 emitted
-4. PEP verifies artifact
-5. Execution allowed only if verification succeeds
+4. Execution becomes reachable only after verification
+5. PEP verifies artifact before execution
 6. DENY → execution blocked before side effects
 
 ---
@@ -202,6 +224,7 @@ pnpm -C examples/openai-tools start
 # What OxDeAI Is
 
 * deterministic execution authorization protocol
+* explicit decision layer: (intent + state) → allow / deny
 * pre-execution gating (no side effect without authorization)
 * cryptographic authorization artifacts
 * offline-verifiable evidence
@@ -210,11 +233,10 @@ pnpm -C examples/openai-tools start
 
 # What OxDeAI Is Not
 
-* not a framework
-* not a prompt guardrail
-* not a monitoring system
-* not a billing layer
-
+* not an agent framework
+* not a prompt or output guardrail
+* not a monitoring or observability system
+* not a runtime heuristic layer
 ---
 
 # Protocol Status
@@ -226,6 +248,8 @@ pnpm -C examples/openai-tools start
 | VerificationEnvelopeV1 | Stable  |
 | ExecutionReceiptV1     | Planned |
 
+The protocol defines a deterministic decision and authorization surface.
+Execution is only reachable through valid, verifiable artifacts.
 ---
 
 # Multi-language
@@ -247,11 +271,10 @@ Agents moved from answering → acting.
 Execution is now the critical boundary.
 
 Prompt guardrails shape behavior.
-OxDeAI controls execution.
+OxDeAI makes a deterministic decision before execution.
 
-p < 1 → prompts
+p < 1 → prompts  
 p = 1 → authorization
-
 ---
 
 # Contributing
