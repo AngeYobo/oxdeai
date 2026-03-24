@@ -2,12 +2,14 @@ import { createHash } from "node:crypto";
 import type { Intent } from "../types/intent.js";
 import type { State, CanonicalState } from "../types/state.js";
 import type { Authorization } from "../types/authorization.js";
-import type { ReasonCode, PolicyResult, PolicyModule } from "../types/policy.js";
+import type { ReasonCode, PolicyModule } from "../types/policy.js";
 
 import { canonicalJson, intentHash, sha256HexFromJson } from "../crypto/hashes.js";
 import { engineSignHmac } from "../crypto/sign.js";
 import { engineVerifyHmac } from "../crypto/verify.js";
 import { SIGNING_DOMAINS, signEd25519, signHmacDomain } from "../crypto/signatures.js";
+import { deepMerge } from "../utils/deepMerge.js";
+import { runDecisionModules } from "./decision/index.js";
 
 import { HashChainedLog } from "../audit/HashChainedLog.js";
 import type { AuditEvent } from "../audit/AuditLog.js";
@@ -71,26 +73,6 @@ function isObject(v: unknown): v is Record<string, unknown> {
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return isObject(v) && !Array.isArray(v);
-}
-
-function mergeInto(target: Record<string, unknown>, source: Record<string, unknown>): void {
-  for (const key of Object.keys(source)) {
-    const src = source[key];
-    const dst = target[key];
-    if (isPlainObject(src) && isPlainObject(dst)) {
-      mergeInto(dst, src);
-      continue;
-    }
-    target[key] = src;
-  }
-}
-
-function deepMerge<T>(base: T, patch: Partial<T>): T {
-  if (!isPlainObject(base) || !isPlainObject(patch)) return (patch as T) ?? base;
-
-  const out: Record<string, unknown> = { ...(base as any) };
-  mergeInto(out, patch as any);
-  return out as T;
 }
 
 // Keep canonical snapshot hashes stable across host package managers/runners.
@@ -396,40 +378,30 @@ export class PolicyEngine {
         policyId
       });
 
-      // IMPORTANT: start from the original state, but do not mutate it
-      let working: State = state;
-      const denyReasons: ReasonCode[] = [];
       const t = intent.type ?? "EXECUTE";
-
       const modules = t === "RELEASE" ? RELEASE_MODULES : EXECUTE_MODULES;
-      const results: PolicyResult[] = modules.map((m) => m.evaluate(intent, working));
 
-      // Apply deltas in-order to working copy (deterministic), but still pure
-      for (const r of results) {
-        if (r.decision === "DENY") {
-          denyReasons.push(...r.reasons);
-          if (mode === "fail-fast") break;
-        } else if (r.stateDelta) {
-          working = deepMerge(working, r.stateDelta);
-        }
-      }
+      // ── Decision phase ──────────────────────────────────────────────────
+      // (intent + state + module policies) → ALLOW | DENY + nextState
+      const decisionResult = runDecisionModules({ intent, state, mode }, modules);
 
-      if (denyReasons.length) {
-        const out = { decision: "DENY" as const, reasons: denyReasons };
+      if (decisionResult.decision === "DENY") {
         this.emitAudit({
           type: "DECISION",
           intent_hash,
           decision: "DENY",
-          reasons: denyReasons,
+          reasons: decisionResult.reasons,
           policy_version: state.policy_version,
           timestamp: intent.timestamp,
           policyId
         });
         this.maybeEmitCheckpoint(policyId, intent.timestamp, state);
-        return out;
+        return { decision: "DENY", reasons: decisionResult.reasons };
       }
 
-      // Authorization is now bound to nextState snapshot
+      // Authorization is bound to the post-decision state snapshot.
+      // working carries all module deltas from the decision phase.
+      let working = decisionResult.nextState;
       const state_snapshot_hash = this.computeStateHashFor(working);
       const issued_at = intent.timestamp;
       const expires_at = issued_at + this.authorizationTtlSeconds();
