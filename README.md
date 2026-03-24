@@ -35,7 +35,7 @@ Agent proposed the same action twice. Executed exactly once. Replay blocked at t
 ```bash
 git clone https://github.com/AngeYobo/oxdeai.git
 cd oxdeai && pnpm install && pnpm build
-pnpm -C examples/openclaw start
+pnpm -C examples/execution-boundary-demo start
 ```
 
 Runs in under 2 minutes. No config required.
@@ -51,6 +51,14 @@ Step through the scenario: agent proposes `charge_wallet(user_123, 10)` twice.
 First is allowed. Second is blocked at the authorization boundary before execution.
 Both panels update live showing agent intent vs. authorization decision.
 
+---
+
+## Additional examples
+
+To run a full agent integration example:
+
+pnpm -C examples/openclaw start
+This runs a simple OpenClaw agent that provisions a GPU and queries a database, with OxDeAI enforcing authorization before execution.
 ---
 
 ## Why devs care
