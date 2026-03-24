@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"
-  },  
+  },
   "scripts": {
     "clean": "pnpm -r exec rm -rf dist",
     "build": "pnpm -r build",
@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.19.11",
+    "puppeteer": "^24.40.0",
     "typescript": "^5.6.0"
   }
-
 }
