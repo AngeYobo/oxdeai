@@ -57,6 +57,8 @@ type DecisionOutput = {
   decisions: string[];
   authIds: (string | null)[];
   finalStateHash: string;
+  policyId: string;
+  auditHeadHash: string;
 };
 
 async function runDecisionSubprocess(): Promise<DecisionOutput> {
@@ -78,7 +80,7 @@ async function runDecisionSubprocess(): Promise<DecisionOutput> {
   return JSON.parse(await readFile(outPath, "utf8")) as DecisionOutput;
 }
 
-test("D-5 cross-process decision determinism: decision sequence and state hash match", async () => {
+test("D-5 cross-process decision determinism: all outputs match", async () => {
   const a = await runDecisionSubprocess();
   const b = await runDecisionSubprocess();
 
@@ -96,5 +98,15 @@ test("D-5 cross-process decision determinism: decision sequence and state hash m
     a.finalStateHash,
     b.finalStateHash,
     `finalStateHash mismatch:\nA=${a.finalStateHash}\nB=${b.finalStateHash}`
+  );
+  assert.equal(
+    a.policyId,
+    b.policyId,
+    `policyId mismatch:\nA=${a.policyId}\nB=${b.policyId}`
+  );
+  assert.equal(
+    a.auditHeadHash,
+    b.auditHeadHash,
+    `auditHeadHash mismatch:\nA=${a.auditHeadHash}\nB=${b.auditHeadHash}`
   );
 });

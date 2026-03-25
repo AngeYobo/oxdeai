@@ -5,7 +5,13 @@
 // Runs a fixed, fully-specified intent sequence against a fixed state and
 // writes the result to OXDEAI_DECISION_OUT as JSON:
 //
-//   { decisions: string[], authIds: (string | null)[], finalStateHash: string }
+//   {
+//     decisions:      string[],
+//     authIds:        (string | null)[],
+//     finalStateHash: string,
+//     policyId:       string,
+//     auditHeadHash:  string
+//   }
 //
 // Nothing here is random or environment-dependent.  Two invocations of this
 // script in separate Node processes must always produce identical output.
@@ -125,7 +131,9 @@ async function main(): Promise<void> {
   }
 
   const finalStateHash = engine.computeStateHash(state);
-  const output = { decisions, authIds, finalStateHash };
+  const policyId = engine.computePolicyId();
+  const auditHeadHash = engine.audit.headHash();
+  const output = { decisions, authIds, finalStateHash, policyId, auditHeadHash };
 
   if (process.env["OXDEAI_DECISION_OUT"]) {
     await writeFile(process.env["OXDEAI_DECISION_OUT"], JSON.stringify(output));

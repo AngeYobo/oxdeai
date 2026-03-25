@@ -329,7 +329,7 @@ function runIntentOps(
   initial: State,
   ops: IntentOp[],
   seed: number
-): { decisions: Array<"ALLOW" | "DENY">; finalState: State } {
+): { decisions: Array<"ALLOW" | "DENY">; finalState: State; auditHeadHash: string } {
   let state = structuredClone(initial);
   const decisions: Array<"ALLOW" | "DENY"> = [];
   const authsByAgent: Record<string, string[]> = {};
@@ -380,7 +380,7 @@ function runIntentOps(
       }
     }
   }
-  return { decisions, finalState: state };
+  return { decisions, finalState: state, auditHeadHash: engine.audit.headHash() };
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────
@@ -490,8 +490,8 @@ test("D-3 cross-clone determinism: structuredClone inputs yield identical output
 
 test("D-4 key order does not affect decision output", () => {
   // buildEquivalentState shuffles the insertion order of every object key
-  // while preserving logical equality. The decision sequence and final state
-  // hash must be identical to the unshuffled baseline.
+  // while preserving logical equality. The decision sequence, final state hash,
+  // and audit head hash must be identical to the unshuffled baseline.
   for (const seed of seeds()) {
     const state = genState(seed);
     const shuffled = buildEquivalentState(seed, state);
@@ -508,6 +508,9 @@ test("D-4 key order does not affect decision output", () => {
       makeEngine().computeStateHash(r2.finalState),
       `seed=${seed} key order affected the final state hash`
     );
+
+    assert.equal(r1.auditHeadHash, r2.auditHeadHash,
+      `seed=${seed} key order affected the audit head hash`);
   }
 });
 
@@ -572,5 +575,66 @@ test("D-6 strict mode: evaluatePure uses intent.timestamp, not Date.now()", () =
       assert.equal(out1.authorization.auth_id, out2.authorization.auth_id,
         `seed=${seed} auth_id not stable across calls`);
     }
+  }
+});
+
+test("D-7 audit head hash is deterministic across independent engine instances", () => {
+  // Two freshly-created engines that process the same intent sequence against
+  // the same initial state must produce identical audit.headHash() values.
+  // This verifies that all audit event fields — policyId, timestamps, hashes —
+  // are derived solely from the inputs and not from any per-instance entropy.
+  for (const seed of seeds()) {
+    const state = genState(seed);
+    const ops = genIntentOps(seed, state);
+
+    const r1 = runIntentOps(makeEngine(), state, ops, seed);
+    const r2 = runIntentOps(makeEngine(), state, ops, seed);
+
+    assert.deepEqual(r1.decisions, r2.decisions,
+      `seed=${seed} D-7 decision sequences diverged between instances`);
+    assert.equal(r1.auditHeadHash, r2.auditHeadHash,
+      `seed=${seed} D-7 audit head hash mismatch between independent engine instances`);
+  }
+});
+
+test("D-8 computePolicyId is stable for fixed engine configuration", () => {
+  // computePolicyId() must return the same string on every call for a given
+  // engine instance, and across independently-constructed engines with the
+  // same options. It must change when any option that participates in the
+  // policy identity changes.
+  for (const seed of seeds()) {
+    const e1 = makeEngine();
+    const e2 = makeEngine();
+
+    // Stable within a single instance.
+    const id1a = e1.computePolicyId();
+    const id1b = e1.computePolicyId();
+    assert.equal(id1a, id1b,
+      `seed=${seed} D-8 computePolicyId not stable within the same instance`);
+
+    // Stable across independently-constructed instances with identical opts.
+    assert.equal(id1a, e2.computePolicyId(),
+      `seed=${seed} D-8 computePolicyId differs across equivalent engine instances`);
+
+    // Changes when a policy-identity-bearing option changes.
+    const eDiffTtl = new PolicyEngine({
+      policy_version: POLICY_VERSION,
+      engine_secret: "test-secret",
+      authorization_ttl_seconds: 999,   // differs from makeEngine() (120)
+      deny_mode: "fail-fast",
+      strictDeterminism: true
+    });
+    assert.notEqual(id1a, eDiffTtl.computePolicyId(),
+      `seed=${seed} D-8 computePolicyId did not change when ttl changed`);
+
+    const eDiffVersion = new PolicyEngine({
+      policy_version: "v0.6-test-alt",  // differs from POLICY_VERSION
+      engine_secret: "test-secret",
+      authorization_ttl_seconds: 120,
+      deny_mode: "fail-fast",
+      strictDeterminism: true
+    });
+    assert.notEqual(id1a, eDiffVersion.computePolicyId(),
+      `seed=${seed} D-8 computePolicyId did not change when policy_version changed`);
   }
 });
