@@ -220,6 +220,7 @@ Strict mode removes implicit entropy sources.
 
 ```ts
 const out = engine.evaluatePure(intent, state);
+if (out.decision !== "ALLOW") throw new Error(out.reasons.join(", "));
 const policyId = engine.computePolicyId();
 const stateHash = engine.computeStateHash(out.nextState);
 const auditHead = engine.audit.headHash();
