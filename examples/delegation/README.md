@@ -51,4 +51,4 @@ child-agent
 
 - Spec: [`docs/spec/delegation-v1.md`](../../docs/spec/delegation-v1.md)
 - Implementation plan: [`docs/spec/delegation-v1-implementation.md`](../../docs/spec/delegation-v1-implementation.md)
-- Roadmap milestone: `v2.x - Delegated Agent Authorization`
+- Roadmap: [`v2.x - Delegated Agent Authorization (shipped)`](../../ROADMAP.md)

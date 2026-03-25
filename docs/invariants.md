@@ -1,6 +1,6 @@
 # Invariants
 
-Protocol-level invariants expected at v1.0.0.
+Protocol-level invariants defined from v1.0.0. Extended with delegation invariants in v1.3.0.
 
 ## I1 - Canonical hashing ignores key insertion order
 Equivalent objects with different insertion order produce identical canonical hashes.

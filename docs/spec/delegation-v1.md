@@ -1,7 +1,7 @@
 # DelegationV1 Specification
 
-**Status:** Draft
-**Version:** v2.x candidate
+**Status:** Stable
+**Version:** v1.3.0
 **Depends on:** OxDeAI Specification v1.2+, AuthorizationV1
 
 ---
@@ -356,4 +356,4 @@ Both events MUST be included in the hash-chained audit log.
 - [AuthorizationV1 schema](../../SPEC.md#4-authorizationv1)
 - [KeySet Distribution](../../SPEC.md#11-keyset-distribution-v1-baseline)
 - [Cross-Organization Verification Model](../../SPEC.md#12-cross-organization-verification-model)
-- [Roadmap: v2.x Delegated Agent Authorization](../../ROADMAP.md)
+- [Roadmap: v2.x Delegated Agent Authorization (shipped)](../../ROADMAP.md)

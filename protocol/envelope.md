@@ -1,9 +1,7 @@
+This document is a companion reference.
+For the canonical normative specification, see [../SPEC.md](../SPEC.md).
+
 # Verification Envelope
-
-This document describes the OxDeAI verification envelope artifact.
-
-Reference:
-- Protocol canonical definition: [protocol.md](./protocol.md)
 
 ## Artifact
 `VerificationEnvelopeV1`
@@ -18,8 +16,18 @@ Reference:
 
 ## Verification Intent
 The envelope enables stateless third-party verification of:
-- snapshot integrity
-- audit chain integrity
-- policy identity consistency
+- snapshot integrity (state commitment)
+- audit chain integrity (ordered, hash-linked events)
+- policy binding consistency (policyId alignment across snapshot and events)
+- decision reproducibility (via deterministic evaluation inputs)
 
-See `protocol.md` for normative validation rules and result semantics (`ok | invalid | inconclusive`).
+The envelope provides a portable verification surface that allows independent parties to validate
+authorization decisions without relying on the original execution environment.
+
+Verification is performed via:
+
+- verifySnapshot()
+- verifyAuditEvents()
+- verifyEnvelope()
+
+See [`SPEC.md`](../SPEC.md) for normative validation rules and result semantics (`ok | invalid | inconclusive`).

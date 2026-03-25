@@ -58,7 +58,7 @@ These are policy controls expressed through the existing `(intent, state, policy
 1. The runtime proposes an external API call.
 2. The adapter normalizes that proposal into deterministic intent.
 3. Current policy state is supplied, including remaining allowance or counters.
-4. The OxDeAI PDP evaluates the proposed action against `(intent, state)`.
+4. The OxDeAI PDP evaluates the proposed action against `(intent, state, policy)`.
 5. On `ALLOW`, `AuthorizationV1` may be emitted.
 6. The PEP verifies authorization before the API call is executed.
 7. Decision and execution or refusal are recorded in audit events.

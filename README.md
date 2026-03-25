@@ -57,8 +57,12 @@ Both panels update live showing agent intent vs. authorization decision.
 
 To run a full agent integration example:
 
+```
 pnpm -C examples/openclaw start
+```
+
 This runs a simple OpenClaw agent that provisions a GPU and queries a database, with OxDeAI enforcing authorization before execution.
+
 ---
 
 ## Why devs care
@@ -136,7 +140,7 @@ Execution only becomes reachable after this decision succeeds.
 # How It Works
 
 1. Agent proposes an action
-2. OxDeAI evaluates (intent, state) in a deterministic decision phase
+2. OxDeAI evaluates (intent, state, policy) in a deterministic decision phase
 3. ALLOW → AuthorizationV1 emitted
 4. Execution becomes reachable only after verification
 5. PEP verifies artifact before execution
@@ -255,9 +259,11 @@ pnpm -C examples/openai-tools start
 | DelegationV1           | Stable  |
 | VerificationEnvelopeV1 | Stable  |
 | ExecutionReceiptV1     | Planned |
+---
 
-The protocol defines a deterministic decision and authorization surface.
-Execution is only reachable through valid, verifiable artifacts.
+```
+The protocol defines a deterministic decision and authorization surface. Execution is only reachable through valid, verifiable artifacts.
+```
 ---
 
 # Multi-language
@@ -281,8 +287,10 @@ Execution is now the critical boundary.
 Prompt guardrails shape behavior.
 OxDeAI makes a deterministic decision before execution.
 
+```
 p < 1 → prompts  
 p = 1 → authorization
+```
 ---
 
 # Contributing

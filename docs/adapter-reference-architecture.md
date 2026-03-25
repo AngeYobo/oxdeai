@@ -7,7 +7,7 @@ Shared adapter contract:
 
 ## Layer Model
 
-- **PDP (Policy Decision Point)**: deterministic policy evaluation over `(intent, state)`.
+- **PDP (Policy Decision Point)**: deterministic policy evaluation over `(intent, state, policy)`.
 - **PEP (Policy Enforcement Point)**: execution boundary that verifies authorization and either executes or refuses side effects.
 
 ## Adapter Sidecar Architecture

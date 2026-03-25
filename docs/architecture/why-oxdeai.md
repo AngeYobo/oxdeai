@@ -10,7 +10,7 @@ OxDeAI enforces deterministic authorization at the execution boundary of autonom
 
 Modern agent runtimes can trigger real side effects: external API calls, cloud provisioning, payments, workflow actions, command execution.
 
-A model output is not yet a side effect. A provider call, infrastructure action, or paid tool invocation is. That gap — between what a model proposes and what the runtime executes — is where economic and operational risk becomes real. Existing layers do not close it.
+A model output is not yet a side effect. A provider call, infrastructure action, or paid tool invocation is. That gap - between what a model proposes and what the runtime executes - is where economic and operational risk becomes real. Existing layers do not close it.
 
 ## Why Prompt Guardrails Are Insufficient
 
@@ -28,8 +28,8 @@ OxDeAI sits between the runtime and the external system.
 
 The control point is pre-execution:
 
-- `DENY` — the side effect does not execute
-- `ALLOW` — the engine emits `AuthorizationV1`
+- `DENY` - the side effect does not execute
+- `ALLOW` - the engine emits `AuthorizationV1`
 - the PEP verifies that authorization artifact before the side effect occurs
 
 No execution happens without a verified `ALLOW`. No `AuthorizationV1` exists without a prior deterministic evaluation.
@@ -53,10 +53,10 @@ raw action surface
 
 Key roles:
 
-- **adapter** — maps a runtime-specific action surface into a deterministic intent
-- **PDP** — evaluates `(intent, state, policy)` and returns `ALLOW` or `DENY`
-- **PEP** — verifies `AuthorizationV1` (or `DelegationV1`) before any side effect
-- **evidence path** — preserves snapshot, audit events, and verification envelope for independent verification
+- **adapter** - maps a runtime-specific action surface into a deterministic intent
+- **PDP** - evaluates `(intent, state, policy)` and returns `ALLOW` or `DENY`
+- **PEP** - verifies `AuthorizationV1` (or `DelegationV1`) before any side effect
+- **evidence path** - preserves snapshot, audit events, and verification envelope for independent verification
 
 ## Deterministic Evaluation Model
 
@@ -82,7 +82,7 @@ On `ALLOW`, the engine emits `AuthorizationV1`. That artifact binds the authoriz
 
 ## Delegated Authorization
 
-Multi-agent systems often need one agent to authorize constrained action by another — a planner delegating to a worker, an orchestrator granting limited authority to a specialized executor.
+Multi-agent systems often need one agent to authorize constrained action by another - a planner delegating to a worker, an orchestrator granting limited authority to a specialized executor.
 
 OxDeAI addresses this with `DelegationV1`: a signed artifact that binds a child agent's authority to a parent `AuthorizationV1` while enforcing strictly narrowing scope.
 
@@ -90,8 +90,8 @@ Key properties:
 
 - delegated scope cannot exceed the parent's granted scope (`tools`, `max_amount`, `max_actions`, `max_depth`)
 - delegation expiry cannot exceed parent authorization expiry
-- chain verification runs locally at the PEP — no control-plane round-trip required
-- single-hop only — `DelegationV1` cannot itself be re-delegated
+- chain verification runs locally at the PEP - no control-plane round-trip required
+- single-hop only - `DelegationV1` cannot itself be re-delegated
 - fail-closed: any chain violation rejects the path; `setState` is never called on the delegation path
 
 ```text
@@ -109,9 +109,9 @@ See [`docs/spec/delegation-v1.md`](../spec/delegation-v1.md) for the full artifa
 
 OxDeAI preserves a verification path independent of the live runtime:
 
-- **snapshot** — canonical encoding of evaluated policy state
-- **audit events** — hash-chained record of proposed actions, decisions, and execution or refusal
-- **verification envelope** — packages snapshot plus audit evidence into a portable artifact
+- **snapshot** - canonical encoding of evaluated policy state
+- **audit events** - hash-chained record of proposed actions, decisions, and execution or refusal
+- **verification envelope** - packages snapshot plus audit evidence into a portable artifact
 
 `verifyEnvelope()` provides stateless verification of that packaged evidence. It does not require access to the live engine or policy state.
 

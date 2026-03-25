@@ -59,7 +59,7 @@ These controls are implemented as policy decisions over normalized intent and cu
 1. The runtime proposes a provisioning action.
 2. The adapter normalizes the action into deterministic intent.
 3. Current policy state is provided, including budget, scope, or operational flags.
-4. The OxDeAI PDP evaluates the proposed action against `(intent, state)`.
+4. The OxDeAI PDP evaluates the proposed action against `(intent, state, policy)`.
 5. On `ALLOW`, `AuthorizationV1` may be emitted.
 6. The PEP verifies authorization before calling the infrastructure provider.
 7. Decision and execution or refusal are recorded in audit events.

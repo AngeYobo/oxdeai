@@ -1,254 +1,113 @@
-# OxDeAI Protocol (v1.3.x)
+# OxDeAI Protocol
 
-OxDeAI is a deterministic economic containment protocol for autonomous systems.
+OxDeAI is a deterministic execution-time authorization protocol for autonomous systems.
 
-This document is the front door:
+---
 
-- what problem OxDeAI solves
-- what artifacts it emits
-- how to verify those artifacts without running the engine
+## Core Model
 
-For normative details (schemas, canonicalization, verifier semantics), see:
+```
+(intent, state, policy) → ALLOW | DENY
+```
 
-- [`SPEC.md`](./SPEC.md)
-- [`protocol/protocol.md`](./protocol/protocol.md)
+An agent proposes an action.
+OxDeAI evaluates deterministically against the current policy state before execution.
+If the decision is `ALLOW`, a signed authorization artifact is emitted.
+If the decision is `DENY`, execution MUST NOT proceed.
 
-## 1) Problem
+No valid authorization artifact → no execution.
+Execution is only reachable through a verified authorization boundary.
 
-Autonomous runtimes fail in repeatable ways:
+---
 
-- runaway spend before operators react
-- unbounded concurrency causing amplified side effects
-- duplicate execution effects from retries/replays
+## Protocol Artifacts
 
-Observability alone is post-fact.
-OxDeAI shifts control to pre-execution policy gating.
+OxDeAI defines the following first-class protocol artifacts:
 
-## 2) Core Question
+| Artifact | Purpose |
+|---|---|
+| **AuthorizationV1** | Pre-execution `ALLOW` artifact. Signed, expiring, bound to intent and policy state. |
+| **DelegationV1** | Narrowed sub-authorization issued by a principal to a delegatee. Strictly scoped, locally verifiable. |
+| **VerificationEnvelopeV1** | Portable post-execution evidence bundle. Contains canonical snapshot + audit chain. |
+| **ExecutionReceiptV1** | *(planned)* Execution attestation binding receipt to a verified authorization. |
 
-OxDeAI answers one protocol question:
+Artifacts are language-independent and MUST be interpreted identically across conformant implementations.
 
-`Given intent + state + policy config, is this economically allowed?`
+---
 
-Outputs are deterministic for the same inputs.
+## Action-Surface Independence
 
-If allowed, a signed authorization artifact is emitted.
-If denied, execution MUST NOT proceed.
+OxDeAI does not define how agents express their actions.
 
-### Action Surface Independence
+Agent runtimes may use structured tool calls, CLI-style invocations, MCP tool calls, workflow engines, or framework-specific adapters.
 
-OxDeAI is independent from the action interface used by agent runtimes.
-
-Agent runtimes may express actions through various interfaces, including:
-
-* structured tool calls
-* CLI-style command execution (e.g. `run("command")`)
-* workflow engines
-* MCP tool invocation
-* framework-specific tool adapters
-
-OxDeAI does not define how actions are expressed.
-
-Instead, runtimes SHOULD normalize proposed actions into a deterministic **intent** before submitting them to the policy engine.
+Runtimes SHOULD normalize proposed actions into a deterministic **intent** before submitting to the policy engine:
 
 ```
 action surface
 → normalization
 → intent
 → OxDeAI PDP evaluation
-→ AuthorizationV1
+→ AuthorizationV1 (or DENY)
 → PEP enforcement
 → side effect
 ```
 
-This ensures that OxDeAI secures the **execution boundary**, independent of the upstream action surface.
-This is a documentation clarification of interface-independence, not a new protocol artifact layer.
+Deterministic intent normalization is what makes policy evaluation reproducible across action surfaces.
+The protocol does not mandate one universal normalization schema; implementations MUST ensure that supported surfaces map to intent deterministically.
 
-### Intent Normalization
+---
 
-Before policy evaluation, runtimes SHOULD normalize proposed actions into the intent representation used by their OxDeAI integration.
+## Verification Surface
 
-Normalization preserves deterministic evaluation and policy portability across different action surfaces.
-The protocol does not currently mandate one universal normalization schema for all runtimes.
+Authorization artifacts are portable and independently verifiable without re-running the policy engine.
 
-Implementations MUST ensure that supported action surfaces map to intent deterministically.
-Equivalent external actions SHOULD map to equivalent intent representations within the implementation that evaluates and enforces them.
+The protocol-stable verifier surface is:
 
-## 3) Artifact Flow
+| Verifier | What it checks |
+|---|---|
+| `verifyAuthorization` | Pre-execution gate. Validates an `AuthorizationV1` before allowing execution. |
+| `verifyDelegation` | Validates a `DelegationV1` artifact structurally and against its parent hash. |
+| `verifyDelegationChain` | Validates a delegation + parent authorization pair as a complete chain. |
+| `verifyEnvelope` | Post-execution evidence check. Validates a `VerificationEnvelopeV1` snapshot + audit chain. |
 
-![Agent authorization boundary](./docs/diagrams/agent-authorization-boundary.svg)
+All verifiers return a unified `VerificationResult`:
+- `ok` - artifact is valid
+- `invalid` - malformed or inconsistent
+- `inconclusive` - structurally valid but insufficient strict anchor evidence
 
-Expanded flow:
+Violations are deterministically ordered for cross-runtime reproducibility.
 
-1. Runtime submits `intent` with current policy `state`.
-2. Engine evaluates policy modules deterministically.
-3. Engine returns `ALLOW` or `DENY`.
-4. On `ALLOW`, runtime commits state/audit and executes side effect.
-5. Runtime can package artifacts into `VerificationEnvelopeV1`.
-6. Third parties verify envelope offline via stateless verifiers.
+---
 
-Diagram source/editing policy:
-- [`docs/diagrams/README.md`](./docs/diagrams/README.md)
+## Boundary Model
 
-## Architecture
+OxDeAI separates two distinct concerns:
 
-OxDeAI sits between agent runtimes and external systems as a deterministic authorization boundary.
+- **Capability** - what an agent *can* do (tool definitions, runtime affordances)
+- **Authority** - what an agent *is authorized* to do at this moment under current policy
 
-![PDP and PEP flow](./docs/diagrams/pdp-pep-flow.svg)
+The OxDeAI boundary sits between them. An agent may have the capability to call an action. It may not execute unless a valid authorization exists for that specific intent and state.
 
-- `PDP` evaluates policy deterministically over `intent,state`.
-- `AuthorizationV1` is emitted only on `ALLOW`.
-- `PEP` enforces authorization verification before execution.
-- External side effects must not execute on `DENY`.
+Delegation preserves this invariant: `DelegationV1` can only narrow the delegator's existing authority. Authority cannot be amplified through delegation.
 
-Verification artifacts are generated and validated through the envelope flow:
+---
 
-![Verification envelope flow](./docs/diagrams/verification-envelope-flow.svg)
+## Where to Go Next
 
-## 4) Protocol Artifacts (Overview)
+- Normative spec: [`SPEC.md`](./SPEC.md)
+- Delegation artifact details: [`docs/spec/delegation-v1.md`](./docs/spec/delegation-v1.md)
+- Conformance vectors: [`packages/conformance`](./packages/conformance)
+- Invariant mapping: [`docs/invariants.md`](./docs/invariants.md)
+- Adapter integration: [`docs/integrations/README.md`](./docs/integrations/README.md)
 
-OxDeAI v1.3.x protocol surface centers on:
+---
 
-- Intent (request + binding fields)
-- Canonical snapshot (`formatVersion: 1`)
-- AuthorizationV1 (`ALLOW` pre-execution artifact with issuer/audience/intent/state/policy binding)
-- non-forgeable authorization signatures (`alg`, `kid`, `signature`)
-- Hash-chained audit events
-- Verification envelope (`snapshot + events`) with optional signature profile
-- KeySet metadata for offline key lookup and rotation windows
-- Unified verification result (`ok | invalid | inconclusive`)
+## Legacy Compatibility
 
-See detailed definitions in [`SPEC.md`](./SPEC.md).
+The v1.0.2 protocol profile is preserved for historical and reference compatibility at:
 
-## 5) Stateless Verification Surface
+[`docs/archive/PROTOCOL-v1.0.2.md`](./docs/archive/PROTOCOL-v1.0.2.md)
 
-The protocol-stable verification APIs are:
-
-- `verifySnapshot(snapshotBytes)`
-- `verifyAuditEvents(events, opts?)`
-- `verifyEnvelope(envelopeBytes, opts?)`
-- `verifyAuthorization(auth, opts?)`
-
-All return unified `VerificationResult`.
-
-Operational meaning:
-
-- `ok`: verification passes under selected mode
-- `invalid`: malformed or inconsistent artifacts
-- `inconclusive`: not invalid, but insufficient strict anchor evidence
-
-Strict/best-effort behavior and deterministic violation ordering are specified in [`SPEC.md`](./SPEC.md).
-Relying-party execution gate requirements are specified in [`SPEC.md` §9](./SPEC.md#9-relying-party-contract).
-
-`verifyAuthorization` is the pre-execution gate.
-`verifyEnvelope` remains the post-execution evidence verifier.
-Ed25519 + KeySet verification is the preferred non-shared-secret path.
-
-## 6) Package Roles
-
-## `@oxdeai/core`
-
-Reference implementation of the protocol:
-
-- deterministic policy engine
-- canonical snapshot codec
-- audit chain logic
-- stateless verification functions
-- envelope codec
-
-## `@oxdeai/conformance`
-
-Protocol truth test:
-
-- frozen vectors for protocol behavior
-- validator that checks deterministic equivalence
-- cross-implementation baseline for non-TS runtimes
-
-Passing conformance means implementation outputs match frozen protocol artifacts for the targeted version profile.
-
-## `@oxdeai/sdk`
-
-Integration convenience layer on top of `@oxdeai/core`.
-It does not redefine protocol semantics.
-
-## `@oxdeai/cli`
-
-Operational tooling layer for local artifact workflows (`build`, `verify`, `replay`).
-It is versioned independently from the protocol stack and does not redefine protocol semantics.
-
-## 7) Deterministic Boundary
-
-Protocol-critical paths are deterministic:
-
-- canonical serialization before hashing
-- stable ordering rules
-- no hidden entropy in verification functions
-
-This is what makes offline verification and cross-runtime conformance possible.
-
-## Future Policy Dimensions
-
-OxDeAI already evaluates policy over `(intent, state)`.
-Richer authorization semantics can therefore be expressed through deterministic state modeling without changing the current protocol contract.
-
-### 1) Context-Aware Authorization
-
-Policy evaluation MAY depend on contextual state accumulated during execution.
-
-Examples of contextual state include:
-
-- remaining budget
-- action counters
-- resource scopes
-- environment flags
-- execution phase
-
-Context-aware decisions are already expressible through the `state` input without protocol changes.
-
-### 2) Execution Path Policies
-
-Execution path policies depend on sequences of actions rather than one action in isolation.
-
-Examples include:
-
-- `read_secret` -> forbid `external_upload`
-- `access_sensitive_resource` -> restrict network access
-- `deployment_started` -> restrict destructive actions
-
-The OxDeAI protocol does not currently define path-policy primitives.
-Instead, runtimes MAY encode relevant execution history, derived flags, or workflow markers into the policy state used during evaluation.
-
-### 3) Delegated Authority
-
-Delegated authority describes bounded authorization in multi-agent systems.
-
-For example, a parent agent may authorize a child agent with reduced:
-
-- budget
-- action types
-- resource scope
-- time window
-
-Future protocol versions MAY introduce explicit delegation artifacts such as `DelegatedAuthorizationV1`.
-For the current protocol line, delegation can be implemented through state-scoped policies that preserve deterministic evaluation over `(intent, state, policy)`.
-
-## 8) Versioning and Stability
-
-v1.3.x is the current protocol line for the guard/integration surface on top of the v1.2 non-forgeable verification baseline (`alg`/`kid`/`signature` with Ed25519).
-Legacy v1.0.x compatibility paths MAY remain supported by implementations where explicitly documented.
-
-Incompatible changes to canonical artifacts, verification result semantics, or envelope format require a major protocol version.
-
-See release policy:
-
-- [`RELEASE.md`](./RELEASE.md)
-
-## 9) Where to Go Next
-
-- Full protocol companion spec: [`SPEC.md`](./SPEC.md)
-- Relying-party execution gate contract: [`SPEC.md` §9](./SPEC.md#9-relying-party-contract)
-- Production PEP wiring guide: [`docs/pep-production-guide.md`](./docs/pep-production-guide.md)
-- Legacy v1.0.2 normative profile (archival): [`protocol/protocol.md`](./protocol/protocol.md)
-- Threat model details: [`protocol/threat-model.md`](./protocol/threat-model.md)
-- Envelope profile details: [`protocol/envelope.md`](./protocol/envelope.md)
-- Non-forgeable verification design notes: [`docs/NON_FORGEABLE_VERIFICATION.md`](./docs/NON_FORGEABLE_VERIFICATION.md)
+That document is archival only and does not describe the current protocol surface.
+The current normative protocol is defined in [`SPEC.md`](./SPEC.md).

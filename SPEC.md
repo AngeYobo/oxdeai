@@ -1,5 +1,8 @@
 # OxDeAI Specification (v1.3.0)
 
+This is the canonical normative specification for the OxDeAI protocol.
+Other documents (e.g. under /protocol) are companion references and must not be treated as normative.
+
 This document defines the OxDeAI execution authorization protocol.
 
 OxDeAI is a portable, language-agnostic protocol for deterministic pre-execution authorization and post-execution evidence verification in autonomous systems.
@@ -91,7 +94,7 @@ This check MUST be performed before any policy module runs. A `POLICY_VERSION_MI
 
 This invariant ensures that authorization artifacts are issued only under the policy version that was in effect when the intent was evaluated, preventing replay of artifacts across incompatible policy versions.
 
-### 3.3 Invariant I5 — Evaluation Isolation
+### 3.3 Invariant I5 - Evaluation Isolation
 
 Concurrent evaluations MUST NOT share a mutable state object.
 

@@ -1,18 +1,16 @@
-This document is a companion reference.
-For the canonical normative specification, see [../SPEC.md](../SPEC.md).
-
 > ⚠️ **Archival profile only.**
-> This document has been superseded. The canonical archival location is:
-> [`docs/archive/PROTOCOL-v1.0.2.md`](../docs/archive/PROTOCOL-v1.0.2.md)
+> This document preserves the OxDeAI v1.0.2 protocol profile for historical and reference compatibility.
+> It does not describe the current OxDeAI protocol surface.
 >
 > For the current protocol, see:
-> - [`PROTOCOL.md`](../PROTOCOL.md) - current front-door overview
-> - [`SPEC.md`](../SPEC.md) - current normative specification
+> - [`PROTOCOL.md`](../../PROTOCOL.md) - current front-door overview
+> - [`SPEC.md`](../../SPEC.md) - current normative specification
+
+---
 
 # OxDeAI Protocol (Legacy v1.0.2 Profile)
 
 This document preserves the v1.0.2 protocol profile for archival/reference compatibility.
-The canonical archival copy is at [`docs/archive/PROTOCOL-v1.0.2.md`](../docs/archive/PROTOCOL-v1.0.2.md).
 
 ## 1. Conformance Language
 
@@ -127,7 +125,7 @@ Optional:
 - `tool`
 - `tool_call`
 
-`signature` MUST NOT be included in `intent_hash`.  
+`signature` MUST NOT be included in `intent_hash`.
 Unknown/non-binding fields MUST NOT affect `intent_hash`.
 
 ### Example Intent JSON
@@ -289,7 +287,7 @@ Chain recurrence:
 - `head_0 = ""` (empty UTF-8 string)
 - `head_{n+1} = sha256_hex( head_n || "\n" || canonical_event_bytes_n )`
 
-Events MUST be processed in order.  
+Events MUST be processed in order.
 `timestamp` MUST be non-decreasing across the sequence.
 
 ### Example audit excerpt
@@ -456,7 +454,7 @@ Disallowed in deterministic evaluation/verification:
 - locale-dependent formatting
 - floating-point non-finite values in canonicalized data
 
-Strict mode MUST fail closed when required deterministic inputs (for example `now`) are missing.  
+Strict mode MUST fail closed when required deterministic inputs (for example `now`) are missing.
 Best-effort mode MAY continue but MUST preserve deterministic processing over provided inputs.
 
 ---
@@ -487,12 +485,6 @@ Conformance suites MUST check deterministic equivalence, including:
 - snapshot roundtrip idempotence
 - deterministic violation ordering
 - replay/verification consistency across processes/runtimes
-
-DelegationV1 conformance (v1.3+) additionally requires:
-- `delegation_parent_hash = SHA256(canonical_json(AuthorizationV1))` - key-order invariant
-- `verifyDelegation()` field/structural checks - no crypto required
-- `verifyDelegationChain()` - hash recomputation, chain structural checks
-- Ed25519 signature path - via test key material in `opts.trustedKeySets`
 
 Reference vectors are distributed in `@oxdeai/conformance`.
 
