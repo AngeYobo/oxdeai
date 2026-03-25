@@ -85,7 +85,7 @@ export type State = {
     max_depth: Record<string, number>;        // per agent
   };
 
-  tool_limits?: ToolLimitsState;
+  tool_limits: ToolLimitsState;
 };
 
 /** @public */
