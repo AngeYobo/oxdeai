@@ -25,10 +25,10 @@ Passing validation means the implementation reproduces expected deterministic ar
 - `envelope-signature-verification.json`
 
 ### DelegationV1 (v1.3+)
-- `delegation-parent-hash.json` — `delegation_parent_hash = SHA256(canonical_json(AuthorizationV1))`; key-order invariance (I1)
-- `delegation-verification.json` — `verifyDelegation()` field-level checks: expiry, scope narrowing, delegatee, policy, replay, trust-missing
-- `delegation-chain-verification.json` — `verifyDelegationChain()` chain checks: hash binding, delegator, parent expiry, expiry ceiling, single-hop, policy binding
-- `delegation-signature-verification.json` — Ed25519 signature path: valid, tampered sig, wrong kid, tampered field, expired
+- `delegation-parent-hash.json` - `delegation_parent_hash = SHA256(canonical_json(AuthorizationV1))`; key-order invariance (I1)
+- `delegation-verification.json` - `verifyDelegation()` field-level checks: expiry, scope narrowing, delegatee, policy, replay, trust-missing
+- `delegation-chain-verification.json` - `verifyDelegationChain()` chain checks: hash binding, delegator, parent expiry, expiry ceiling, single-hop, policy binding
+- `delegation-signature-verification.json` - Ed25519 signature path: valid, tampered sig, wrong kid, tampered field, expired
 
 Current validator assertion count: `139`.
 
@@ -36,10 +36,10 @@ Current validator assertion count: `139`.
 
 | Op | Input | Output | Independence |
 |----|-------|--------|--------------|
-| `delegation_parent_hash` | `{ parent: AuthorizationV1 }` | `{ parent_auth_hash: hex }` | Full — SHA256 + canonical JSON |
-| `verify_delegation` | `{ delegation: DelegationV1, opts }` | `{ status, violations, policyId }` | Full — no crypto required |
-| `verify_delegation_chain` | `{ parent, delegation, opts }` (inline) | `{ status, violations }` | Full — hash recomputation + structural checks |
-| `verify_delegation_signature` | `{ parent, delegation, opts }` (inline) | `{ status, violations }` | Full — chain checks + Ed25519 via test key material |
+| `delegation_parent_hash` | `{ parent: AuthorizationV1 }` | `{ parent_auth_hash: hex }` | Full - SHA256 + canonical JSON |
+| `verify_delegation` | `{ delegation: DelegationV1, opts }` | `{ status, violations, policyId }` | Full - no crypto required |
+| `verify_delegation_chain` | `{ parent, delegation, opts }` (inline) | `{ status, violations }` | Full - hash recomputation + structural checks |
+| `verify_delegation_signature` | `{ parent, delegation, opts }` (inline) | `{ status, violations }` | Full - chain checks + Ed25519 via test key material |
 | `verify_delegation_chain_case` | `{ id: string }` | `{ status, violations }` | Lookup (frozen) |
 | `verify_delegation_signature_case` | `{ id: string }` | `{ status, violations }` | Lookup (frozen) |
 
@@ -54,10 +54,10 @@ compatibility but not used by the harness runners.
 
 | Layer | What it covers | Cross-language? |
 |-------|---------------|-----------------|
-| `delegation-parent-hash.json` | Hash stability, I1 key-order invariance | Yes — SHA256 + canonical JSON only |
-| `delegation-verification.json` | Field checks, expiry, scope, replay, trust-missing | Yes — no crypto required |
-| `delegation-chain-verification.json` | Chain structural checks (hash binding, delegator, expiry ceiling, policy) | Yes — independently recomputed |
-| `delegation-signature-verification.json` | Ed25519 verification path | Yes — independently verified |
+| `delegation-parent-hash.json` | Hash stability, I1 key-order invariance | Yes - SHA256 + canonical JSON only |
+| `delegation-verification.json` | Field checks, expiry, scope, replay, trust-missing | Yes - no crypto required |
+| `delegation-chain-verification.json` | Chain structural checks (hash binding, delegator, expiry ceiling, policy) | Yes - independently recomputed |
+| `delegation-signature-verification.json` | Ed25519 verification path | Yes - independently verified |
 | `delegation.property.test.ts` (D-P1–D-P5) | PBT over scope / hash / mutation | TypeScript only |
 | `guard.delegation.property.test.ts` (G-D1–G-D3) | Guard PEP delegation path | TypeScript only |
 | `cross-adapter.test.ts` (CA-1–CA-10) | Cross-adapter equivalence, I6 | TypeScript only |

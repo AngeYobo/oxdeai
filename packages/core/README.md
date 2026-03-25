@@ -193,6 +193,12 @@ Deterministic invariants enforced and tested:
 * I4 Replay verification determinism
 * I5 Cross-process determinism
 * I6 Evaluation isolation - concurrent evaluations must not share mutable state (`getState: () => structuredClone(state)`)
+* D-1 `evaluatePure` produces identical outputs for identical inputs across repeated calls
+* D-2 `evaluatePure` does not mutate the input state
+* D-3 `structuredClone` inputs yield identical outputs (no aliasing between clone and engine working state)
+* D-4 Object key insertion order does not affect decisions or derived hashes
+* D-5 Same inputs produce identical decisions and state hashes across separate processes
+* D-6 Strict mode rejects missing explicit time inputs — no implicit `Date.now()` fallback
 
 * `policyId` - content-addressed engine configuration
 * `stateHash` - canonical snapshot hash
@@ -263,7 +269,7 @@ npm install @oxdeai/core
 
 ## Core Model
 
-![OxDeAI Core - Protocol Responsibilities](../../docs/diagrams/core-model.svg)
+![OxDeAI Core - Protocol Responsibilities](../../docs/diagrams/authorization_policy_flow_v1_6.svg)
 
 Diagram source/editing policy:
 - [`docs/diagrams/README.md`](../../docs/diagrams/README.md)
@@ -318,17 +324,21 @@ Verification envelopes remain post-execution evidence artifacts verified with `v
 import { PolicyEngine } from "@oxdeai/core";
 import type { State, Intent } from "@oxdeai/core";
 
+// Policy configuration is bound in the engine instance.
+// evaluatePure(intent, state) evaluates against that bound policy.
 const engine = new PolicyEngine({
-  policy_version: "v0.9",
-  engine_secret: process.env.oxdeai_ENGINE_SECRET!,
+  policy_version: "v1.6",
   authorization_ttl_seconds: 60,
-  strictDeterminism: false
+  authorization_signing_alg: "Ed25519",
+  authorization_private_key_pem: process.env.OXDEAI_SIGNING_KEY_PEM!,
+  engine_secret: process.env.OXDEAI_ENGINE_SECRET!,
+  strictDeterminism: true
 });
 
 const now = 1730000000; // injected timestamp (seconds)
 
 const state: State = {
-  policy_version: "v0.9",
+  policy_version: "v1.6",
   period_id: "2026-02",
   kill_switch: { global: false, agents: {} },
   allowlists: {},
@@ -337,11 +347,18 @@ const state: State = {
   velocity: { config: { window_seconds: 60, max_actions: 100 }, counters: {} },
   replay: { window_seconds: 3600, max_nonces_per_agent: 256, nonces: {} },
   recursion: { max_depth: { "agent-1": 2 } },
-  concurrency: { max_concurrent: { "agent-1": 2 }, active: {}, active_auths: {} }
+  concurrency: { max_concurrent: { "agent-1": 2 }, active: {}, active_auths: {} },
+  tool_limits: { window_seconds: 60, max_calls: { "agent-1": 10 }, calls: {} }
 };
+// policy_version must match engine.opts.policy_version — evaluatePure fails-closed on mismatch
 
 const intent: Intent = {
+  intent_id: "intent-1",
   agent_id: "agent-1",
+  action_type: "PAYMENT",
+  target: "openai-api",
+  metadata_hash: "0".repeat(64),
+  signature: "",
   type: "EXECUTE",
   tool_call: true,
   tool: "openai.responses",
@@ -368,8 +385,17 @@ if (out.decision === "DENY") {
 `RELEASE` must reference a valid active `authorization_id`.
 
 ```ts
+if (out.decision === "DENY") {
+  throw new Error("RELEASE requires a prior allowed EXECUTE with an active authorization");
+}
+
 const releaseIntent: Intent = {
+  intent_id: "intent-2",
   agent_id: "agent-1",
+  action_type: "PAYMENT",
+  target: "openai-api",
+  metadata_hash: "0".repeat(64),
+  signature: "",
   type: "RELEASE",
   authorization_id: out.authorization.authorization_id,
   nonce: 43n,
@@ -407,7 +433,7 @@ const rel = engine.evaluatePure(releaseIntent, out.nextState);
 
 ---
 
-## Snapshot API (v0.6)
+## Canonical Snapshot API
 
 ```ts
 import {
@@ -425,10 +451,13 @@ const decoded = decodeCanonicalState(bytes);
 // 4. Import into fresh state container
 const freshState = structuredClone(state);
 engine.importState(freshState, decoded);
-engine.computeStateHash(freshState); // identical to original
+engine.computeStateHash(freshState); // deterministically identical stateHash
 ```
 
-`importState` enforces `formatVersion: 1` and rejects policy mismatches (`policyId` must match `engine.computePolicyId()`).
+`importState` enforces:
+
+- `formatVersion: 1`
+- policy binding (`policyId` must match `engine.computePolicyId()`)
 
 Snapshots are:
 
@@ -437,20 +466,25 @@ Snapshots are:
 - Policy-bound (policyId must match)
 - Deterministically hashed
 
+Snapshots are portable, deterministic, and verifiable across runtimes.
+
 ---
 
 ## Adapters (v0.8)
 
 ```ts
-import { PolicyEngine, FileStateStore, FileAuditSink } from "@oxdeai/core";
+import { PolicyEngine } from "@oxdeai/core";
+import { FileStateStore, FileAuditSink } from "@oxdeai/core/adapters";
 
 const stateStore = new FileStateStore("./policy-state.bin");
 const auditSink = new FileAuditSink("./audit.ndjson");
 
 const engine = new PolicyEngine({
-  policy_version: "v0.9",
-  engine_secret: "secret",
+  policy_version: "v1.6",
   authorization_ttl_seconds: 60,
+  authorization_signing_alg: "Ed25519",
+  authorization_private_key_pem: process.env.OXDEAI_SIGNING_KEY_PEM!,
+  engine_secret: process.env.OXDEAI_ENGINE_SECRET!,
   stateStore,
   auditSink
 });
@@ -467,17 +501,24 @@ Core ships only minimal in-memory and file adapters; no redis/postgres adapters 
 
 ## Replay Verification (v0.7)
 
-`ReplayEngine.verify` recomputes `auditHeadHash` offline from the provided events, and validates policy binding (`policyId`) plus non-decreasing timestamps.
+Replay verification uses the public stateless verifier surface.
+In strict mode, verification returns `ok` once the audit trace includes at least one `STATE_CHECKPOINT`.
 
-Strict mode returns `inconclusive` unless the trace contains at least one `STATE_CHECKPOINT` (`stateHash` anchor).
+`verifyAuditEvents(...)` recomputes `auditHeadHash` offline from the provided audit events, and validates policy binding (`policyId`) plus non-decreasing timestamps.
 
 ```ts
-import { PolicyEngine, ReplayEngine } from "@oxdeai/core";
-const engine = new PolicyEngine({ policy_version: "v0.9", engine_secret: "secret", authorization_ttl_seconds: 60, checkpoint_every_n_events: 2 });
-engine.evaluatePure(intent1, state);
-const out = engine.evaluatePure(intent2, state);
+import { PolicyEngine, verifyAuditEvents } from "@oxdeai/core";
+const engine = new PolicyEngine({
+  policy_version: "v1.6",
+  authorization_ttl_seconds: 60,
+  authorization_signing_alg: "Ed25519",
+  authorization_private_key_pem: process.env.OXDEAI_SIGNING_KEY_PEM!,
+  checkpoint_every_n_events: 2
+});
+const first = engine.evaluatePure(intent1, state);
+const out = engine.evaluatePure(intent2, first.nextState);
 const events = engine.audit.snapshot();
-const verified = ReplayEngine.verify(events, { policyId: engine.computePolicyId() }); // strict by default
+const verified = verifyAuditEvents(events, { policyId: engine.computePolicyId() }); // strict by default
 console.log(verified.ok, verified.status); // true, "ok" when checkpoints exist
 ```
 

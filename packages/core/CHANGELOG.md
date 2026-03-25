@@ -7,6 +7,22 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.6.1] - 2026-03-25
+
+### Fixed
+
+- `deepMerge` was mutating nested objects of the base argument via shallow-spread aliasing, silently violating the documented non-mutating contract. Nested plain objects are now shallow-copied before recursing.
+
+### Added
+
+- Property-based decision-path tests (D-1–D-6): determinism for equivalent inputs, no input-state mutation, cross-clone stability, key-order insensitivity, cross-process decision determinism, strict-mode explicit-input enforcement.
+
+### Notes
+
+- No protocol or API changes. This is a correctness and test coverage patch.
+
+---
+
 ##  [1.6.0] - 2026-03-22
 
 ### Added
@@ -240,7 +256,7 @@ v0.8.0 introduces first-class host integration primitives to @oxdeai/core withou
 ## [0.7.0] - 2026-03-03
 
 ### Added
-- `ReplayEngine.verify(...)` offline audit verifier.
+- `verifyAuditEvents(...)` stateless audit verification for offline audit traces.
 - Strict verification mode returning `"inconclusive"` without state anchors.
 - Optional `STATE_CHECKPOINT` audit events (stateHash only).
 - `checkpoint_every_n_events` engine option.
@@ -315,7 +331,7 @@ v0.8.0 introduces first-class host integration primitives to @oxdeai/core withou
   - Stable module ordering
   - Canonicalized engine configuration
   - SHA-256 over canonical payload.
-- `ReplayEngine` (deterministic log replay interface).
+- Stateless audit verification surface for deterministic offline audit validation.
 - Strict determinism mode:
   - `Date.now()` fallback disallowed when `strictDeterminism` is enabled.
 - Signature-stripped canonical intent identity:

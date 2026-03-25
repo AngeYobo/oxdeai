@@ -7,6 +7,32 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.4.0] - 2026-03-25
+
+### Changed
+
+- Version-line release alignment for `@oxdeai/conformance@1.4.0`.
+- Package metadata updated for the `1.4.x` publication line.
+
+### Notes
+
+- No conformance vector or validator semantic changes from `1.3.1`.
+- Frozen protocol behavior remains unchanged; this release keeps the package line current with the published metadata.
+
+## [1.4.0] - 2026-03-25
+
+### Changed
+
+- Version-line release alignment for `@oxdeai/conformance@1.4.0`.
+- Package metadata updated for the `1.4.x` publication line.
+
+### Notes
+
+- No conformance vector or validator semantic changes from `1.3.1`.
+- Frozen protocol behavior remains unchanged; this release keeps the package line current with the published metadata.
+
+---
+
 ## [1.3.1] - 2026-03-08
 
 ### Changed
