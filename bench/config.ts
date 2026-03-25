@@ -3,7 +3,8 @@ export type ScenarioName =
   | "verifyAuthorization"
   | "verifyEnvelope"
   | "baselinePath"
-  | "protectedPath";
+  | "protectedPath"
+  | "verifyDelegation";
 
 export type BenchmarkConfig = {
   scenario: ScenarioName | "all";
@@ -61,7 +62,8 @@ export function parseBenchmarkConfig(argv: readonly string[]): BenchmarkConfig {
           v === "verifyAuthorization" ||
           v === "verifyEnvelope" ||
           v === "baselinePath" ||
-          v === "protectedPath"
+          v === "protectedPath" ||
+          v === "verifyDelegation"
         ) {
           config.scenario = v;
         }
@@ -119,7 +121,7 @@ export function benchmarkHelpText(): string {
     "  pnpm -C bench run run -- --scenario=all --runs=5 --iterations=100000 --warmup=10000 --concurrency=1,4",
     "",
     "Scenarios:",
-    "  evaluate | verifyAuthorization | verifyEnvelope | baselinePath | protectedPath | all",
+    "  evaluate | verifyAuthorization | verifyEnvelope | baselinePath | protectedPath | verifyDelegation | all",
     "",
     "Parameters:",
     "  --scenario=<name>                 Scenario to run (default: all)",

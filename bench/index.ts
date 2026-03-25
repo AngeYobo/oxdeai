@@ -9,6 +9,7 @@ import * as verifyAuthorizationCase from "./cases/verifyAuthorization.js";
 import * as verifyEnvelopeCase from "./cases/verifyEnvelope.js";
 import * as baselinePathCase from "./cases/baselinePath.js";
 import * as protectedPathCase from "./cases/protectedPath.js";
+import * as verifyDelegationCase from "./cases/verifyDelegation.js";
 import { collectEnvironment, printReportHeader, reportDelta, reportRun, writeJsonOutputs, writeMarkdownSummary } from "./reporter.js";
 import { nsToMs } from "./metrics.js";
 import type { ScenarioRun } from "./runner-core.js";
@@ -16,7 +17,7 @@ import type { ScenarioRun } from "./runner-core.js";
 function buildScenarios(config: ReturnType<typeof parseBenchmarkConfig>): ScenarioHandle[] {
   const selected: ScenarioName[] =
     config.scenario === "all"
-      ? ["evaluate", "verifyAuthorization", "verifyEnvelope", "baselinePath", "protectedPath"]
+      ? ["evaluate", "verifyAuthorization", "verifyEnvelope", "baselinePath", "protectedPath", "verifyDelegation"]
       : [config.scenario];
   const out: ScenarioHandle[] = [];
 
@@ -62,6 +63,19 @@ function buildScenarios(config: ReturnType<typeof parseBenchmarkConfig>): Scenar
           work: protectedPathCase.create(config.seed, "strict"),
         });
       }
+      continue;
+    }
+    if (name === "verifyDelegation") {
+      out.push({
+        scenario: "verifyDelegation",
+        label: "verifyDelegation",
+        work: verifyDelegationCase.create(config.seed),
+      });
+      out.push({
+        scenario: "verifyDelegation",
+        label: "verifyDelegationChain",
+        work: verifyDelegationCase.createChain(config.seed),
+      });
       continue;
     }
     if (config.envelopeMode === "both" || config.envelopeMode === "best-effort") {
