@@ -12,7 +12,7 @@ Deterministic Execution Authorization Layer for Autonomous Systems
 
 `@oxdeai/core` is a stable protocol library.
 
-Current protocol stack line: **v1.5.x**.
+Current protocol stack line: **v1.6.x**.
 
 Version 1.5.x preserves the stateless verification surface:
 
@@ -21,7 +21,7 @@ Version 1.5.x preserves the stateless verification surface:
 - verifyEnvelope
 - verifyAuthorization
 - VerificationResult schema
-- Verification Envelope format
+- VerificationEnvelopeV1 format
 
 v1.2 baseline additions (preserved in v1.3.x):
 
@@ -49,7 +49,7 @@ Future protocol releases maintain backward compatibility for frozen verification
 
 It answers a narrow question:
 
-> Given an intent and a policy state, is this action allowed to execute - deterministically?
+> Given an intent, a state, and a policy configuration, is this action allowed to execute - deterministically?
 
 If allowed, it emits a signed, expiring authorization bound to the intent and state snapshot.
 If denied, it fails closed.
@@ -97,11 +97,11 @@ Hash-chained sequence of execution events.
 
 ### DelegationV1
 
-Chain-of-trust delegation from a principal authorization to a sub-agent scope.
+First-class authorization artifact enabling scoped delegation from a parent `AuthorizationV1`.
 A delegation narrows the parent's scope (budget ceiling, tool allowlist, expiry)
 and is cryptographically bound to the parent `auth_id`.
 
-### Verification Envelope
+### VerificationEnvelopeV1
 
 Portable artifact combining:
 
@@ -151,8 +151,8 @@ Execution authorization decisions should not be probabilistic.
 
 A deterministic execution authorization substrate that:
 
-* evaluates `(intent, state)` → stable, reproducible decision
-* emits signed `AuthorizationV1` artifacts (Ed25519 preferred, legacy HMAC compatibility)
+* evaluates `(intent, state, policy)` → stable, reproducible decision
+* emits signed `AuthorizationV1` artifacts (Ed25519-based signatures; legacy HMAC paths available for compatibility only)
 * enforces policy domains as authorization invariants:
   * budget - per-period spend caps
   * velocity - rate and window limits
@@ -163,10 +163,10 @@ A deterministic execution authorization substrate that:
 * produces hash-chained, tamper-evident audit logs
 * supports pure evaluation (`evaluatePure`) - no side effects
 * produces content-addressed `policyId`, canonical `stateHash`, tamper-evident `auditHeadHash`
-* packages snapshot + audit events into a portable `verificationEnvelope`
+* packages snapshot + audit events into a portable `VerificationEnvelopeV1`
 * exposes stateless verifiers: `verifySnapshot`, `verifyAuditEvents`, `verifyEnvelope`, `verifyAuthorization`
 
-Same inputs ⇒ same outputs. Policy domains are examples of what the engine can enforce - not its sole identity.
+Same inputs ⇒ same outputs. Policy domains are enforced as deterministic authorization invariants.
 
 ---
 
@@ -192,7 +192,7 @@ Deterministic invariants enforced and tested:
 * I3 Decision equivalence across import/export
 * I4 Replay verification determinism
 * I5 Cross-process determinism
-* I6 Evaluation isolation — concurrent evaluations must not share mutable state (`getState: () => structuredClone(state)`)
+* I6 Evaluation isolation - concurrent evaluations must not share mutable state (`getState: () => structuredClone(state)`)
 
 * `policyId` - content-addressed engine configuration
 * `stateHash` - canonical snapshot hash
@@ -552,10 +552,10 @@ Stateless verification layer for protocol artifacts.
 
 ### v1.6 - Delegated Agent Authorization (shipped)
 
-* `DelegationV1` — chain-of-trust delegation from principal to sub-agent
+* `DelegationV1` - chain-of-trust delegation from principal to sub-agent
 * Scope narrowing enforcement (budget ceiling, tool allowlist, expiry ceiling)
 * `verifyDelegation()` stateless verifier
-* `delegationParentHash` — cryptographic binding to parent `auth_id`
+* `delegationParentHash` - cryptographic binding to parent `auth_id`
 * Property-based coverage: D-P1 through D-P5 (`delegation.property.test.ts`)
 * Cross-adapter delegation guard tests: G-D1 through G-D3 (`@oxdeai/guard`)
 

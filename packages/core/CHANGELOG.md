@@ -7,6 +7,28 @@ This project follows Semantic Versioning.
 
 ---
 
+##  [1.6.0] - 2026-03-22
+
+### Added
+
+- DelegationV1 - first-class authorization artifact for scoped delegation from a parent AuthorizationV1
+- verifyDelegation(...) stateless verifier
+- verifyDelegationChain(...) chain verification support
+- delegationParentHash - cryptographic binding to parent AuthorizationV1
+- delegation conformance vectors (D-P1–D-P5)
+- cross-adapter delegation validation (G-D1–G-D3)
+
+### Changed
+
+- Protocol model clarified to (intent, state, policy) in documentation (no API changes)
+- DelegationV1 promoted from design concept to stable protocol artifact
+
+### Notes
+
+- No breaking changes to existing AuthorizationV1 semantics
+- Stateless verification surface remains backward compatible
+- Existing integrations continue to function without modification
+
 ## [1.5.0] - 2026-03-19
 
 ### Changed
