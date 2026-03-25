@@ -1,4 +1,4 @@
-import { createPrivateKey, createPublicKey, createHmac, sign, verify } from "node:crypto";
+import { createPrivateKey, createPublicKey, createHmac, sign, verify, timingSafeEqual } from "node:crypto";
 import { canonicalJson } from "./hashes.js";
 import type { KeySet, KeySetKey, SignatureAlgorithm } from "../types/keyset.js";
 
@@ -69,7 +69,10 @@ export function verifyHmacDomain(
 ): boolean {
   try {
     const expected = signHmacDomain(domain, payload, secret);
-    return expected === signatureHex;
+    const a = Buffer.from(expected, "hex");
+    const b = Buffer.from(signatureHex, "hex");
+    if (a.length === 0 || a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
   } catch {
     return false;
   }
