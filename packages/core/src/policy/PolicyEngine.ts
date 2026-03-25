@@ -71,10 +71,6 @@ function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
 
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return isObject(v) && !Array.isArray(v);
-}
-
 // Keep canonical snapshot hashes stable across host package managers/runners.
 const ENGINE_VERSION = "unknown";
 
@@ -343,14 +339,15 @@ export class PolicyEngine {
   }
 
   /**
-   * IMPORTANT: The input `state` is assumed to be immutable for the duration
-   * of this call. Callers MUST NOT share a mutable state object across
-   * concurrent evaluations. Each invocation must receive an isolated snapshot
-   * (e.g. `structuredClone(state)`). Violating this breaks determinism:
-   * `deepMerge` accumulates module deltas via shallow merging, which mutates
-   * nested objects of the original state in place. A concurrent caller that
-   * reads the same reference mid-flight will observe a partially-applied
-   * delta and may produce non-deterministic budget or replay decisions.
+   * evaluatePure — pure, deterministic evaluation of (intent, state, policy).
+   *
+   * The input `state` is never mutated. deepMerge creates new object copies at
+   * every level touched by a module delta, so passing the same state reference
+   * across sequential calls is safe.
+   *
+   * For concurrent evaluation in multi-threaded environments (e.g. worker
+   * threads sharing a SharedArrayBuffer), callers should still provide
+   * structuredClone(state) to each invocation for full isolation.
    */
   evaluatePure(intent: Intent, state: State, opts?: EngineEvalOptions): EvaluatePureOutput {
 
