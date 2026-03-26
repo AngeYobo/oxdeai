@@ -412,8 +412,8 @@ Execution MUST NOT proceed unless all checks succeed.
 
 ### 5.9 Compatibility Note
 
-`DelegationV1` is an optional artifact in the v1.3 protocol profile.
-Relying parties that do not implement delegation support MAY reject `DelegationV1` artifacts.
+`DelegationV1` is a stable artifact in the current protocol profile.
+Relying parties that do not use delegation MAY reject `DelegationV1` artifacts.
 Implementations that do support delegation MUST implement the full verification obligations in Section 5.8.
 
 `DelegationV1` extends `AuthorizationV1` without replacing it.
@@ -1053,7 +1053,7 @@ If execution context changes after verification, execution SHOULD be re-verified
 
 v1.2 adds non-forgeable public-key verification as the preferred path.
 
-v1.3 adds `DelegationV1` as an optional, backward-compatible protocol artifact for delegated agent authorization.
+v1.3 adds `DelegationV1` as a stable protocol artifact for delegated agent authorization.
 
 Compatibility requirements:
 
@@ -1064,13 +1064,13 @@ Compatibility requirements:
 
 ### DelegationV1 Compatibility
 
-`DelegationV1` is an optional, backward-compatible artifact introduced in v1.3.
+`DelegationV1` is a stable artifact introduced in v1.3.
 
-- Relying parties that do not implement delegation support MAY reject `DelegationV1` artifacts without violating protocol conformance for v1.2 and earlier profiles.
+- Relying parties that do not use delegation MAY reject `DelegationV1` artifacts without violating protocol conformance.
 - Implementations claiming v1.3 delegation support MUST implement the full verification obligations defined in Section 5.8.
 - `DelegationV1` does not alter the semantics or structure of `AuthorizationV1`. Existing v1.2 compliant implementations continue to operate correctly without modification.
 - A verifier that accepts `DelegationV1` MUST also hold appropriate trusted KeySets for delegation issuers, which are distinct from PDP-issuer KeySets.
-- Multi-hop delegation (chaining `DelegationV1` from `DelegationV1`) is explicitly not supported in v1.3. Implementations MUST NOT support or accept multi-hop chains.
+- Multi-hop delegation (chaining `DelegationV1` from `DelegationV1`) is not supported. Implementations MUST NOT support or accept multi-hop chains.
 
 ## 16. Conformance Requirement
 

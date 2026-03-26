@@ -121,7 +121,7 @@ If DENY → nothing executes (fail-closed)
 
 Inside OxDeAI, authorization is structured as an explicit decision phase:
 
-(intent + state) → ALLOW | DENY
+(intent, state, policy) → ALLOW | DENY
 
 This is not an implicit check inside execution.
 It is a deterministic, standalone decision step evaluated before any side effect is reachable.
@@ -172,7 +172,7 @@ parent-agent → AuthorizationV1 (tools=[provision_gpu, query_db], budget=1000)
                     ↓
                DelegationV1 (tools=[provision_gpu], max_amount=300)
                     ↓
-child-agent → verifyDelegation() → execute or DENY
+child-agent → verifyDelegationChain() → execute or DENY
 ```
 
 Properties:
@@ -236,7 +236,7 @@ pnpm -C examples/openai-tools start
 # What OxDeAI Is
 
 * deterministic execution authorization protocol
-* explicit decision layer: (intent + state) → allow / deny
+* explicit decision layer: (intent, state, policy) → allow / deny
 * pre-execution gating (no side effect without authorization)
 * cryptographic authorization artifacts
 * offline-verifiable evidence

@@ -12,7 +12,7 @@ This document is an implementation and integration companion to the OxDeAI proto
 
 ---
 
-## 1) Why Pre-Execution Economic Containment
+## 1) Why Pre-Execution Authorization
 
 Traditional observability is post-fact:
 - detect anomaly

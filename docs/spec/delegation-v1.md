@@ -97,16 +97,16 @@ Key properties:
     },
     "issued_at": {
       "type": "integer",
-      "description": "Unix timestamp (ms) at which this delegation was issued."
+      "description": "Unix timestamp (seconds) at which this delegation was issued."
     },
     "expiry": {
       "type": "integer",
-      "description": "Unix timestamp (ms) at which this delegation expires. MUST be ≤ parent AuthorizationV1 expiry."
+      "description": "Unix timestamp (seconds) at which this delegation expires. MUST be ≤ parent AuthorizationV1 expiry."
     },
     "alg": {
       "type": "string",
-      "enum": ["EdDSA"],
-      "description": "Signing algorithm. Only EdDSA (Ed25519) is supported."
+      "enum": ["Ed25519"],
+      "description": "Signing algorithm. Only Ed25519 is supported."
     },
     "kid": {
       "type": "string",
@@ -127,7 +127,7 @@ Key properties:
 The signature MUST be computed over the following canonical input, using the same domain-separated format as `AuthorizationV1`:
 
 ```
-oxdeai:delegation:v1:<canonical_json>
+OXDEAI_DELEGATION_V1\n<canonical_json>
 ```
 
 Where `<canonical_json>` is the deterministic JSON encoding of the `DelegationV1` object **excluding** the `signature` field, with:
@@ -166,7 +166,7 @@ If the parent has no `audience`, verification MUST fail closed (DENY).
 ### 4.3 Expiry
 
 `expiry` MUST be:
-- a valid integer timestamp in milliseconds
+- a valid integer timestamp in seconds
 - strictly greater than `issued_at`
 - less than or equal to parent `AuthorizationV1` expiry
 
@@ -203,7 +203,7 @@ Inputs:
 - `delegation`: the `DelegationV1` artifact to verify
 - `parent_auth`: the resolved `AuthorizationV1` referenced by `parent_auth_hash`
 - `keyset`: the issuer's `KeySet`
-- `now`: current timestamp in ms (injected, not ambient)
+- `now`: current timestamp in seconds (injected, not ambient)
 - `consumed_ids`: optional set of previously seen delegation IDs
 
 Returns: `ALLOW` or `DENY` with a reason list.
@@ -220,7 +220,7 @@ function verifyDelegation(delegation, parent_auth, keyset, now, consumed_ids?):
   if key is null:
     return DENY("unknown kid")
 
-  signing_input = "oxdeai:delegation:v1:" + canonicalJson(delegation without signature)
+  signing_input = "OXDEAI_DELEGATION_V1\n" + canonicalJson(delegation without signature)
   if not Ed25519.verify(key, signing_input, delegation.signature):
     return DENY("invalid signature")
 

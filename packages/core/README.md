@@ -99,7 +99,7 @@ Hash-chained sequence of execution events.
 
 First-class authorization artifact enabling scoped delegation from a parent `AuthorizationV1`.
 A delegation narrows the parent's scope (budget ceiling, tool allowlist, expiry)
-and is cryptographically bound to the parent `auth_id`.
+and is cryptographically bound to the parent `AuthorizationV1` via `parent_auth_hash`.
 
 ### VerificationEnvelopeV1
 
@@ -597,7 +597,7 @@ Stateless verification layer for protocol artifacts.
 * `DelegationV1` - chain-of-trust delegation from principal to sub-agent
 * Scope narrowing enforcement (budget ceiling, tool allowlist, expiry ceiling)
 * `verifyDelegation()` stateless verifier
-* `delegationParentHash` - cryptographic binding to parent `auth_id`
+* `delegationParentHash` - cryptographic binding to the parent `AuthorizationV1` via `parent_auth_hash`
 * Property-based coverage: D-P1 through D-P5 (`delegation.property.test.ts`)
 * Cross-adapter delegation guard tests: G-D1 through G-D3 (`@oxdeai/guard`)
 
