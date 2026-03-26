@@ -526,6 +526,14 @@ console.log(verified.ok, verified.status); // true, "ok" when checkpoints exist
 
 ---
 
+## Benchmarks
+
+Adds ~80–150µs per action (p50) for the full protected path (evaluation + authorization verification).
+
+Negligible compared to multi-second agent loops.
+
+The protected path includes deterministic policy evaluation and authorization verification before execution becomes reachable.
+
 ## Roadmap
 
 ### v0.6 - Stateful Canonical Snapshots (shipped)
