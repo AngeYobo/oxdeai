@@ -1,6 +1,9 @@
 # OxDeAI
 
-[![CI](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml/badge.svg)](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml)
+[![CI](https://github.com/AngeYobo/oxdeai/actions/workflows/ci.yml/badge.svg)](https://github.com/AngeYobo/oxdeai/actions/workflows/ci.yml)
+<!--
+[![Conformance](https://img.shields.io/badge/conformance-139_assertions-green)](...)
+-->
 
 A deterministic authorization layer that decides whether AI agent actions are allowed to execute before any side effect occurs.
 
@@ -286,8 +289,10 @@ Execution is now the critical boundary.
 Prompt guardrails shape behavior.
 OxDeAI makes a deterministic decision before execution.
 
+```
 Prompt guardrails are probabilistic (p < 1).
 Authorization is deterministic (p = 1).
+```
 ---
 
 # Contributing
