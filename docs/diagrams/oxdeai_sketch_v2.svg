@@ -1,8 +1,13 @@
-<svg width="1120" height="210" viewBox="0 0 1120 210" xmlns="http://www.w3.org/2000/svg" style="font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; background: #ffffff;">
+<svg width="1120" height="210" viewBox="0 0 1120 210" xmlns="http://www.w3.org/2000/svg"
+     style="font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;background:#fff">
 
 <defs>
   <filter id="sh" x="-10%" y="-15%" width="120%" height="145%">
     <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#0000001a"/>
+  </filter>
+  <filter id="gl" x="-25%" y="-25%" width="150%" height="150%">
+    <feGaussianBlur stdDeviation="3" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
   </filter>
   <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
     <path d="M1 1.5L9 5L1 8.5" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -13,21 +18,201 @@
   <marker id="ag-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
     <path d="M1 1.5L9 5L1 8.5" fill="none" stroke="#DC2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
   </marker>
+
+  <style>
+    /* All overlays start hidden */
+    .ov { opacity:0; pointer-events:none; }
+
+    /* ── Arrow overlays: stroke-dashoffset draw-in + fade ── */
+    /* dasharray = exact line length so one dash = full line  */
+
+    .ai1 { stroke-dasharray:16; animation:ai1 4s cubic-bezier(.4,0,.2,1) infinite; }
+    .ai2 { stroke-dasharray:10; animation:ai2 4s cubic-bezier(.4,0,.2,1) infinite; }
+    .afe { stroke-dasharray:20; animation:afe 4s cubic-bezier(.4,0,.2,1) infinite; }
+    .afg { stroke-dasharray:36; animation:afg 4s cubic-bezier(.4,0,.2,1) infinite; }
+    .aah { stroke-dasharray:90; animation:aah 4s cubic-bezier(.4,0,.2,1) infinite; }
+    .aap { stroke-dasharray:16; animation:aap 4s cubic-bezier(.4,0,.2,1) infinite; }
+    .aae { stroke-dasharray:16; animation:aae 4s cubic-bezier(.4,0,.2,1) infinite; }
+    .afr { stroke-dasharray:36; animation:afr 4s cubic-bezier(.4,0,.2,1) infinite; }
+    .adh { stroke-dasharray:90; animation:adh 4s cubic-bezier(.4,0,.2,1) infinite; }
+
+    /* ── Box / badge glow overlays ── */
+    .adec { animation:adec 4s cubic-bezier(.4,0,.2,1) infinite; }
+    .aau  { animation:aau  4s cubic-bezier(.4,0,.2,1) infinite; }
+    .aex  { animation:aex  4s cubic-bezier(.4,0,.2,1) infinite; }
+    .abl  { animation:abl  4s cubic-bezier(.4,0,.2,1) infinite; }
+    .aabg { animation:aabg 4s cubic-bezier(.4,0,.2,1) infinite; }
+    .adbg { animation:adbg 4s cubic-bezier(.4,0,.2,1) infinite; }
+
+    /* ─────────────── KEYFRAMES ─────────────── */
+    /* Timing overview (4 s = 100%)
+       0–10%   intro: agent→propose
+       5–16%   intro: propose→decision
+       18–35%  decision pulse (ALLOW eval)
+       32–52%  ALLOW flow: fork-exit, green-vert, horiz
+       40–50%  ALLOW badge glow
+       48–65%  ALLOW downstream: auth glow, auth→pep, pep→exec
+       63–73%  execution box glow
+       58–67%  decision pulse (DENY eval, softer)
+       62–80%  DENY flow: fork-exit, red-vert, horiz
+       70–80%  DENY badge glow
+       78–88%  blocked box glow
+       88–100% hold/reset
+    */
+
+    /* Intro 1: agent→propose (0–10%) */
+    @keyframes ai1 {
+      0%   { stroke-dashoffset:16; opacity:0; }
+      2%   { opacity:.85; }
+      10%  { stroke-dashoffset:0; }
+      16%  { opacity:0; }
+      100% { stroke-dashoffset:16; opacity:0; }
+    }
+
+    /* Intro 2: propose→decision (5–16%) */
+    @keyframes ai2 {
+      0%,5% { stroke-dashoffset:10; opacity:0; }
+      7%    { opacity:.85; }
+      16%   { stroke-dashoffset:0; }
+      22%   { opacity:0; }
+      100%  { stroke-dashoffset:10; opacity:0; }
+    }
+
+    /* Decision pulse — peaks at 27% (ALLOW) and 63% (DENY, softer) */
+    @keyframes adec {
+      0%,18% { opacity:0; }
+      27%    { opacity:.9; }
+      35%    { opacity:0; }
+      57%    { opacity:0; }
+      63%    { opacity:.5; }
+      70%    { opacity:0; }
+      100%   { opacity:0; }
+    }
+
+    /* Fork exit: fires at 32% (ALLOW) and 62% (DENY) */
+    @keyframes afe {
+      0%,31%  { stroke-dashoffset:20; opacity:0; }
+      33%     { opacity:.85; }
+      37%     { stroke-dashoffset:0; }
+      43%     { opacity:0; }
+      61%     { stroke-dashoffset:20; opacity:0; }
+      63%     { opacity:.85; }
+      67%     { stroke-dashoffset:0; }
+      73%     { opacity:0; }
+      100%    { stroke-dashoffset:20; opacity:0; }
+    }
+
+    /* Fork green vertical: junction(y=106)→ALLOW(y=70) draws upward (32–43%) */
+    @keyframes afg {
+      0%,31%  { stroke-dashoffset:36; opacity:0; }
+      33%     { opacity:.9; }
+      43%     { stroke-dashoffset:0; }
+      50%     { opacity:0; }
+      100%    { stroke-dashoffset:36; opacity:0; }
+    }
+
+    /* ALLOW horizontal: (x=500→590, y=70) draws left→right (38–52%) */
+    @keyframes aah {
+      0%,37%  { stroke-dashoffset:90; opacity:0; }
+      39%     { opacity:.9; }
+      52%     { stroke-dashoffset:0; }
+      58%     { opacity:0; }
+      100%    { stroke-dashoffset:90; opacity:0; }
+    }
+
+    /* ALLOW badge glow (40–52%) */
+    @keyframes aabg {
+      0%,39% { opacity:0; }
+      44%    { opacity:.75; }
+      53%    { opacity:0; }
+      100%   { opacity:0; }
+    }
+
+    /* AuthV1 box glow (48–59%) */
+    @keyframes aau {
+      0%,47% { opacity:0; }
+      52%    { opacity:.8; }
+      60%    { opacity:0; }
+      100%   { opacity:0; }
+    }
+
+    /* Auth→PEP (52–60%) */
+    @keyframes aap {
+      0%,51%  { stroke-dashoffset:16; opacity:0; }
+      53%     { opacity:.85; }
+      60%     { stroke-dashoffset:0; }
+      66%     { opacity:0; }
+      100%    { stroke-dashoffset:16; opacity:0; }
+    }
+
+    /* PEP→Exec (58–66%) */
+    @keyframes aae {
+      0%,57%  { stroke-dashoffset:16; opacity:0; }
+      59%     { opacity:.85; }
+      66%     { stroke-dashoffset:0; }
+      72%     { opacity:0; }
+      100%    { stroke-dashoffset:16; opacity:0; }
+    }
+
+    /* Execution box glow (63–73%) */
+    @keyframes aex {
+      0%,62% { opacity:0; }
+      67%    { opacity:.9; }
+      74%    { opacity:0; }
+      100%   { opacity:0; }
+    }
+
+    /* Fork red vertical: junction(y=106)→DENY(y=142) draws downward (62–73%) */
+    @keyframes afr {
+      0%,61%  { stroke-dashoffset:36; opacity:0; }
+      63%     { opacity:.9; }
+      73%     { stroke-dashoffset:0; }
+      79%     { opacity:0; }
+      100%    { stroke-dashoffset:36; opacity:0; }
+    }
+
+    /* DENY horizontal: (x=500→590, y=142) (68–80%) */
+    @keyframes adh {
+      0%,67%  { stroke-dashoffset:90; opacity:0; }
+      69%     { opacity:.9; }
+      80%     { stroke-dashoffset:0; }
+      86%     { opacity:0; }
+      100%    { stroke-dashoffset:90; opacity:0; }
+    }
+
+    /* DENY badge glow (70–82%) */
+    @keyframes adbg {
+      0%,69% { opacity:0; }
+      74%    { opacity:.75; }
+      83%    { opacity:0; }
+      100%   { opacity:0; }
+    }
+
+    /* Blocked box glow (78–88%) */
+    @keyframes abl {
+      0%,77% { opacity:0; }
+      82%    { opacity:.8; }
+      89%    { opacity:0; }
+      100%   { opacity:0; }
+    }
+  </style>
 </defs>
 
-<!-- ── Agent ── -->
+<!-- ═══════════════════════════════════════ -->
+<!-- STATIC DIAGRAM                          -->
+<!-- ═══════════════════════════════════════ -->
+
+<!-- Agent -->
 <rect x="14" y="84" width="88" height="44" rx="7" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.25" filter="url(#sh)"/>
 <text font-size="13" font-weight="500" x="58" y="111" text-anchor="middle" fill="#475569">Agent</text>
-
 <line x1="102" y1="106" x2="118" y2="106" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ag)"/>
 
-<!-- ── Propose Action ── -->
+<!-- Propose Action -->
 <rect x="120" y="84" width="130" height="44" rx="7" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.25" filter="url(#sh)"/>
 <text font-size="13" font-weight="500" x="185" y="111" text-anchor="middle" fill="#475569">Propose Action</text>
-
 <line x1="250" y1="106" x2="260" y2="106" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ag)"/>
 
-<!-- ── Decision Box ── -->
+<!-- Decision Box -->
 <rect x="262" y="48" width="218" height="116" rx="8" fill="#FFFBEB" stroke="#F59E0B" stroke-width="1.75" filter="url(#sh)"/>
 <text font-size="10.5" font-weight="700" x="371" y="78" text-anchor="middle" fill="#92400E" letter-spacing="0.5">DETERMINISTIC AUTHORIZATION</text>
 <text font-size="10.5" font-weight="700" x="371" y="94" text-anchor="middle" fill="#92400E" letter-spacing="0.5">DECISION</text>
@@ -35,42 +220,39 @@
 <text font-size="9" x="371" y="119" text-anchor="middle" fill="#B45309">(intent, state, policy) → ALLOW | DENY</text>
 <text font-size="8.5" x="371" y="136" text-anchor="middle" fill="#D97706">evaluated before execution</text>
 
-<!-- Fork: right edge → junction (110px wide fork zone) -->
+<!-- Fork structure -->
 <line x1="480" y1="106" x2="500" y2="106" stroke="#94A3B8" stroke-width="1.5"/>
 <circle cx="500" cy="106" r="2.5" fill="#94A3B8"/>
-<!-- Vertical fork: green top, red bottom -->
 <line x1="500" y1="70" x2="500" y2="106" stroke="#16A34A" stroke-width="1.5"/>
 <line x1="500" y1="106" x2="500" y2="142" stroke="#DC2626" stroke-width="1.5"/>
 
-<!-- ALLOW arrow + pill badge (above arrow, in clear fork zone) -->
+<!-- ALLOW branch -->
 <line x1="500" y1="70" x2="590" y2="70" stroke="#16A34A" stroke-width="1.75" marker-end="url(#ag-g)"/>
 <rect x="518" y="46" width="54" height="19" rx="9" fill="#16A34A" filter="url(#sh)"/>
-<text font-size="10" font-weight="700" x="545" y="60" text-anchor="middle" fill="#ffffff" letter-spacing="0.5">ALLOW</text>
+<text font-size="10" font-weight="700" x="545" y="60" text-anchor="middle" fill="#fff" letter-spacing="0.5">ALLOW</text>
 
-<!-- DENY arrow + pill badge (below arrow, in clear fork zone) -->
+<!-- DENY branch -->
 <line x1="500" y1="142" x2="590" y2="142" stroke="#DC2626" stroke-width="1.75" marker-end="url(#ag-r)"/>
 <rect x="520" y="148" width="46" height="19" rx="9" fill="#DC2626" filter="url(#sh)"/>
-<text font-size="10" font-weight="700" x="543" y="162" text-anchor="middle" fill="#ffffff" letter-spacing="0.5">DENY</text>
+<text font-size="10" font-weight="700" x="543" y="162" text-anchor="middle" fill="#fff" letter-spacing="0.5">DENY</text>
 
-<!-- ── AuthorizationV1 ── -->
+<!-- AuthorizationV1 -->
 <rect x="592" y="48" width="180" height="44" rx="7" fill="#F0FDF4" stroke="#22C55E" stroke-width="1.5" filter="url(#sh)"/>
 <text font-size="12.5" font-weight="700" x="682" y="67" text-anchor="middle" fill="#15803D">AuthorizationV1</text>
 <text font-size="8.5" x="682" y="83" text-anchor="middle" fill="#166534">signed · scoped · state-bound · expiring</text>
-
 <line x1="772" y1="70" x2="788" y2="70" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ag)"/>
 
-<!-- ── PEP ── -->
+<!-- PEP -->
 <rect x="790" y="48" width="148" height="44" rx="7" fill="#F0FDF4" stroke="#22C55E" stroke-width="1.25" filter="url(#sh)"/>
 <text font-size="12.5" font-weight="600" x="864" y="67" text-anchor="middle" fill="#15803D">PEP</text>
 <text font-size="8.5" x="864" y="83" text-anchor="middle" fill="#166534">verifyAuthorization()</text>
-
 <line x1="938" y1="70" x2="954" y2="70" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ag)"/>
 
-<!-- ── Execution ── -->
+<!-- Execution -->
 <rect x="956" y="48" width="112" height="44" rx="7" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5" filter="url(#sh)"/>
 <text font-size="13" font-weight="600" x="1012" y="75" text-anchor="middle" fill="#1D4ED8">Execution</text>
 
-<!-- ── Execution Blocked ── -->
+<!-- Execution Blocked -->
 <rect x="592" y="120" width="180" height="44" rx="7" fill="#FEF2F2" stroke="#F87171" stroke-width="1.5" filter="url(#sh)"/>
 <text font-size="12.5" font-weight="700" x="682" y="139" text-anchor="middle" fill="#DC2626">Execution Blocked</text>
 <text font-size="8.5" x="682" y="155" text-anchor="middle" fill="#991B1B">fail-closed · no side effect</text>
@@ -78,5 +260,52 @@
 <!-- Caption -->
 <line x1="40" y1="181" x2="1080" y2="181" stroke="#E2E8F0" stroke-width="0.75"/>
 <text font-size="9.5" x="560" y="196" text-anchor="middle" fill="#94A3B8" letter-spacing="0.2">Execution is unreachable without valid authorization · artifacts are verifiable offline</text>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- ANIMATED OVERLAYS (all start opacity:0) -->
+<!-- ═══════════════════════════════════════ -->
+
+<!-- Intro flow: agent→propose→decision (slate bright) -->
+<line class="ov ai1" x1="102" y1="106" x2="118" y2="106" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+<line class="ov ai2" x1="250" y1="106" x2="260" y2="106" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+
+<!-- Decision pulse glow (amber ring, fires twice per loop) -->
+<rect class="ov adec" x="260" y="46" width="222" height="120" rx="9" fill="none" stroke="#F59E0B" stroke-width="5" filter="url(#gl)"/>
+
+<!-- Fork exit (fires at ALLOW and DENY phases) -->
+<line class="ov afe" x1="480" y1="106" x2="500" y2="106" stroke="#64748B" stroke-width="3" stroke-linecap="round"/>
+
+<!-- ALLOW: green vertical (junction y=106 → ALLOW end y=70, draws upward) -->
+<line class="ov afg" x1="500" y1="106" x2="500" y2="70" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
+
+<!-- ALLOW: horizontal flow -->
+<line class="ov aah" x1="500" y1="70" x2="590" y2="70" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
+
+<!-- ALLOW badge glow -->
+<rect class="ov aabg" x="514" y="42" width="62" height="27" rx="11" fill="#16A34A" filter="url(#gl)"/>
+
+<!-- AuthV1 box glow -->
+<rect class="ov aau" x="592" y="48" width="180" height="44" rx="7" fill="none" stroke="#22C55E" stroke-width="5" filter="url(#gl)"/>
+
+<!-- Auth→PEP flow -->
+<line class="ov aap" x1="772" y1="70" x2="788" y2="70" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
+
+<!-- PEP→Exec flow -->
+<line class="ov aae" x1="938" y1="70" x2="954" y2="70" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/>
+
+<!-- Execution box glow (blue) -->
+<rect class="ov aex" x="956" y="48" width="112" height="44" rx="7" fill="none" stroke="#3B82F6" stroke-width="5" filter="url(#gl)"/>
+
+<!-- DENY: red vertical (junction y=106 → DENY end y=142, draws downward) -->
+<line class="ov afr" x1="500" y1="106" x2="500" y2="142" stroke="#EF4444" stroke-width="3" stroke-linecap="round"/>
+
+<!-- DENY: horizontal flow -->
+<line class="ov adh" x1="500" y1="142" x2="590" y2="142" stroke="#EF4444" stroke-width="3" stroke-linecap="round"/>
+
+<!-- DENY badge glow -->
+<rect class="ov adbg" x="516" y="144" width="54" height="27" rx="11" fill="#DC2626" filter="url(#gl)"/>
+
+<!-- Blocked box glow (red) -->
+<rect class="ov abl" x="592" y="120" width="180" height="44" rx="7" fill="none" stroke="#EF4444" stroke-width="5" filter="url(#gl)"/>
 
 </svg>
