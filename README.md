@@ -17,7 +17,9 @@ Control execution, not just behavior.
 
 ---
 
-![Authorization Decision Flow](./docs/diagrams/oxdeai_sketch_v2.svg)
+<p align="center">
+  <img src="./docs/diagrams/oxdeai_sketch_v2.svg" alt="OxDeAI authorization decision flow" width="100%" style="max-width:1100px;" />
+</p>
 
 ---
 
