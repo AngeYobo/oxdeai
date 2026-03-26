@@ -12,26 +12,24 @@ Deterministic Execution Authorization Layer for Autonomous Systems
 
 `@oxdeai/core` is a stable protocol library.
 
-Current protocol stack line: **v1.6.x**.
+Current protocol stack line: **v1.6.x**. The first published release on this line is `1.6.1`; `1.6.0` was tagged in the repository but not published.
 
-Version 1.5.x preserves the stateless verification surface:
+v1.6.x adds on top of the preserved v1.5.x verification surface:
 
-- verifySnapshot
-- verifyAuditEvents
-- verifyEnvelope
-- verifyAuthorization
-- VerificationResult schema
-- VerificationEnvelopeV1 format
+- `DelegationV1` — first-class delegation artifact
+- `verifyDelegation()` / `verifyDelegationChain()` — stateless delegation verifiers
+- `createDelegation()` — delegation signing helper
+- Scope narrowing enforcement (budget ceiling, tool allowlist, expiry ceiling)
 
-v1.2 baseline additions (preserved in v1.3.x):
+Preserved stateless verification surface (v1.2+):
 
-- non-forgeable verification (Ed25519)
-- `alg` / `kid` signature metadata
-- KeySet-based issuer/key resolution
+- `verifySnapshot`, `verifyAuditEvents`, `verifyEnvelope`, `verifyAuthorization`
+- `VerificationResult` schema, `VerificationEnvelopeV1` format
+- Ed25519 signatures, `alg` / `kid` fields, KeySet-based key resolution
 
 Validation status:
 
-- conformance suite: **94 assertions passing**
+- conformance suite: **139 assertions passing**
 - working demos (all produce `ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`):
   - `examples/openai-tools` (protocol reference)
   - `examples/langgraph`
@@ -245,6 +243,8 @@ import { PolicyEngine, verifyEnvelope } from "@oxdeai/core";
 const decision = engine.evaluate(intent, state);
 const result = verifyEnvelope(envelopeBytes);
 if (result.ok) console.log("artifact verified");
+// result.ok is true only when the envelope contains a STATE_CHECKPOINT.
+// Set checkpoint_every_n_events: 1 (or N) in the engine options to emit one.
 ```
 
 ---
@@ -270,7 +270,7 @@ npm install @oxdeai/core
 
 ## Core Model
 
-![OxDeAI Core - Protocol Responsibilities](../../docs/diagrams/authorization_policy_flow_v1_6.svg)
+![OxDeAI Core - Protocol Responsibilities](../../docs/diagrams/core-model.svg)
 
 Diagram source/editing policy:
 - [`docs/diagrams/README.md`](../../docs/diagrams/README.md)
@@ -430,7 +430,7 @@ const rel = engine.evaluatePure(releaseIntent, out.nextState);
 * Sorted key hashing
 * Hash-chained audit log
 * Strict-mode clock injection
-* Property-based determinism tests (seeded, no deps): I1–I5 (`property.test.ts`), delegation chain D-P1–D-P5 (`delegation.property.test.ts`), cross-adapter CA-1–CA-10 (`@oxdeai/compat`)
+* Property-based determinism tests (seeded, no deps): I1–I5 (`property.test.ts`), D-1–D-6 decision-path determinism (`property.decision.test.ts`), delegation chain D-P1–D-P5 (`delegation.property.test.ts`), cross-adapter CA-1–CA-10 (`@oxdeai/compat`)
 
 ---
 
@@ -517,6 +517,7 @@ const engine = new PolicyEngine({
   checkpoint_every_n_events: 2
 });
 const first = engine.evaluatePure(intent1, state);
+if (first.decision !== "ALLOW") throw new Error(first.reasons.join(", "));
 const out = engine.evaluatePure(intent2, first.nextState);
 const events = engine.audit.snapshot();
 const verified = verifyAuditEvents(events, { policyId: engine.computePolicyId() }); // strict by default
@@ -596,7 +597,7 @@ Stateless verification layer for protocol artifacts.
 
 * `DelegationV1` - chain-of-trust delegation from principal to sub-agent
 * Scope narrowing enforcement (budget ceiling, tool allowlist, expiry ceiling)
-* `verifyDelegation()` stateless verifier
+* `verifyDelegation()` / `verifyDelegationChain()` stateless verifiers
 * `delegationParentHash` - cryptographic binding to the parent `AuthorizationV1` via `parent_auth_hash`
 * Property-based coverage: D-P1 through D-P5 (`delegation.property.test.ts`)
 * Cross-adapter delegation guard tests: G-D1 through G-D3 (`@oxdeai/guard`)

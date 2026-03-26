@@ -19,7 +19,9 @@ This project follows Semantic Versioning.
 
 ### Notes
 
-- No protocol or API changes. This is a correctness and test coverage patch.
+- Version 1.6.0 was tagged in the repository but not published to npm.
+- Version 1.6.1 is the first published release on the 1.6 line.
+- No protocol semantic change from the current 1.6 protocol surface. This is a correctness, safety, and validation hardening release, including determinism guarantees, non-mutating evaluation, and verification fixes.
 
 ---
 

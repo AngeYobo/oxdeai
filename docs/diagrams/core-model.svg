@@ -1,151 +1,139 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1420" viewBox="0 0 960 1420" role="img" aria-label="OxDeAI Core — Protocol Flow">
-  <rect width="960" height="1420" fill="#ffffff"/>
+<svg width="760" viewBox="0 0 760 750" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="a-gray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="a-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="a-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
 
-  <defs>
-    <marker id="arr"   viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/></marker>
-    <marker id="arr-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker>
-    <marker id="arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#15803d"/></marker>
-    <marker id="arr-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#b45309"/></marker>
-    <marker id="arr-i" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#4338ca"/></marker>
-    <marker id="arr-s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/></marker>
-    <marker id="arr-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#0e7490"/></marker>
-    <marker id="arr-p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#7c3aed"/></marker>
-  </defs>
+<!-- ── Legend ─────────────────────────────────────────── -->
+<text font-size="10" font-family="Arial,sans-serif" font-weight="600" x="10" y="14" fill="#16a34a">ALLOW →</text>
+<text font-size="10" font-family="Arial,sans-serif" x="66" y="14" fill="#5F5E5A">AuthorizationV1 → (Delegation?) → PEP (verification) → Execution</text>
+<text font-size="10" font-family="Arial,sans-serif" font-weight="600" x="10" y="26" fill="#dc2626">DENY →</text>
+<text font-size="10" font-family="Arial,sans-serif" x="52" y="26" fill="#5F5E5A">fail-closed (no execution)</text>
 
-  <!-- ── 1. Agent Runtime ─────────────────────────────────────────── -->
-  <ellipse cx="480" cy="52" rx="130" ry="28" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
-  <text x="480" y="57" font-family="Inter,Arial,sans-serif" font-size="15" fill="#0f172a" font-weight="600" text-anchor="middle">Agent Runtime</text>
+<!-- ── A: Agent Runtime ───────────────────────────────── -->
+<rect x="145" y="36" width="170" height="44" rx="8" fill="#D3D1C7" stroke="#5F5E5A" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="230" y="63" text-anchor="middle" fill="#2C2C2A">Agent Runtime</text>
 
-  <line x1="480" y1="80" x2="480" y2="106" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+<line x1="230" y1="80" x2="230" y2="112" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
 
-  <!-- ── 2. (intent, state, policy) ──────────────────────────────── -->
-  <rect x="260" y="108" width="440" height="58" rx="8" fill="#f1f5f9" stroke="#334155" stroke-width="2"/>
-  <text x="480" y="143" font-family="Inter,Arial,sans-serif" font-size="16" fill="#0f172a" font-weight="500" text-anchor="middle" font-style="italic">(intent, state, policy)</text>
+<!-- ── B: Input tuple ─────────────────────────────────── -->
+<rect x="112" y="114" width="236" height="44" rx="8" fill="#D3D1C7" stroke="#5F5E5A" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="230" y="141" text-anchor="middle" fill="#2C2C2A">(intent, state, policy)</text>
 
-  <line x1="480" y1="166" x2="480" y2="196" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+<line x1="230" y1="158" x2="230" y2="192" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
 
-  <!-- ── 3. PolicyEngine ──────────────────────────────────────────── -->
-  <rect x="80" y="198" width="800" height="138" rx="12" fill="#ecfdf5" stroke="#166534" stroke-width="3"/>
-  <text x="480" y="236" font-family="Inter,Arial,sans-serif" font-size="20" fill="#14532d" font-weight="700" text-anchor="middle">PolicyEngine</text>
-  <text x="480" y="258" font-family="Inter,Arial,sans-serif" font-size="13" fill="#14532d" text-anchor="middle">deterministic · fail-closed · evaluatePure(intent, state)  ·  policy bound in engine</text>
-  <text x="480" y="278" font-family="Inter,Arial,sans-serif" font-size="12" fill="#374151" text-anchor="middle">policyId  ·  stateHash  ·  auditHeadHash</text>
-  <text x="480" y="302" font-family="Inter,Arial,sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Budget · Velocity · Replay · Concurrency · Recursion · ToolAmplification · KillSwitch · Allowlist</text>
+<!-- ── C: PolicyEngine ────────────────────────────────── -->
+<rect x="108" y="194" width="244" height="68" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="230" y="213" text-anchor="middle" fill="#26215C">PolicyEngine</text>
+<text font-size="11" font-family="Arial,sans-serif" x="230" y="233" text-anchor="middle" fill="#3C3489">(intent, state, policy)</text>
+<text font-size="11" font-family="Arial,sans-serif" x="230" y="251" text-anchor="middle" fill="#3C3489">→ deterministic authorization decision</text>
 
-  <!-- DENY branch -->
-  <path d="M 220 336 L 145 388" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3" fill="none" marker-end="url(#arr-r)"/>
-  <text x="148" y="355" font-family="Inter,Arial,sans-serif" font-size="12" fill="#dc2626" font-weight="700" text-anchor="end">DENY</text>
+<!-- ALLOW arrow -->
+<line x1="230" y1="262" x2="230" y2="304" stroke="#16a34a" stroke-width="2" marker-end="url(#a-green)"/>
+<text font-size="12" font-family="Arial,sans-serif" font-weight="700" x="244" y="280" fill="#16a34a">ALLOW</text>
 
-  <!-- ALLOW branch -->
-  <path d="M 740 336 L 668 388" stroke="#15803d" stroke-width="2.5" fill="none" marker-end="url(#arr-g)"/>
-  <text x="754" y="355" font-family="Inter,Arial,sans-serif" font-size="12" fill="#15803d" font-weight="700" text-anchor="start">ALLOW</text>
+<!-- DENY arrow -->
+<path d="M 352 228 L 595 228 L 595 286" stroke="#dc2626" stroke-width="2" fill="none" marker-end="url(#a-red)"/>
+<text font-size="12" font-family="Arial,sans-serif" font-weight="700" x="472" y="220" text-anchor="middle" fill="#dc2626">DENY</text>
 
-  <!-- ── 4a. DENY-PDP ─────────────────────────────────────────────── -->
-  <rect x="30" y="388" width="230" height="90" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,3"/>
-  <text x="145" y="425" font-family="Inter,Arial,sans-serif" font-size="15" fill="#991b1b" font-weight="700" text-anchor="middle">DENY (policy)</text>
-  <text x="145" y="447" font-family="Inter,Arial,sans-serif" font-size="12" fill="#b91c1c" text-anchor="middle">no side effect</text>
-  <text x="145" y="463" font-family="Inter,Arial,sans-serif" font-size="11" fill="#b91c1c" text-anchor="middle">audit recorded</text>
+<!-- ── D: DENY node ───────────────────────────────────── -->
+<rect x="520" y="288" width="150" height="66" rx="8" fill="#F5C4B3" stroke="#993C1D" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="595" y="312" text-anchor="middle" fill="#4A1B0C">DENY</text>
+<text font-size="12" font-family="Arial,sans-serif" x="595" y="336" text-anchor="middle" fill="#712B13">no execution</text>
 
-  <!-- ── 4b. AuthorizationV1 ─────────────────────────────────────── -->
-  <rect x="520" y="388" width="300" height="90" rx="8" fill="#eef2ff" stroke="#4338ca" stroke-width="2"/>
-  <text x="670" y="421" font-family="Inter,Arial,sans-serif" font-size="16" fill="#312e81" font-weight="700" text-anchor="middle">AuthorizationV1</text>
-  <text x="670" y="441" font-family="Inter,Arial,sans-serif" font-size="11" fill="#4338ca" text-anchor="middle">intent_hash · state_hash · policy_id</text>
-  <text x="670" y="458" font-family="Inter,Arial,sans-serif" font-size="11" fill="#4338ca" text-anchor="middle">issuer · audience · Ed25519 sig · expiry</text>
+<!-- ── E: AuthorizationV1 ─────────────────────────────── -->
+<rect x="100" y="304" width="260" height="58" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="230" y="325" text-anchor="middle" fill="#26215C">AuthorizationV1</text>
+<text font-size="10" font-family="Arial,sans-serif" x="230" y="345" text-anchor="middle" fill="#534AB7">signed · scoped · state-bound · short-lived</text>
 
-  <line x1="670" y1="478" x2="670" y2="506" stroke="#4338ca" stroke-width="2" marker-end="url(#arr-i)"/>
+<line x1="230" y1="362" x2="230" y2="382" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
 
-  <!-- ── 5. Delegation fork diamond ──────────────────────────────── -->
-  <polygon points="670,507 716,535 670,563 624,535" fill="#fffbeb" stroke="#b45309" stroke-width="2"/>
-  <text x="670" y="540" font-family="Inter,Arial,sans-serif" font-size="10" fill="#92400e" font-weight="600" text-anchor="middle">Delegation?</text>
+<!-- E → Audit chain -->
+<path d="M 360 326 L 440 326 L 440 420 L 475 420" stroke="#5F5E5A" stroke-width="1.5" fill="none" marker-end="url(#a-gray)"/>
 
-  <!-- "Yes" exit (left) → DelegationV1 -->
-  <path d="M 624 535 L 500 580" stroke="#b45309" stroke-width="2" fill="none" marker-end="url(#arr-a)"/>
-  <text x="553" y="552" font-family="Inter,Arial,sans-serif" font-size="11" fill="#b45309" font-weight="600" text-anchor="middle">Yes</text>
+<!-- ── F: Delegation needed? ──────────────────────────── -->
+<polygon points="230,382 330,410 230,438 130,410" fill="#D3D1C7" stroke="#5F5E5A" stroke-width="0.75"/>
+<text font-size="13" font-family="Arial,sans-serif" font-weight="500" x="230" y="414" text-anchor="middle" fill="#2C2C2A">Delegation needed?</text>
 
-  <!-- "No" exit (right) → verifyAuthorization -->
-  <line x1="716" y1="535" x2="716" y2="740" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr)"/>
-  <text x="724" y="556" font-family="Inter,Arial,sans-serif" font-size="11" fill="#475569">No</text>
+<!-- F → H: No -->
+<path d="M 130 410 L 105 410 L 105 466" stroke="#5F5E5A" stroke-width="1.5" fill="none" marker-end="url(#a-gray)"/>
+<text font-size="12" font-family="Arial,sans-serif" x="120" y="402" text-anchor="end" fill="#5F5E5A">No</text>
 
-  <!-- ── 6. DelegationV1 ──────────────────────────────────────────── -->
-  <rect x="350" y="580" width="300" height="82" rx="8" fill="#fefce8" stroke="#b45309" stroke-width="2"/>
-  <text x="500" y="610" font-family="Inter,Arial,sans-serif" font-size="15" fill="#78350f" font-weight="700" text-anchor="middle">DelegationV1</text>
-  <text x="500" y="629" font-family="Inter,Arial,sans-serif" font-size="11" fill="#b45309" text-anchor="middle">narrowed scope · single-hop</text>
-  <text x="500" y="646" font-family="Inter,Arial,sans-serif" font-size="11" fill="#b45309" text-anchor="middle">parent_auth_hash · Ed25519 sig</text>
+<!-- F → G: Yes -->
+<line x1="330" y1="410" x2="330" y2="466" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
+<text font-size="12" font-family="Arial,sans-serif" x="338" y="402" fill="#5F5E5A">Yes</text>
 
-  <!-- DelegationV1 → verifyDelegationChain -->
-  <path d="M 390 662 L 249 740" stroke="#b45309" stroke-width="2" fill="none" marker-end="url(#arr-a)"/>
+<!-- ── H: Authorized execution intent ─────────────── -->
+<rect x="12" y="466" width="186" height="44" rx="8" fill="#D3D1C7" stroke="#5F5E5A" stroke-width="0.75"/>
+<text font-size="13" font-family="Arial,sans-serif" font-weight="500" x="105" y="493" text-anchor="middle" fill="#2C2C2A">Authorized execution intent</text>
 
-  <!-- ── 7. PEP boundary ──────────────────────────────────────────── -->
-  <rect x="60" y="720" width="840" height="134" rx="12" fill="#f0fdf4" stroke="#15803d" stroke-width="3"/>
-  <text x="480" y="737" font-family="Inter,Arial,sans-serif" font-size="12" fill="#166534" font-weight="700" text-anchor="middle">Execution Boundary — PEP</text>
+<!-- ── G: DelegationV1 ───────────────────────────────── -->
+<rect x="220" y="466" width="220" height="58" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="330" y="485" text-anchor="middle" fill="#26215C">DelegationV1</text>
+<text font-size="10" font-family="Arial,sans-serif" x="330" y="505" text-anchor="middle" fill="#534AB7">parent-bound · single-hop · narrowing-only</text>
 
-  <!-- verifyDelegationChain (left inside PEP) -->
-  <rect x="88" y="742" width="322" height="84" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
-  <text x="249" y="779" font-family="Inter,Arial,sans-serif" font-size="14" fill="#14532d" font-weight="600" text-anchor="middle">verifyDelegationChain()</text>
-  <text x="249" y="798" font-family="Inter,Arial,sans-serif" font-size="11" fill="#166534" text-anchor="middle">parent + delegation · scope · expiry · sig</text>
+<!-- G → Audit chain -->
+<path d="M 440 488 L 440 430 L 475 430" stroke="#5F5E5A" stroke-width="1.5" fill="none" marker-end="url(#a-gray)"/>
 
-  <!-- verifyAuthorization (right inside PEP) -->
-  <rect x="550" y="742" width="322" height="84" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
-  <text x="711" y="779" font-family="Inter,Arial,sans-serif" font-size="14" fill="#14532d" font-weight="600" text-anchor="middle">verifyAuthorization()</text>
-  <text x="711" y="798" font-family="Inter,Arial,sans-serif" font-size="11" fill="#166534" text-anchor="middle">direct path · sig · expiry · audience</text>
+<!-- H → PEP -->
+<line x1="105" y1="510" x2="105" y2="547" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
 
-  <text x="480" y="843" font-family="Inter,Arial,sans-serif" font-size="10" fill="#166534" font-style="italic" text-anchor="middle">execution unreachable without verification</text>
+<!-- G → PEP -->
+<path d="M 330 524 L 330 547" stroke="#5F5E5A" stroke-width="1.5" fill="none" marker-end="url(#a-gray)"/>
 
-  <!-- PEP → DENY-PEP (invalid) -->
-  <line x1="200" y1="854" x2="200" y2="896" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arr-r)"/>
-  <text x="163" y="877" font-family="Inter,Arial,sans-serif" font-size="11" fill="#dc2626" text-anchor="end">invalid</text>
+<!-- ── Mandatory Execution Boundary ───────────────────── -->
+<rect x="10" y="520" width="430" height="114" rx="8" fill="none" stroke="#888780" stroke-width="1" stroke-dasharray="6 3"/>
+<text font-size="11" font-family="Arial,sans-serif" x="22" y="534" fill="#888780">Mandatory Execution Boundary (PEP)</text>
 
-  <!-- PEP → Execution (verified) -->
-  <line x1="760" y1="854" x2="760" y2="896" stroke="#15803d" stroke-width="2.5" marker-end="url(#arr-g)"/>
-  <text x="768" y="877" font-family="Inter,Arial,sans-serif" font-size="11" fill="#15803d">verified</text>
+<!-- PEP inner node -->
+<rect x="20" y="548" width="410" height="72" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="225" y="569" text-anchor="middle" fill="#042C53">Policy Enforcement Point (PEP)</text>
+<text font-size="11" font-family="Arial,sans-serif" font-style="italic" x="225" y="587" text-anchor="middle" fill="#4a7fa5">authorization enforcement (fail-closed)</text>
+<text font-size="11" font-family="Arial,sans-serif" x="225" y="606" text-anchor="middle" fill="#185FA5">verifyAuthorization · verifyDelegationChain</text>
 
-  <!-- ── 8a. DENY-PEP ─────────────────────────────────────────────── -->
-  <rect x="82" y="896" width="236" height="80" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,3"/>
-  <text x="200" y="931" font-family="Inter,Arial,sans-serif" font-size="14" fill="#991b1b" font-weight="700" text-anchor="middle">DENY (verification)</text>
-  <text x="200" y="952" font-family="Inter,Arial,sans-serif" font-size="11" fill="#b91c1c" text-anchor="middle">fail-closed · no execution</text>
+<!-- Constraint label -->
+<text font-size="11" font-family="Arial,sans-serif" font-style="italic" x="225" y="646" text-anchor="middle" fill="#888780">Execution is unreachable unless authorization is verified</text>
 
-  <!-- ── 8b. Execution ────────────────────────────────────────────── -->
-  <ellipse cx="750" cy="936" rx="110" ry="40" fill="#ecfdf5" stroke="#15803d" stroke-width="2.5"/>
-  <text x="750" y="941" font-family="Inter,Arial,sans-serif" font-size="16" fill="#14532d" font-weight="700" text-anchor="middle">Execution</text>
+<!-- PEP → Execution -->
+<line x1="205" y1="620" x2="205" y2="650" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
 
-  <!-- ── Audit rails ──────────────────────────────────────────────── -->
-  <!-- Left rail: DENY-PDP + DENY-PEP → Audit chain left edge -->
-  <path d="M 30 478 L 12 478 L 12 1099 L 88 1099"
-        stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#arr-s)"/>
-  <!-- DENY-PEP junction into left rail -->
-  <line x1="82" y1="936" x2="12" y2="936" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+<!-- ── K: Execution ───────────────────────────────────── -->
+<rect x="128" y="652" width="155" height="44" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="205" y="679" text-anchor="middle" fill="#04342C">Execution</text>
 
-  <!-- Right: Execution → Audit chain -->
-  <line x1="750" y1="976" x2="750" y2="1067" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-s)"/>
+<!-- D → Audit chain -->
+<line x1="595" y1="354" x2="595" y2="392" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
 
-  <!-- ── 9. Evidence subgraph ────────────────────────────────────── -->
-  <rect x="60" y="1044" width="840" height="270" rx="12" fill="#faf5ff" stroke="#7c3aed" stroke-width="2.5"/>
-  <text x="480" y="1062" font-family="Inter,Arial,sans-serif" font-size="12" fill="#6d28d9" font-weight="700" text-anchor="middle">Verifiable Evidence</text>
+<!-- ── L: Audit chain ─────────────────────────────────── -->
+<rect x="475" y="392" width="240" height="58" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="595" y="412" text-anchor="middle" fill="#04342C">Audit chain</text>
+<text font-size="10" font-family="Arial,sans-serif" font-style="italic" x="595" y="432" text-anchor="middle" fill="#085041">all decisions (ALLOW / DENY) are recorded</text>
 
-  <!-- Audit chain -->
-  <rect x="88" y="1068" width="784" height="62" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
-  <text x="480" y="1098" font-family="Inter,Arial,sans-serif" font-size="15" fill="#4c1d95" font-weight="600" text-anchor="middle">Audit chain</text>
-  <text x="480" y="1116" font-family="Inter,Arial,sans-serif" font-size="11" fill="#6d28d9" text-anchor="middle">hash-chained events · auditHeadHash  ·  all decisions (ALLOW + DENY) recorded</text>
+<line x1="595" y1="450" x2="595" y2="480" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
 
-  <line x1="480" y1="1130" x2="480" y2="1148" stroke="#7c3aed" stroke-width="2" marker-end="url(#arr-p)"/>
+<!-- ── M: Canonical Snapshot ──────────────────────────── -->
+<rect x="488" y="482" width="214" height="44" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="595" y="509" text-anchor="middle" fill="#04342C">Canonical Snapshot</text>
 
-  <!-- Canonical Snapshot -->
-  <rect x="88" y="1148" width="784" height="62" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
-  <text x="480" y="1178" font-family="Inter,Arial,sans-serif" font-size="15" fill="#4c1d95" font-weight="600" text-anchor="middle">Canonical Snapshot</text>
-  <text x="480" y="1196" font-family="Inter,Arial,sans-serif" font-size="11" fill="#6d28d9" text-anchor="middle">stateHash · formatVersion: 1 · policyId-bound</text>
+<line x1="595" y1="526" x2="595" y2="562" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
 
-  <line x1="480" y1="1210" x2="480" y2="1228" stroke="#7c3aed" stroke-width="2" marker-end="url(#arr-p)"/>
+<!-- ── N: VerificationEnvelopeV1 ──────────────────────── -->
+<rect x="482" y="564" width="226" height="44" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="595" y="591" text-anchor="middle" fill="#04342C">VerificationEnvelopeV1</text>
 
-  <!-- VerificationEnvelopeV1 -->
-  <rect x="88" y="1228" width="784" height="62" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
-  <text x="480" y="1258" font-family="Inter,Arial,sans-serif" font-size="15" fill="#4c1d95" font-weight="600" text-anchor="middle">VerificationEnvelopeV1</text>
-  <text x="480" y="1276" font-family="Inter,Arial,sans-serif" font-size="11" fill="#6d28d9" text-anchor="middle">snapshot + audit events + policyId</text>
+<line x1="595" y1="608" x2="595" y2="648" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
 
-  <!-- Evidence → Stateless verification -->
-  <line x1="480" y1="1314" x2="480" y2="1332" stroke="#0e7490" stroke-width="2.5" marker-end="url(#arr-c)"/>
-
-  <!-- ── 10. Stateless verification ──────────────────────────────── -->
-  <rect x="60" y="1332" width="840" height="76" rx="10" fill="#ecfeff" stroke="#0e7490" stroke-width="2.5"/>
-  <text x="480" y="1364" font-family="Inter,Arial,sans-serif" font-size="15" fill="#155e75" font-weight="600" text-anchor="middle">verifyEnvelope()  ·  verifyAuthorization()  ·  verifySnapshot()</text>
-  <text x="480" y="1386" font-family="Inter,Arial,sans-serif" font-size="12" fill="#0e7490" text-anchor="middle">ok  ·  invalid  ·  inconclusive  —  stateless  ·  portable  ·  offline</text>
+<!-- ── O: Stateless verification ──────────────────────── -->
+<rect x="450" y="650" width="290" height="72" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="595" y="671" text-anchor="middle" fill="#04342C">Stateless verification</text>
+<text font-size="11" font-family="Arial,sans-serif" x="595" y="690" text-anchor="middle" fill="#085041">verifySnapshot · verifyAuditEvents · verifyEnvelope</text>
+<text font-size="11" font-family="Arial,sans-serif" x="595" y="708" text-anchor="middle" fill="#085041">verifyAuthorization · verifyDelegationChain</text>
 
 </svg>
