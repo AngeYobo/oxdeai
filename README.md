@@ -1,24 +1,29 @@
 # OxDeAI
 
+[![CI](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml/badge.svg)](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml)
+
 A deterministic authorization layer that decides whether AI agent actions are allowed to execute before any side effect occurs.
 
-Agents can call APIs, provision infrastructure, and move money.  
-Most systems rely on prompts or checks after the fact.  
+Same intent + state + policy → same decision, everywhere.
+
+Agents can call APIs, provision infrastructure, and move money.
+Most systems rely on prompts or checks after the fact.
 OxDeAI blocks or authorizes execution **before anything happens**.
 
 Control execution, not just behavior.
 
 ---
 
-![Authorization Decision Flow](./docs/diagrams/authorization-decision-flow.svg)
+![Authorization Decision Flow](./docs/diagrams/oxdeai_sketch_v2.svg)
 
 ---
 
 ## TL;DR
 
-Agents propose actions. OxDeAI makes a deterministic decision before execution.
+Agents propose actions.
+OxDeAI decides — deterministically — whether execution is allowed.
 
-No valid authorization → no execution.
+No authorization → no execution.
 
 ---
 
@@ -36,16 +41,10 @@ Agent proposed the same action twice. Executed exactly once. Replay blocked at t
 git clone https://github.com/AngeYobo/oxdeai.git
 cd oxdeai && pnpm install && pnpm build
 pnpm -C examples/execution-boundary-demo start
+# open http://localhost:3001
 ```
 
 Runs in under 2 minutes. No config required.
-
-For a visual two-panel UI showing the authorization boundary in action:
-
-```bash
-pnpm -C examples/execution-boundary-demo start
-# open http://localhost:3001
-```
 
 Step through the scenario: agent proposes `charge_wallet(user_123, 10)` twice.
 First is allowed. Second is blocked at the authorization boundary before execution.
@@ -67,8 +66,10 @@ This runs a simple OpenClaw agent that provisions a GPU and queries a database, 
 
 ## Why devs care
 
-* prevents unintended side effects before they happen
-* deterministic decisions (same input → same result)
+* stops execution before side effects occur
+* prevents replay, loops, and budget leaks at the boundary
+* guarantees reproducible decisions (same input → same result)
+* produces verifiable authorization artifacts
 * works across LangGraph, OpenAI Agents SDK, CrewAI, AutoGen, OpenClaw
 
 ---
@@ -79,7 +80,7 @@ This runs a simple OpenClaw agent that provisions a GPU and queries a database, 
 * budget keeps going after limit
 * permissions leak across agents
 * duplicate / replayed actions
-* decisions you cannot explain or prove
+* decisions that cannot be reproduced or verified
 
 ---
 
@@ -93,7 +94,7 @@ Logs explain what happened. Authorization artifacts prove what was allowed.
 
 ---
 
-**Validated by frozen conformance vectors (139 assertions), cross-adapter tests, and independent Go/Python verification.**
+**Validated by frozen conformance vectors, cross-adapter tests, and independent Go/Python verification — continuously validated via CI.**
 
 ---
 
@@ -114,6 +115,8 @@ separate from execution and enforced before any side effect.
 
 If ALLOW → emits a signed AuthorizationV1
 If DENY → nothing executes (fail-closed)
+
+
 
 ---
 
@@ -157,9 +160,16 @@ Execution only becomes reachable after this decision succeeds.
 
 Covered by:
 
-* 139 conformance assertions
+* conformance suite: continuously validated via CI
 * property-based tests (D-P1–D-P5, G-D1–G-D3)
 * cross-adapter validation (CA-1–CA-10)
+
+---
+
+## Security Note
+
+`verifyEnvelope` does not automatically enforce snapshot ↔ checkpoint state consistency.
+Consumers must explicitly compare `stateHash` values to ensure full state continuity.
 
 ---
 
@@ -188,7 +198,7 @@ Properties:
 
 Behavior is defined by frozen conformance vectors, not just the reference implementation.
 
-* 139 assertions across protocol artifacts
+* conformance vectors: continuously validated via CI
 * Go + Python harness independently verify DelegationV1
 * no oracle / lookup fallback
 * cross-adapter deterministic equivalence
@@ -215,21 +225,9 @@ ALLOW / ALLOW / DENY / verifyEnvelope() => ok
 
 # Benchmarks
 
-Adds ~15–25µs overhead per action (p50).
+Adds ~80–150µs overhead per action (p50), depending on evaluation and verification path.
 
 Negligible compared to multi-second agent loops.
-
----
-
-# Quickstart
-
-```bash
-git clone https://github.com/AngeYobo/oxdeai.git
-cd oxdeai
-pnpm install
-pnpm build
-pnpm -C examples/openai-tools start
-```
 
 ---
 
@@ -249,6 +247,7 @@ pnpm -C examples/openai-tools start
 * not a prompt or output guardrail
 * not a monitoring or observability system
 * not a runtime heuristic layer
+
 ---
 
 # Protocol Status
@@ -287,10 +286,8 @@ Execution is now the critical boundary.
 Prompt guardrails shape behavior.
 OxDeAI makes a deterministic decision before execution.
 
-```
-p < 1 → prompts  
-p = 1 → authorization
-```
+Prompt guardrails are probabilistic (p < 1).
+Authorization is deterministic (p = 1).
 ---
 
 # Contributing

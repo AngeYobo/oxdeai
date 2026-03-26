@@ -29,7 +29,7 @@ Preserved stateless verification surface (v1.2+):
 
 Validation status:
 
-- conformance suite: **139 assertions passing**
+- conformance suite: **continuously validated via CI** [![CI](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml/badge.svg)](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml)
 - working demos (all produce `ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`):
   - `examples/openai-tools` (protocol reference)
   - `examples/langgraph`

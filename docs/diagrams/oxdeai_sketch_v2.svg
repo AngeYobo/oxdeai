@@ -1,0 +1,82 @@
+<svg width="1120" height="210" viewBox="0 0 1120 210" xmlns="http://www.w3.org/2000/svg" style="font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; background: #ffffff;">
+
+<defs>
+  <filter id="sh" x="-10%" y="-15%" width="120%" height="145%">
+    <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#0000001a"/>
+  </filter>
+  <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M1 1.5L9 5L1 8.5" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="ag-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M1 1.5L9 5L1 8.5" fill="none" stroke="#16A34A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="ag-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M1 1.5L9 5L1 8.5" fill="none" stroke="#DC2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- ── Agent ── -->
+<rect x="14" y="84" width="88" height="44" rx="7" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.25" filter="url(#sh)"/>
+<text font-size="13" font-weight="500" x="58" y="111" text-anchor="middle" fill="#475569">Agent</text>
+
+<line x1="102" y1="106" x2="118" y2="106" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ag)"/>
+
+<!-- ── Propose Action ── -->
+<rect x="120" y="84" width="130" height="44" rx="7" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.25" filter="url(#sh)"/>
+<text font-size="13" font-weight="500" x="185" y="111" text-anchor="middle" fill="#475569">Propose Action</text>
+
+<line x1="250" y1="106" x2="260" y2="106" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ag)"/>
+
+<!-- ── Decision Box ── -->
+<rect x="262" y="48" width="218" height="116" rx="8" fill="#FFFBEB" stroke="#F59E0B" stroke-width="1.75" filter="url(#sh)"/>
+<text font-size="10.5" font-weight="700" x="371" y="78" text-anchor="middle" fill="#92400E" letter-spacing="0.5">DETERMINISTIC AUTHORIZATION</text>
+<text font-size="10.5" font-weight="700" x="371" y="94" text-anchor="middle" fill="#92400E" letter-spacing="0.5">DECISION</text>
+<line x1="280" y1="104" x2="462" y2="104" stroke="#FCD34D" stroke-width="0.75"/>
+<text font-size="9" x="371" y="119" text-anchor="middle" fill="#B45309">(intent, state, policy) → ALLOW | DENY</text>
+<text font-size="8.5" x="371" y="136" text-anchor="middle" fill="#D97706">evaluated before execution</text>
+
+<!-- Fork: right edge → junction (110px wide fork zone) -->
+<line x1="480" y1="106" x2="500" y2="106" stroke="#94A3B8" stroke-width="1.5"/>
+<circle cx="500" cy="106" r="2.5" fill="#94A3B8"/>
+<!-- Vertical fork: green top, red bottom -->
+<line x1="500" y1="70" x2="500" y2="106" stroke="#16A34A" stroke-width="1.5"/>
+<line x1="500" y1="106" x2="500" y2="142" stroke="#DC2626" stroke-width="1.5"/>
+
+<!-- ALLOW arrow + pill badge (above arrow, in clear fork zone) -->
+<line x1="500" y1="70" x2="590" y2="70" stroke="#16A34A" stroke-width="1.75" marker-end="url(#ag-g)"/>
+<rect x="518" y="46" width="54" height="19" rx="9" fill="#16A34A" filter="url(#sh)"/>
+<text font-size="10" font-weight="700" x="545" y="60" text-anchor="middle" fill="#ffffff" letter-spacing="0.5">ALLOW</text>
+
+<!-- DENY arrow + pill badge (below arrow, in clear fork zone) -->
+<line x1="500" y1="142" x2="590" y2="142" stroke="#DC2626" stroke-width="1.75" marker-end="url(#ag-r)"/>
+<rect x="520" y="148" width="46" height="19" rx="9" fill="#DC2626" filter="url(#sh)"/>
+<text font-size="10" font-weight="700" x="543" y="162" text-anchor="middle" fill="#ffffff" letter-spacing="0.5">DENY</text>
+
+<!-- ── AuthorizationV1 ── -->
+<rect x="592" y="48" width="180" height="44" rx="7" fill="#F0FDF4" stroke="#22C55E" stroke-width="1.5" filter="url(#sh)"/>
+<text font-size="12.5" font-weight="700" x="682" y="67" text-anchor="middle" fill="#15803D">AuthorizationV1</text>
+<text font-size="8.5" x="682" y="83" text-anchor="middle" fill="#166534">signed · scoped · state-bound · expiring</text>
+
+<line x1="772" y1="70" x2="788" y2="70" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ag)"/>
+
+<!-- ── PEP ── -->
+<rect x="790" y="48" width="148" height="44" rx="7" fill="#F0FDF4" stroke="#22C55E" stroke-width="1.25" filter="url(#sh)"/>
+<text font-size="12.5" font-weight="600" x="864" y="67" text-anchor="middle" fill="#15803D">PEP</text>
+<text font-size="8.5" x="864" y="83" text-anchor="middle" fill="#166534">verifyAuthorization()</text>
+
+<line x1="938" y1="70" x2="954" y2="70" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ag)"/>
+
+<!-- ── Execution ── -->
+<rect x="956" y="48" width="112" height="44" rx="7" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5" filter="url(#sh)"/>
+<text font-size="13" font-weight="600" x="1012" y="75" text-anchor="middle" fill="#1D4ED8">Execution</text>
+
+<!-- ── Execution Blocked ── -->
+<rect x="592" y="120" width="180" height="44" rx="7" fill="#FEF2F2" stroke="#F87171" stroke-width="1.5" filter="url(#sh)"/>
+<text font-size="12.5" font-weight="700" x="682" y="139" text-anchor="middle" fill="#DC2626">Execution Blocked</text>
+<text font-size="8.5" x="682" y="155" text-anchor="middle" fill="#991B1B">fail-closed · no side effect</text>
+
+<!-- Caption -->
+<line x1="40" y1="181" x2="1080" y2="181" stroke="#E2E8F0" stroke-width="0.75"/>
+<text font-size="9.5" x="560" y="196" text-anchor="middle" fill="#94A3B8" letter-spacing="0.2">Execution is unreachable without valid authorization · artifacts are verifiable offline</text>
+
+</svg>
