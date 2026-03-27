@@ -1,0 +1,16 @@
+{
+  "name": "@examples/agentgram-demo",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@oxdeai/sdk": "workspace:*",
+    "@oxdeai/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "demo": "tsx src/run.ts"
+  }
+}

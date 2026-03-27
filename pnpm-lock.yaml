@@ -40,6 +40,19 @@ importers:
         specifier: ^4.0.0
         version: 4.21.0
 
+  examples/agentgram-demo:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@oxdeai/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+    devDependencies:
+      tsx:
+        specifier: ^4.20.5
+        version: 4.21.0
+
   examples/autogen:
     dependencies:
       '@oxdeai/autogen':

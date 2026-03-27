@@ -1,0 +1,13 @@
+{
+  "name": "@examples/agentgram-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/demo.ts",
+    "test": "node --import tsx/esm --test src/policy.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}
