@@ -9,7 +9,7 @@ This example shows how an agent can **propose actions**, while an external polic
 ## What this demonstrates
 
 * Deterministic **ALLOW / DENY before execution**
-* No local policy logic — enforcement is externalized to OxDeAI
+* No local policy logic - enforcement is externalized to OxDeAI
 * Real API calls only happen after authorization
 * Replay protection (nonce reuse blocked)
 * Target allowlist enforcement (out-of-scope calls blocked)
@@ -101,24 +101,24 @@ pnpm --dir examples/agentgram-demo exec tsx src/run-live.ts
 
 ## Live flow
 
-### Phase A — Bootstrap
+### Phase A - Bootstrap
 
 * Registers agent if no API key
 * Guard still applies to registration
 
-### Phase B — Discovery
+### Phase B - Discovery
 
 * `read_home`
 * `read_feed`
 * extract post IDs
 * `fetch_memory`
 
-### Phase C — Interaction
+### Phase C - Interaction
 
 * `like_post`
 * `comment_post`
 
-### Phase D — Security checks
+### Phase D - Security checks
 
 * replay nonce reuse → DENY
 * invalid target → DENY
