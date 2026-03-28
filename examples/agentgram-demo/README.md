@@ -1,200 +1,212 @@
-# Agentgram Demo
+# Agentgram Demo (OxDeAI)
 
-Minimal **OxDeAI adapter + guard integration** for Agentgram-style actions.
+Deterministic execution boundary for Agentgram actions using the OxDeAI SDK.
 
-This example shows how to enforce a **deterministic authorization boundary before execution** using `@oxdeai/core` + `@oxdeai/sdk`.
-
-No prompt guardrails.
-No post-hoc checks.
-No network required.
+This example shows how an agent can **propose actions**, while an external policy engine **decides whether execution is allowed before any API call happens**.
 
 ---
 
 ## What this demonstrates
 
-* Agent proposes actions (`AgentgramAction`)
-* Actions are mapped → `IntentBuilderInput`
-* OxDeAI evaluates `(intent, state, policy)` deterministically
-* Execution is **only reachable on ALLOW**
-* DENY cases are blocked **before any side effect**
-
-**No authorization → no execution**
+* Deterministic **ALLOW / DENY before execution**
+* No local policy logic — enforcement is externalized to OxDeAI
+* Real API calls only happen after authorization
+* Replay protection (nonce reuse blocked)
+* Target allowlist enforcement (out-of-scope calls blocked)
 
 ---
 
 ## Architecture
 
 ```
-AgentgramAction
+Agent action
    ↓
-toIntentInput()          // adapter.ts (pure mapping)
+IntentBuilderInput
    ↓
-createGuard()           // @oxdeai/sdk
+OxDeAI PolicyEngine (evaluatePure)
    ↓
-PolicyEngine.evaluate   // @oxdeai/core (deterministic)
+ALLOW / DENY
    ↓
-ALLOW → execute()
-DENY  → blocked (throw)
+(if ALLOW) → execute() → Agentgram API
+(if DENY)  → blocked before execution
 ```
+
+Key property:
+
+> No authorization → no execution
 
 ---
 
 ## Supported actions
 
-| Action          | Tool value                 | Target example                       |
-| --------------- | -------------------------- | ------------------------------------ |
-| Read home       | `agentgram.read.home`      | `agentgram:/home`                    |
-| Read feed       | `agentgram.read.feed`      | `agentgram:/feed`                    |
-| Like post       | `agentgram.post.like`      | `agentgram:/posts/{postId}/like`     |
-| Comment on post | `agentgram.comment.create` | `agentgram:/posts/{postId}/comments` |
+| Action         | Tool                       |
+| -------------- | -------------------------- |
+| Read home      | `agentgram.read.home`      |
+| Read feed      | `agentgram.read.feed`      |
+| Like post      | `agentgram.post.like`      |
+| Comment post   | `agentgram.comment.create` |
+| Register agent | `agentgram.agent.register` |
+| Fetch memory   | `agentgram.memory.fetch`   |
 
 ---
 
-## Deterministic guarantees
+## Modes
 
-This demo uses real OxDeAI modules:
+### 1. Offline demo (deterministic, no network)
 
-* **AllowlistModule** → enforces allowed targets
-* **ReplayModule** → blocks reused nonces
-* **Budget / limits modules** → configured but permissive
+Runs a fully local simulation.
 
-### Proven properties
-
-* Same `(intent + state + policy)` → same decision
-* Replay attempts are rejected (`REPLAY_NONCE`)
-* Unknown targets are rejected (`ALLOWLIST_TARGET`)
-* Execution is unreachable on DENY (fail-closed)
-
----
-
-## Example output
-
-```
-ALLOW  agentgram.read.home
-ALLOW  agentgram.read.feed
-ALLOW  agentgram.post.like
-ALLOW  agentgram.comment.create
-DENY   agentgram.read.home [replay nonce=1n] | DENY: REPLAY_NONCE
-DENY   agentgram.post.like [unknown postId] | DENY: ALLOWLIST_TARGET
-```
-
----
-
-## Key files
-
-| File         | Responsibility                  |
-| ------------ | ------------------------------- |
-| `types.ts`   | `AgentgramAction` (input shape) |
-| `intents.ts` | Tool constants                  |
-| `policy.ts`  | `PolicyEngine`, `makeState()`   |
-| `adapter.ts` | Mapping + guard wrapper         |
-| `run.ts`     | Demo orchestration (no network) |
-| `client.ts`  | HTTP layer (not used in demo)   |
-
----
-
-## Execution boundary
-
-The boundary is explicit:
-
-```ts
-guard(action, async () => execute())
-```
-
-* `guard(...)` → authorization phase
-* `execute()` → only runs if ALLOW
-
-There is **no path** to execution without passing the policy engine.
-
----
-
-## Run
-
-```sh
+```bash
 pnpm --dir examples/agentgram-demo exec tsx src/run.ts
 ```
 
-Typecheck:
+Demonstrates:
 
-```sh
-pnpm --dir examples/agentgram-demo run typecheck
+* ALLOW flows
+* replay DENY
+* allowlist DENY
+
+---
+
+### 2. Live sandbox (real Agentgram API)
+
+Runs against:
+
+```
+https://agentgram-production.up.railway.app/api/v1
+```
+
+#### Required env
+
+```bash
+export AGENTGRAM_AGENT_NAME="your_agent_name"
+export AGENTGRAM_TARGET_AGENT_NAME="target_agent_name"
+```
+
+Optional:
+
+```bash
+export AGENTGRAM_API_KEY="..."              # skip bootstrap
+export AGENTGRAM_TARGET_POST_ID="..."      # force post selection
+export OXDEAI_ENGINE_SECRET="dev-secret"   # optional
+```
+
+#### Run
+
+```bash
+pnpm --dir examples/agentgram-demo exec tsx src/run-live.ts
 ```
 
 ---
 
-## Design notes
+## Live flow
 
-### Action mapping
+### Phase A — Bootstrap
 
-All actions are mapped to:
+* Registers agent if no API key
+* Guard still applies to registration
 
-```ts
-IntentBuilderInput {
-  action_type: "PROVISION"
-  amount: 0n
-  tool: <Agentgram intent>
-  target: <derived canonical target>
-}
-```
+### Phase B — Discovery
 
-* `tool` → semantic action identity
-* `target` → enforced by allowlist
-* `nonce` → replay protection
-* `amount` → unused (no cost model)
+* `read_home`
+* `read_feed`
+* extract post IDs
+* `fetch_memory`
 
-### action_type
+### Phase C — Interaction
 
-`"PROVISION"` is used as a placeholder.
+* `like_post`
+* `comment_post`
 
-It is not semantically perfect.
-It is the least incorrect option in the current enum:
+### Phase D — Security checks
 
-```
-"PAYMENT" | "PURCHASE" | "PROVISION" | "ONCHAIN_TX"
-```
-
-Future improvement: introduce `API_CALL` or `TOOL_CALL`.
+* replay nonce reuse → DENY
+* invalid target → DENY
 
 ---
 
-## Out of scope
+## Example output (live)
 
-* Real HTTP execution
-* Authentication / API keys
-* Rate limiting beyond policy modules
-* Economic cost modeling
-* Multi-agent delegation
+```
+ALLOW  read_home
+ALLOW  read_feed
+ALLOW  fetch_memory
+ALLOW  like_post
+ALLOW  comment_post
+
+ALLOW  read_home (first use of replay nonce)
+DENY   replay_nonce | DENY: REPLAY_NONCE
+
+DENY   allowlist_target | DENY: ALLOWLIST_TARGET
+```
+
+---
+
+## Important distinction
+
+OxDeAI enforces **execution eligibility**, not business success.
+
+* ALLOW → request is allowed to execute
+* Agentgram may still return:
+
+  * `200 OK`
+  * `409 already liked`
+  * etc.
+
+This is expected.
+
+> OxDeAI controls *whether an action can execute*, not *whether it succeeds*.
+
+---
+
+## What DENY proves
+
+In live mode:
+
+* Denied actions are **never sent to Agentgram**
+* Replay attacks are blocked at the boundary
+* Out-of-scope targets are blocked before HTTP
 
 ---
 
 ## Why this matters
 
-Most agent systems:
+Agent systems can trigger real side effects:
 
-* rely on prompts
-* check after execution
-* cannot guarantee outcomes
+* API calls
+* payments
+* infrastructure changes
 
-This demo shows a different model:
+Without a boundary, the agent controls execution.
 
-> **Deterministic authorization before execution**
+With OxDeAI:
 
-* reproducible
-* auditable
-* fail-closed
-* portable across runtimes
+* execution is gated
+* decisions are deterministic
+* enforcement is fail-closed
 
 ---
 
-## Next step
+## Key takeaway
 
-Replace the mocked `execute()` in `run.ts` with real calls from `client.ts`.
+> Patterns structure behavior.
+> Boundaries control consequences.
 
-No changes required to:
+---
 
-* policy
-* adapter
-* guard
-* evaluation logic
+## Scope
 
-Only the execution layer changes.
+This example focuses on:
+
+* execution authorization
+* deterministic policy enforcement
+* integration with a real API (Agentgram)
+
+Out of scope:
+
+* authentication lifecycle
+* retries / orchestration
+* full production rate limiting strategies
+
+---
+
