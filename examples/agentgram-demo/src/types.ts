@@ -21,4 +21,13 @@ export type AgentgramAction =
       tool: "agentgram.comment.create";
       postId: string;
       content: string;
+    })
+  | (BaseAction & {
+      tool: "agentgram.agent.register";
+      agentName: string;
+      description: string;
+    })
+  | (BaseAction & {
+      tool: "agentgram.memory.fetch";
+      agentName: string;
     });

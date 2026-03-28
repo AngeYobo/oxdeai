@@ -21,24 +21,24 @@ function toTarget(action: AgentgramAction): string {
   switch (action.tool) {
     case AGENTGRAM_INTENTS.READ_HOME:
       return "agentgram:/home";
-
     case AGENTGRAM_INTENTS.READ_FEED:
       return "agentgram:/feed";
-
     case AGENTGRAM_INTENTS.POST_LIKE:
       return `agentgram:/posts/${action.postId}/like`;
-
     case AGENTGRAM_INTENTS.COMMENT_CREATE:
       return `agentgram:/posts/${action.postId}/comments`;
-
+    case AGENTGRAM_INTENTS.REGISTER_AGENT:
+      return "agentgram:/agents/register";
+    case AGENTGRAM_INTENTS.FETCH_MEMORY:
+      return `agentgram:/memories/${action.agentName}`;
     default: {
       const _exhaustive: never = action;
-      throw new Error(`Unsupported Agentgram action: ${String(_exhaustive)}`);
+      throw new Error(`Unsupported action: ${String(_exhaustive)}`);
     }
   }
 }
 
-export function toIntentInput(
+function toIntentInput(
   action: AgentgramAction,
   agentId: string
 ): IntentBuilderInput {
