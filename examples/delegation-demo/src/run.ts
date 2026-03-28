@@ -288,7 +288,7 @@ const entry = process.argv[1];
 if (entry && import.meta.url === pathToFileURL(entry).href) {
   run().catch(err => {
     process.stdout.write("\x1b[?25h");
-    console.error(`\x1b[1;31m✗ Terminal demo failed:\x1b[0m`, err);
+    console.error(`\x1b[1;31m✗ Terminal demo failed:\x1b[0m`, err instanceof Error ? err.message : String(err));
     process.exit(1);
   });
 }

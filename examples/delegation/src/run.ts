@@ -268,7 +268,7 @@ async function runDemo(log = (m: string) => console.log(m)): Promise<void> {
 const entrypoint = process.argv[1];
 if (entrypoint && import.meta.url === pathToFileURL(entrypoint).href) {
   runDemo().catch((err) => {
-    console.error(`\n${"\x1b[1;31m"}✗ Demo failed:${"\x1b[0m"}`, err);
+    console.error(`\n${"\x1b[1;31m"}✗ Demo failed:${"\x1b[0m"}`, err instanceof Error ? err.message : String(err));
     process.exit(1);
   });
 }

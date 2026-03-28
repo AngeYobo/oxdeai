@@ -129,7 +129,7 @@ export async function runDemo(log: (msg: string) => void = (msg) => console.log(
   log(`   ${c(C.dim, "policyId:")}      ${c(C.blue, (vr.policyId ?? "—").slice(0, 32) + "...")}`);
   log(`   ${c(C.dim, "stateHash:")}     ${c(C.blue, (vr.stateHash ?? "—").slice(0, 32) + "...")}`);
   log(`   ${c(C.dim, "auditHeadHash:")} ${c(C.blue, (vr.auditHeadHash ?? "—").slice(0, 32) + "...")}`);
-  log(`   ${c(C.dim, "violations:")}    ${vr.violations.length === 0 ? c(C.bGreen, "none") : c(C.bRed, JSON.stringify(vr.violations))}`);
+  log(`   ${c(C.dim, "violations:")}    ${vr.violations.length === 0 ? c(C.bGreen, "none") : c(C.bRed, vr.violations.map((v) => v.code).join(", "))}`);
 
   if (vr.status !== "ok") {
     throw new Error(`Envelope verification failed: ${vr.status}`);
@@ -147,7 +147,7 @@ export async function runDemo(log: (msg: string) => void = (msg) => console.log(
 const entrypoint = process.argv[1];
 if (entrypoint && import.meta.url === pathToFileURL(entrypoint).href) {
   runDemo().catch((err) => {
-    console.error("\n✗ Demo failed:", err);
+    console.error("\n✗ Demo failed:", err instanceof Error ? err.message : String(err));
     process.exit(1);
   });
 }
