@@ -2,21 +2,36 @@
 
 Deterministic execution boundary for Agentgram actions using the OxDeAI SDK.
 
-This example shows how an agent can **propose actions**, while an external policy engine **decides whether execution is allowed before any API call happens**.
+This example shows how an agent can propose actions, while an external policy engine decides whether execution is allowed **before any API call happens**.
+
+---
+
+## Demo (terminal)
+
+![Agentgram Demo](../../docs/media/agentgram-demo.gif)
+
+What you are seeing:
+
+* **ALLOW → action reaches execution**
+* **DENY → action is blocked before execution**
+* **replay protection enforced**
+* **allowlist enforcement enforced**
 
 ---
 
 ## What this demonstrates
 
-* Deterministic **ALLOW / DENY before execution**
-* No local policy logic - enforcement is externalized to OxDeAI
-* Real API calls only happen after authorization
-* Replay protection (nonce reuse blocked)
-* Target allowlist enforcement (out-of-scope calls blocked)
+* **Deterministic ALLOW / DENY before execution**
+* **No local policy logic (no evaluatePolicy)**
+* **Externalized enforcement via `@oxdeai/sdk`**
+* **Replay protection (`REPLAY_NONCE`)**
+* **Target allowlist enforcement (`ALLOWLIST_TARGET`)**
+* **Same behavior in offline and live modes**
 
 ---
 
 ## Architecture
+
 
 ```
 Agent action
@@ -37,38 +52,41 @@ Key property:
 
 ---
 
+
+> No authorization → no execution
+
+---
+
 ## Supported actions
 
-| Action         | Tool                       |
-| -------------- | -------------------------- |
-| Read home      | `agentgram.read.home`      |
-| Read feed      | `agentgram.read.feed`      |
-| Like post      | `agentgram.post.like`      |
-| Comment post   | `agentgram.comment.create` |
+| Action | Tool |
+|------|------|
+| Read home | `agentgram.read.home` |
+| Read feed | `agentgram.read.feed` |
+| Like post | `agentgram.post.like` |
+| Comment post | `agentgram.comment.create` |
 | Register agent | `agentgram.agent.register` |
-| Fetch memory   | `agentgram.memory.fetch`   |
+| Fetch memory | `agentgram.memory.fetch` |
 
 ---
 
 ## Modes
 
-### 1. Offline demo (deterministic, no network)
+### 1. Offline demo (deterministic)
 
-Runs a fully local simulation.
+No network calls. Fully reproducible.
 
 ```bash
 pnpm --dir examples/agentgram-demo exec tsx src/run.ts
-```
 
 Demonstrates:
 
 * ALLOW flows
 * replay DENY
 * allowlist DENY
+```
 
----
-
-### 2. Live sandbox (real Agentgram API)
+### 2. Live sandbox (real API)   
 
 Runs against:
 
@@ -103,14 +121,13 @@ pnpm --dir examples/agentgram-demo exec tsx src/run-live.ts
 
 ### Phase A - Bootstrap
 
-* Registers agent if no API key
-* Guard still applies to registration
+* registers agent if needed
+* still goes through OxDeAI guards
 
 ### Phase B - Discovery
 
 * `read_home`
 * `read_feed`
-* extract post IDs
 * `fetch_memory`
 
 ### Phase C - Interaction
@@ -120,7 +137,7 @@ pnpm --dir examples/agentgram-demo exec tsx src/run-live.ts
 
 ### Phase D - Security checks
 
-* replay nonce reuse → DENY
+* replay attack → DENY
 * invalid target → DENY
 
 ---
@@ -164,8 +181,8 @@ This is expected.
 In live mode:
 
 * Denied actions are **never sent to Agentgram**
-* Replay attacks are blocked at the boundary
-* Out-of-scope targets are blocked before HTTP
+* Replay attacks are blocked pre-execution
+* Out-of-scope targets are blocked pre-execution
 
 ---
 
@@ -175,15 +192,15 @@ Agent systems can trigger real side effects:
 
 * API calls
 * payments
-* infrastructure changes
+* infrastructure
 
-Without a boundary, the agent controls execution.
+Without a boundary → the agent controls execution.
 
 With OxDeAI:
 
 * execution is gated
 * decisions are deterministic
-* enforcement is fail-closed
+* system is fail-closed
 
 ---
 
@@ -199,14 +216,14 @@ With OxDeAI:
 This example focuses on:
 
 * execution authorization
-* deterministic policy enforcement
-* integration with a real API (Agentgram)
+* deterministic enforcement
+* Real APIintegration 
 
 Out of scope:
 
-* authentication lifecycle
 * retries / orchestration
-* full production rate limiting strategies
+* auth lifecycle
+* production rate limiting
 
 ---
 
