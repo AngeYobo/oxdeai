@@ -7,7 +7,7 @@ export const DEMO_POST_ID = "post-001";
 export const POLICY_ID =
   "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
 export function makeEngine(): PolicyEngine {
-  const secret = process.env.OXDEAI_ENGINE_SECRET;
+  const secret = process.env.OXDEAI_ENGINE_SECRET ?? "";
   if (!secret) throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
   return new PolicyEngine({
     policy_version: "v1.0.0",

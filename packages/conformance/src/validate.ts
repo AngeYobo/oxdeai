@@ -87,7 +87,12 @@ const TEST_KEYSET: KeySet = {
   ]
 };
 
-const CORE_ENGINE_SECRET = "test-secret";
+const CORE_ENGINE_SECRET = process.env.OXDEAI_ENGINE_SECRET ?? "";
+
+if (!CORE_ENGINE_SECRET || CORE_ENGINE_SECRET.length < 32) {
+  throw new Error("OXDEAI_ENGINE_SECRET must be set and ≥ 32 chars");
+}
+
 const CORE_POLICY_ID = "a".repeat(64);
 const INTENT_BINDING_FIELDS = [
   "intent_id",
@@ -109,7 +114,7 @@ const INTENT_BINDING_FIELDS = [
 function makeEngine(): PolicyEngine {
   return new PolicyEngine({
     policy_version: "v1.0.0",
-    engine_secret: CORE_ENGINE_SECRET,
+    engine_secret: CORE_ENGINE_SECRET, // now typed as string
     authorization_ttl_seconds: 60,
     policyId: CORE_POLICY_ID
   });

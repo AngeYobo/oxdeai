@@ -538,7 +538,7 @@ function validateStateStructure(state: State): void {
 }
 
 function buildEngine(state: State): PolicyEngine {
-  const secret = process.env["OXDEAI_ENGINE_SECRET"];
+  const secret = process.env["OXDEAI_ENGINE_SECRET"] ?? "";
   if (!secret) throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
   const ttl = Number(process.env["OXDEAI_AUTH_TTL_SECONDS"] ?? "120");
   return new PolicyEngine({

@@ -46,7 +46,7 @@ export const { privateKey: AGENT_A_PRIVATE_KEY_PEM } = generateKeyPairSync("ed25
   publicKeyEncoding:  { type: "spki",  format: "pem" },
 });
 
-const _engineSecret = process.env.OXDEAI_ENGINE_SECRET;
+const _engineSecret = process.env.OXDEAI_ENGINE_SECRET ?? "";
 if (!_engineSecret) throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
 
 export const engine = new PolicyEngine({

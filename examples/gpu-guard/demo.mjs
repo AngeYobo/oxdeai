@@ -1,6 +1,6 @@
 import { PolicyEngine } from "../../packages/core/dist/index.js";
 
-const _engineSecret = process.env.OXDEAI_ENGINE_SECRET;
+const _engineSecret = process.env.OXDEAI_ENGINE_SECRET ?? "";
 if (!_engineSecret) throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
 
 const engine = new PolicyEngine({

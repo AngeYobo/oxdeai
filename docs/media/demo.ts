@@ -3,7 +3,7 @@ import type { Intent, State } from "@oxdeai/core";
 
 const FIXED_TIMESTAMP = 1_730_000_000;
 
-const _engineSecret = process.env.OXDEAI_ENGINE_SECRET;
+const _engineSecret = process.env.OXDEAI_ENGINE_SECRET ?? "";
 if (!_engineSecret) throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
 
 const engine = new PolicyEngine({

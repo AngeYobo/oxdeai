@@ -23,7 +23,7 @@ export const CHARGE_AMOUNT = 10_000_000n;
 // Starting wallet display balance (domain concept, separate from engine budget)
 export const WALLET_START = 100;
 
-const _engineSecret = process.env.OXDEAI_ENGINE_SECRET;
+const _engineSecret = process.env.OXDEAI_ENGINE_SECRET ?? "";
 if (!_engineSecret) throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
 
 export const engine = new PolicyEngine({
