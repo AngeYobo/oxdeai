@@ -26,9 +26,49 @@ Control execution, not just behavior.
 ## TL;DR
 
 Agents propose actions.
-OxDeAI decides — deterministically — whether execution is allowed.
+OxDeAI decides - deterministically - whether execution is allowed.
 
 No authorization → no execution.
+
+---
+
+## Trust Model
+
+OxDeAI is an execution authorization protocol - not a global authority.
+
+Any system can act as an issuer.
+A valid signature is not trust.
+
+Verification guarantees integrity, not authority.
+
+Trust MUST be explicitly configured by the verifier.
+
+In strict mode, missing trust configuration MUST fail closed.
+
+OxDeAI enforces the execution boundary.
+Who is trusted is defined outside the protocol, by the verifier.
+
+| Concept | Controlled by |
+|---|---|
+| Issuer | Any system (policy engine, delegation service, custom authority) |
+| Trusted keys | The verifier (trustedKeySets) |
+| Execution gate | OxDeAI (after trust is established) |
+
+Correct - trust is explicit:
+
+```ts
+verifyAuthorization(auth, {
+  mode: "strict",
+  trustedKeySets: [...]
+});
+// ok only if signature is valid AND issuer is trusted
+
+**Wrong - no trust config, strict mode fails closed:**
+
+```typescript
+verifyAuthorization(auth, { mode: "strict" });
+// → invalid (TRUSTED_KEYSETS_REQUIRED)
+```
 
 ---
 
@@ -99,7 +139,7 @@ Logs explain what happened. Authorization artifacts prove what was allowed.
 
 ---
 
-**Validated by frozen conformance vectors, cross-adapter tests, and independent Go/Python verification — continuously validated via CI.**
+**Validated by frozen conformance vectors, cross-adapter tests, and independent Go/Python verification - continuously validated via CI.**
 
 ---
 

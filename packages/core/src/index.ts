@@ -25,6 +25,8 @@ export { verifySnapshot } from "./verification/verifySnapshot.js";
 export { verifyAuditEvents } from "./verification/verifyAuditEvents.js";
 export { verifyEnvelope } from "./verification/verifyEnvelope.js";
 export { verifyAuthorization, signAuthorizationEd25519, authorizationSigningPayload } from "./verification/verifyAuthorization.js";
+export { createVerifier } from "./verification/createVerifier.js";
+export type { VerifierConfig, BoundVerifier } from "./verification/createVerifier.js";
 export {
   verifyDelegation,
   verifyDelegationChain,

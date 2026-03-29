@@ -106,7 +106,7 @@ test("ok: valid snapshot + audit + checkpoint in strict mode", () => {
     events: makeAuditEvents(policyId, true)
   });
 
-  const out = verifyEnvelope(envelopeBytes, { mode: "strict" });
+  const out = verifyEnvelope(envelopeBytes, { mode: "strict", trustedKeySets: TEST_KEYSET });
   assert.equal(out.ok, true);
   assert.equal(out.status, "ok");
   assert.equal(out.policyId, policyId);
@@ -123,7 +123,7 @@ test("inconclusive: strict mode without STATE_CHECKPOINT", () => {
     events: makeAuditEvents(policyId, false)
   });
 
-  const out = verifyEnvelope(envelopeBytes, { mode: "strict" });
+  const out = verifyEnvelope(envelopeBytes, { mode: "strict", trustedKeySets: TEST_KEYSET });
   assert.equal(out.ok, false);
   assert.equal(out.status, "inconclusive");
   assert.ok(out.violations.some((v) => v.code === "NO_STATE_ANCHOR"));
@@ -181,6 +181,48 @@ test("ok: signed envelope verifies with trusted keyset", () => {
     requireSignatureVerification: true
   });
   assert.equal(out.status, "ok");
+});
+
+test("invalid: strict mode without trustedKeySets fails closed with TRUSTED_KEYSETS_REQUIRED", () => {
+  const { policyId, bytes } = makeSnapshotBytes();
+  const envelopeBytes = encodeEnvelope({
+    formatVersion: 1,
+    snapshot: bytes,
+    events: makeAuditEvents(policyId, true)
+  });
+
+  const out = verifyEnvelope(envelopeBytes, { mode: "strict" });
+  assert.equal(out.ok, false);
+  assert.equal(out.status, "invalid");
+  assert.ok(out.violations.some((v) => v.code === "TRUSTED_KEYSETS_REQUIRED"));
+});
+
+test("invalid: strict mode with empty trustedKeySets array fails closed with TRUSTED_KEYSETS_REQUIRED", () => {
+  const { policyId, bytes } = makeSnapshotBytes();
+  const envelopeBytes = encodeEnvelope({
+    formatVersion: 1,
+    snapshot: bytes,
+    events: makeAuditEvents(policyId, true)
+  });
+
+  const out = verifyEnvelope(envelopeBytes, { mode: "strict", trustedKeySets: [] });
+  assert.equal(out.ok, false);
+  assert.equal(out.status, "invalid");
+  assert.ok(out.violations.some((v) => v.code === "TRUSTED_KEYSETS_REQUIRED"));
+});
+
+test("ok: strict mode with trustedKeySets does not fail the guard", () => {
+  const { policyId, bytes } = makeSnapshotBytes();
+  const envelopeBytes = encodeEnvelope({
+    formatVersion: 1,
+    snapshot: bytes,
+    events: makeAuditEvents(policyId, true)
+  });
+
+  const out = verifyEnvelope(envelopeBytes, { mode: "strict", trustedKeySets: TEST_KEYSET });
+  assert.equal(out.ok, true);
+  assert.equal(out.status, "ok");
+  assert.equal(out.violations.filter((v) => v.code === "TRUSTED_KEYSETS_REQUIRED").length, 0);
 });
 
 test("invalid: signed envelope tampering fails signature verification", () => {

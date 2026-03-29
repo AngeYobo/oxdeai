@@ -225,11 +225,11 @@ test("verify-envelope reads file and verifies", async () => {
   const envelopePath = join(dir, "envelope.bin");
   await writeFile(envelopePath, Buffer.from(envelope));
 
-  const code = await runCli(["verify-envelope", envelopePath, "--json"], cap.io);
-  assert.equal(code, 3);
+  const code = await runCli(["verify-envelope", envelopePath, "--mode", "best-effort", "--json"], cap.io);
+  assert.equal(code, 0);
   const latest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
   assert.equal(typeof latest.status, "string");
-  assert.equal(latest.status, "inconclusive");
+  assert.equal(latest.status, "ok");
   assert.equal(Array.isArray(latest.violations), true);
 });
 
@@ -246,11 +246,11 @@ test("make-envelope writes envelope file that verify-envelope accepts", async ()
   );
   assert.equal(makeCode, 0);
 
-  const verifyCode = await runCli(["verify-envelope", envelopePath, "--json"], cap.io);
-  assert.equal(verifyCode, 3);
+  const verifyCode = await runCli(["verify-envelope", envelopePath, "--mode", "best-effort", "--json"], cap.io);
+  assert.equal(verifyCode, 0);
   const latest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
   assert.equal(typeof latest.status, "string");
-  assert.equal(latest.status, "inconclusive");
+  assert.equal(latest.status, "ok");
   assert.equal(Array.isArray(latest.violations), true);
 });
 
@@ -322,10 +322,10 @@ test("verify supports positional aliases and default files", async () => {
   const auditLatest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
   assert.equal(auditLatest.status, "inconclusive");
 
-  const envCode = await runCli(["verify", "envelope", "--file", envelopePath, "--json"], cap.io);
-  assert.equal(envCode, 3);
+  const envCode = await runCli(["verify", "envelope", "--file", envelopePath, "--mode", "best-effort", "--json"], cap.io);
+  assert.equal(envCode, 0);
   const envLatest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
-  assert.equal(envLatest.status, "inconclusive");
+  assert.equal(envLatest.status, "ok");
 });
 
 test("verify supports --kind authorization from file", async () => {
@@ -374,6 +374,8 @@ test("verify supports --kind authorization from file", async () => {
       evaluated.authorization.issuer,
       "--expected-audience",
       evaluated.authorization.audience,
+      "--mode",
+      "best-effort",
       "--json"
     ],
     cap.io
@@ -391,7 +393,7 @@ test("verify fails closed on malformed authorization payload", async () => {
   const malformedPath = join(dir, "bad-auth.json");
   await writeFile(malformedPath, "{\"not\":\"authorization\"}", "utf8");
 
-  const code = await runCli(["verify", "--kind", "authorization", "--file", malformedPath, "--json"], cap.io);
+  const code = await runCli(["verify", "--kind", "authorization", "--file", malformedPath, "--mode", "best-effort", "--json"], cap.io);
   assert.equal(code, 1);
   const latest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
   assert.equal(latest.status, "invalid");
@@ -454,7 +456,7 @@ test("inspect, verify all, auth create, and launch dry-run work together", async
   assert.equal(await runCli(["auth", "inspect", "--file", authPath, "--json"], cap.io), 0);
 
   const verifyAllCode = await runCli(
-    ["verify", "all", "--state", stateFile, "--audit", auditFile, "--json"],
+    ["verify", "all", "--state", stateFile, "--audit", auditFile, "--mode", "best-effort", "--json"],
     {
       ...cap.io,
       out: cap.io.out
@@ -465,4 +467,104 @@ test("inspect, verify all, auth create, and launch dry-run work together", async
   assert.equal(typeof verifyAll.snapshot.status, "string");
   assert.equal(typeof verifyAll.audit.status, "string");
   assert.equal(typeof verifyAll.envelope.status, "string");
+});
+
+// ── CLI trust UX: strict mode requires --trusted-keyset ───────────────────────
+
+const MINIMAL_KEYSET = JSON.stringify({ issuer: "test-issuer", version: "1", keys: [] });
+
+test("verify-envelope strict without --trusted-keyset fails with guidance message", async () => {
+  const { policyFile, stateFile, auditFile, dir } = await setup();
+  const cap = ioCapture(1_770_001_000);
+  await runCli(["init", "--file", policyFile, "--state", stateFile, "--audit", auditFile], cap.io);
+  const envelopePath = join(dir, "envelope.bin");
+  await runCli(["make-envelope", "--out", envelopePath, "--state", stateFile, "--audit", auditFile], cap.io);
+
+  const code = await runCli(["verify-envelope", envelopePath], cap.io);
+  assert.equal(code, 1);
+  assert.ok(cap.err.some((line) => line.includes("--trusted-keyset")));
+  assert.ok(cap.err.some((line) => line.includes("best-effort")));
+});
+
+test("verify all strict without --trusted-keyset fails with guidance message", async () => {
+  const { policyFile, stateFile, auditFile, dir } = await setup();
+  const cap = ioCapture(1_770_001_100);
+  await runCli(["init", "--file", policyFile, "--state", stateFile, "--audit", auditFile], cap.io);
+  const snapshotPath = join(dir, "snapshot.bin");
+  await runCli(["build", "snapshot", "--state", stateFile, "--out", snapshotPath], cap.io);
+  const envelopePath = join(dir, "envelope.bin");
+  await runCli(["make-envelope", "--out", envelopePath, "--state", stateFile, "--audit", auditFile], cap.io);
+
+  const code = await runCli(["verify", "all", "--state", stateFile, "--audit", auditFile], cap.io);
+  assert.equal(code, 1);
+  assert.ok(cap.err.some((line) => line.includes("--trusted-keyset")));
+  assert.ok(cap.err.some((line) => line.includes("best-effort")));
+});
+
+test("verify-envelope strict with --trusted-keyset proceeds past trust guard", async () => {
+  const { policyFile, stateFile, auditFile, dir } = await setup();
+  const cap = ioCapture(1_770_001_200);
+  await runCli(["init", "--file", policyFile, "--state", stateFile, "--audit", auditFile], cap.io);
+  const envelopePath = join(dir, "envelope.bin");
+  await runCli(["make-envelope", "--out", envelopePath, "--state", stateFile, "--audit", auditFile], cap.io);
+  const keysetPath = join(dir, "keyset.json");
+  await writeFile(keysetPath, MINIMAL_KEYSET, "utf8");
+
+  await runCli(["verify-envelope", envelopePath, "--trusted-keyset", keysetPath, "--json"], cap.io);
+  // no trust-guard guidance — command ran past the guard and produced JSON output
+  assert.ok(cap.err.every((line) => !line.includes("Strict verification requires")));
+  const latest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(typeof latest.status, "string");
+  assert.ok(!latest.violations?.some((v: { code: string }) => v.code === "TRUSTED_KEYSETS_REQUIRED"));
+});
+
+test("verify all strict with --trusted-keyset proceeds past trust guard", async () => {
+  const { policyFile, stateFile, auditFile, dir } = await setup();
+  const cap = ioCapture(1_770_001_300);
+  await runCli(["init", "--file", policyFile, "--state", stateFile, "--audit", auditFile], cap.io);
+  const snapshotPath = join(dir, "snapshot.bin");
+  await runCli(["build", "snapshot", "--state", stateFile, "--out", snapshotPath], cap.io);
+  const envelopePath = join(dir, "envelope.bin");
+  await runCli(["make-envelope", "--out", envelopePath, "--state", stateFile, "--audit", auditFile], cap.io);
+  const keysetPath = join(dir, "keyset.json");
+  await writeFile(keysetPath, MINIMAL_KEYSET, "utf8");
+
+  await runCli(
+    ["verify", "all", "--state", stateFile, "--audit", auditFile, "--trusted-keyset", keysetPath, "--json"],
+    cap.io
+  );
+  // no trust-guard guidance — command ran past the guard and produced JSON output
+  assert.ok(cap.err.every((line) => !line.includes("Strict verification requires")));
+  const latest = JSON.parse(cap.out[cap.out.length - 1] ?? "{}");
+  assert.equal(typeof latest.envelope, "object");
+  assert.ok(!latest.envelope?.violations?.some((v: { code: string }) => v.code === "TRUSTED_KEYSETS_REQUIRED"));
+});
+
+test("verify --kind envelope strict without --trusted-keyset fails with guidance message", async () => {
+  const { policyFile, stateFile, auditFile, dir } = await setup();
+  const cap = ioCapture(1_770_002_000);
+  await runCli(["init", "--file", policyFile, "--state", stateFile, "--audit", auditFile], cap.io);
+  const envelopePath = join(dir, "envelope.bin");
+  await runCli(["make-envelope", "--out", envelopePath, "--state", stateFile, "--audit", auditFile], cap.io);
+
+  const code = await runCli(["verify", "--kind", "envelope", "--file", envelopePath], cap.io);
+  assert.equal(code, 1);
+  assert.ok(cap.err.some((line) => line.includes("--trusted-keyset")));
+  assert.ok(cap.err.some((line) => line.includes("best-effort")));
+});
+
+test("verify --kind authorization strict without --trusted-keyset fails with guidance message", async () => {
+  const { policyFile, stateFile, auditFile, dir } = await setup();
+  const cap = ioCapture(1_770_002_100);
+  await runCli(["init", "--file", policyFile, "--state", stateFile, "--audit", auditFile], cap.io);
+  const authPath = join(dir, "authorization.json");
+  await runCli(
+    ["auth", "create", "PROVISION", "100", "us-east-1", "--agent", "agent-1", "--nonce", "99", "--state", stateFile, "--out", authPath],
+    cap.io
+  );
+
+  const code = await runCli(["verify", "--kind", "authorization", "--file", authPath], cap.io);
+  assert.equal(code, 1);
+  assert.ok(cap.err.some((line) => line.includes("--trusted-keyset")));
+  assert.ok(cap.err.some((line) => line.includes("best-effort")));
 });

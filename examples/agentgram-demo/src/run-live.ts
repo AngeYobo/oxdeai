@@ -74,6 +74,7 @@ function printHeader(agentName: string, targetAgentName: string): void {
   emit(TOP);
   emit(full(center(c(C.bWhite, "OxDeAI × Agentgram  —  Live Sandbox"), W - 4)));
   emit(full(c(C.dim, `  agent: ${agentName}  ·  memory target: ${targetAgentName}`)));
+  emit(full(c(C.dim, `   trust: explicit keyset required  ·  no trust → no execution`)));
   emit(MID);
   emit(row(c(C.bCyan, "AGENT ACTIONS"), c(C.bCyan, "AUTHORIZATION")));
   emit(MID);

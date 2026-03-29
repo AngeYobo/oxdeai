@@ -46,7 +46,8 @@ export type VerificationViolationCode =
   | "DELEGATION_POLICY_MISMATCH"
   | "DELEGATION_SCOPE_VIOLATION"
   | "DELEGATION_MULTIHOP_DENIED"
-  | "DELEGATION_REPLAY";
+  | "DELEGATION_REPLAY"
+  | "TRUSTED_KEYSETS_REQUIRED";
 
 /** @public */
 export type VerificationViolation = {

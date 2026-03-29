@@ -737,19 +737,26 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
 
     if (cmd === "verify") {
       if (args[1] === "all") {
+        const mode = flags.mode ?? "strict";
+        if (mode === "strict" && !flags.trustedKeyset) {
+          err("Strict verification requires --trusted-keyset. Pass one or more trusted keysets, or explicitly use --mode best-effort.");
+          return EXIT_CODE_INVALID;
+        }
         const paths = basePaths(flags);
+        const trustedKeySets = await readTrustedKeySet(flags.trustedKeyset);
         const snapshotBytes = Uint8Array.from(await readFile(paths.snapshot));
         const auditBytes = Uint8Array.from(await readFile(paths.audit));
         const envelopeBytes = Uint8Array.from(await readFile(paths.envelope));
         const snapshot = verifySnapshot(snapshotBytes, flags.expectedPolicyId ? { expectedPolicyId: flags.expectedPolicyId } : undefined);
         const audit = verifyAuditEvents(parseAuditInputBytes(auditBytes) as Parameters<typeof verifyAuditEvents>[0], {
-          mode: flags.mode ?? "strict",
+          mode,
           expectedPolicyId: flags.expectedPolicyId
         });
         const envelope = verifyEnvelope(envelopeBytes, {
-          mode: flags.mode ?? "strict",
+          mode,
           expectedPolicyId: flags.expectedPolicyId,
           expectedIssuer: flags.expectedIssuer,
+          trustedKeySets,
           requireSignatureVerification: flags.requireSignatureVerification
         });
         const payload = { snapshot, audit, envelope, paths };
@@ -765,6 +772,10 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
         throw new Error("authorization verification requires --file <authorization.json>");
       }
       const mode = flags.mode ?? "strict";
+      if (mode === "strict" && !flags.trustedKeyset && (kind === "envelope" || kind === "authorization")) {
+        err("Strict verification requires --trusted-keyset. Pass one or more trusted keysets, or explicitly use --mode best-effort.");
+        return EXIT_CODE_INVALID;
+      }
       const fromFile = file && file !== "-";
       const bytes = fromFile
         ? Uint8Array.from(await readFile(file))
@@ -922,8 +933,14 @@ export async function runCli(argv: string[], io?: Partial<Io>): Promise<number> 
     if (cmd === "verify-envelope") {
       const file = args[1] ?? flags.file;
       if (!file) throw new Error("Usage: verify-envelope <file>");
+      const mode = flags.mode ?? "strict";
+      if (mode === "strict" && !flags.trustedKeyset) {
+        err("Strict verification requires --trusted-keyset. Pass one or more trusted keysets, or explicitly use --mode best-effort.");
+        return EXIT_CODE_INVALID;
+      }
+      const trustedKeySets = await readTrustedKeySet(flags.trustedKeyset);
       const bytes = Uint8Array.from(await readFile(file));
-      const verified = verifyEnvelope(bytes, { mode: "strict" });
+      const verified = verifyEnvelope(bytes, { mode, trustedKeySets });
       writePayload(out, flags, verified, verificationSummary("envelope", verified));
       return verificationExitCode(verified);
     }

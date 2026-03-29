@@ -13,6 +13,7 @@ import {
 /** @public */
 export type VerifyAuthorizationOptions = {
   now?: number;
+  mode?: "strict" | "best-effort";
   expectedIssuer?: string;
   expectedAudience?: string;
   expectedPolicyId?: string;
@@ -140,6 +141,15 @@ export function verifyAuthorization(
   const trusted = trustedRaw
     ? (Array.isArray(trustedRaw) ? trustedRaw : [trustedRaw])
     : [];
+
+  if (opts?.mode === "strict" && trusted.length === 0) {
+    return {
+      ok: false,
+      status: "invalid",
+      violations: [{ code: "TRUSTED_KEYSETS_REQUIRED", message: "strict mode requires trustedKeySets to be provided" }]
+    };
+  }
+
   const requireSig = opts?.requireSignatureVerification ?? false;
   const hasSigMaterial = hasText(auth.alg) && hasText(auth.kid) && hasText(auth.signature);
 

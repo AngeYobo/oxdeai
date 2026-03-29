@@ -21,6 +21,7 @@ import {
   TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
   TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
 } from "./fixtures/ed25519.test-only.fixture.js";
+import { CONFORMANCE_TEST_ENGINE_SECRET } from "./fixtures/conformance-engine-secret.fixture.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -65,6 +66,7 @@ type ConformanceAdapter = {
   }): VerificationResult;
   verifyAuthorization(auth: AuthorizationV1, opts?: {
     now?: number;
+    mode?: "strict" | "best-effort";
     expectedIssuer?: string;
     expectedAudience?: string;
     expectedPolicyId?: string;
@@ -87,11 +89,7 @@ const TEST_KEYSET: KeySet = {
   ]
 };
 
-const CORE_ENGINE_SECRET = process.env.OXDEAI_ENGINE_SECRET ?? "";
-
-if (!CORE_ENGINE_SECRET || CORE_ENGINE_SECRET.length < 32) {
-  throw new Error("OXDEAI_ENGINE_SECRET must be set and ≥ 32 chars");
-}
+const CORE_ENGINE_SECRET = process.env.OXDEAI_ENGINE_SECRET ?? CONFORMANCE_TEST_ENGINE_SECRET;
 
 const CORE_POLICY_ID = "a".repeat(64);
 const INTENT_BINDING_FIELDS = [
@@ -861,11 +859,11 @@ function buildEnvelopeCases(adapter: ConformanceAdapter): Array<{ status: string
   const corrupt = new Uint8Array([1, 2, 3, 4, 5]);
 
   return [
-    adapter.verifyEnvelope(withCheckpoint, { expectedPolicyId: engine.computePolicyId(), mode: "strict" }),
+    adapter.verifyEnvelope(withCheckpoint, { expectedPolicyId: engine.computePolicyId(), mode: "strict", trustedKeySets: TEST_KEYSET }),
     adapter.verifyEnvelope(valid, { expectedPolicyId: engine.computePolicyId(), mode: "best-effort" }),
     adapter.verifyEnvelope(mismatched, { expectedPolicyId: engine.computePolicyId(), mode: "best-effort" }),
     adapter.verifyEnvelope(corrupt, { expectedPolicyId: engine.computePolicyId(), mode: "best-effort" }),
-    adapter.verifyEnvelope(valid, { expectedPolicyId: engine.computePolicyId(), mode: "strict" })
+    adapter.verifyEnvelope(valid, { expectedPolicyId: engine.computePolicyId(), mode: "strict", trustedKeySets: TEST_KEYSET })
   ];
 }
 

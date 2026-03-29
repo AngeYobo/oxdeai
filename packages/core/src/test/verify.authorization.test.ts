@@ -67,6 +67,31 @@ test("invalid: unknown kid", () => {
   assert.ok(out.violations.some((v) => v.code === "AUTH_KID_UNKNOWN"));
 });
 
+test("invalid: strict mode without trustedKeySets fails closed with TRUSTED_KEYSETS_REQUIRED", () => {
+  const out = verifyAuthorization(makeAuth(), { now: 1010, mode: "strict" });
+  assert.equal(out.ok, false);
+  assert.equal(out.status, "invalid");
+  assert.ok(out.violations.some((v) => v.code === "TRUSTED_KEYSETS_REQUIRED"));
+});
+
+test("invalid: strict mode with empty trustedKeySets array fails closed with TRUSTED_KEYSETS_REQUIRED", () => {
+  const out = verifyAuthorization(makeAuth(), { now: 1010, mode: "strict", trustedKeySets: [] });
+  assert.equal(out.ok, false);
+  assert.equal(out.status, "invalid");
+  assert.ok(out.violations.some((v) => v.code === "TRUSTED_KEYSETS_REQUIRED"));
+});
+
+test("ok: strict mode with trustedKeySets passes the guard", () => {
+  const out = verifyAuthorization(makeAuth(), {
+    now: 1010,
+    mode: "strict",
+    trustedKeySets: TEST_KEYSET,
+    requireSignatureVerification: true
+  });
+  assert.equal(out.status, "ok");
+  assert.equal(out.violations.filter((v) => v.code === "TRUSTED_KEYSETS_REQUIRED").length, 0);
+});
+
 test("invalid: unsupported alg", () => {
   const auth = makeAuth();
   const out = verifyAuthorization({ ...auth, alg: "Unknown" as any }, {

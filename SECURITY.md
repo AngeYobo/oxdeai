@@ -1,4 +1,4 @@
-# Security Policy and Threat Model (v1.2.0)
+# Security Policy and Threat Model (v1.3.0)
 
 This document defines OxDeAI protocol security scope, assumptions, and required failure behavior.
 
@@ -50,20 +50,20 @@ Primary threats and required mitigations:
 - PDP: policy decision point; issues authorizations.
 - PEP: policy enforcement point/relying party; verifies before execution.
 - Signer: entity controlling private key for `issuer`.
-- Verifier: system validating artifacts using trusted keysets.
+- Verifier: system validating artifacts using configured `trustedKeySets`.
 
 A relying party MUST NOT trust agent assertions directly.
 A relying party MUST trust only valid artifacts under explicitly trusted issuers.
 
-### Important
+Verifiers MUST configure `trustedKeySets` before invoking strict-mode verification.
+`trustedKeySets` is the trust boundary. In strict mode, verification without it MUST fail closed with `TRUSTED_KEYSETS_REQUIRED`.
 
-OxDeAI does not enforce global issuer authority by default.
+OxDeAI does not define a global issuer authority.
+Any entity that controls a signing key can produce a cryptographically valid artifact.
+Cryptographic validity is a necessary but not sufficient condition for trust.
+The verifier is solely responsible for deciding which issuers are trusted.
 
-- Any entity with access to a valid signing key (`engine_secret` or Ed25519 private key) can issue valid authorizations
-- The protocol guarantees integrity and verification, not centralized trust
-- Trust must be established externally via trusted keysets or controlled issuers
-
-This is a deliberate design choice: OxDeAI enforces execution, not identity authority
+This is a deliberate design choice: OxDeAI enforces the execution boundary; issuer authority is external to the protocol.
 
 ## 4. Cryptographic Model
 
@@ -129,6 +129,7 @@ Fail-closed conditions include:
 - policy mismatch when expected
 - expired authorization
 - replayed `auth_id`
+- strict mode invoked without `trustedKeySets` configured (`TRUSTED_KEYSETS_REQUIRED`)
 
 Implementations MUST NOT downgrade invalid artifacts to warnings for execution gating.
 
@@ -137,16 +138,21 @@ Implementations MUST NOT downgrade invalid artifacts to warnings for execution g
 Verification ensures:
 
 - integrity of the artifact
-- authenticity of the signer
+- authenticity of the signer relative to `trustedKeySets`
 - consistency with the evaluated intent and state
 
 Verification does NOT ensure:
 
-- that the policy was correct
+- that the policy was correct or legitimate
 - that the state was legitimate
-- that the issuer is trusted globally
+- that the issuer is globally authoritative
+- that `policyId` originated from a trusted source — `policyId` is not a trust anchor
 
-These concerns must be handled at the system level.
+`policyId` is a content hash of the policy configuration.
+It identifies a specific policy but does not authenticate the authority that defined it.
+Verifiers MUST NOT treat a matching `policyId` as proof of issuer legitimacy.
+
+These concerns MUST be handled at the deployment level via `trustedKeySets`.
 
 
 ## 8. Test Fixture Key Material
@@ -174,23 +180,24 @@ Do not disclose publicly before coordinated disclosure.
 
 ## 10. Issuer Model and Limitations
 
-OxDeAI separates authorization verification from issuer control.
+OxDeAI separates authorization verification from issuer authority.
 
-Current properties:
+Protocol properties:
 
-- Authorization validity is based on cryptographic verification
-- Issuer trust is determined by the verifier's trusted keyset
-- No global issuer registry exists in the protocol
-- No remote policy authority is enforced by default
+- Any party that controls a signing key can produce a cryptographically valid artifact. The protocol does not prevent this.
+- No global issuer registry exists. There is no built-in mechanism to determine whether an issuer is legitimate.
+- No remote policy authority is enforced. `policyId` is a content hash, not a capability issued by a trusted root.
+- Verification against `trustedKeySets` is the only mechanism by which the protocol establishes issuer trust.
 
-Implications:
+Normative requirements:
 
-- A fork can generate valid authorizations with its own keys
-- Verifiers must explicitly define which issuers they trust
-- `policyId` is not cryptographically anchored to a trusted authority
+- Verifiers MUST configure `trustedKeySets` when invoking strict-mode verification.
+- When `trustedKeySets` is configured, verifiers MUST NOT accept artifacts from issuers not present in the configured set.
+- Verifiers MUST NOT treat `policyId` as a trust anchor or as evidence of issuer authority.
+- A cryptographically valid artifact from an unconfigured issuer MUST be treated as untrusted.
 
-Production systems SHOULD:
+Production systems MUST:
 
-- restrict accepted issuers via trusted keysets
+- restrict accepted issuers via explicitly configured `trustedKeySets`
 - isolate signing keys in controlled infrastructure
-- avoid distributing signing capabilities to untrusted environments
+- treat signing key exposure as a full trust compromise for affected issuers

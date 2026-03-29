@@ -18,11 +18,12 @@ import {
   signAuthorizationEd25519,
   createDelegation,
 } from "@oxdeai/core";
-import type { Intent, State, Authorization, AuthorizationV1, DelegationV1 } from "@oxdeai/core";
+import type { Intent, State, Authorization, AuthorizationV1, DelegationV1, KeySet } from "@oxdeai/core";
 import {
   TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
   TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
 } from "../src/fixtures/ed25519.test-only.fixture.js";
+import { CONFORMANCE_TEST_ENGINE_SECRET } from "../src/fixtures/conformance-engine-secret.fixture.js";
 type ExecuteIntent = Extract<Intent, { type?: "EXECUTE" }>;
 type EnvelopeEvent = Parameters<typeof encodeEnvelope>[0]["events"][number];
 
@@ -77,7 +78,7 @@ function writeVector(filename: string, data: object): void {
   console.log(`wrote ${filename}`);
 }
 
-const ENGINE_SECRET = "test-secret-must-be-at-least-32-chars!!";
+const ENGINE_SECRET = CONFORMANCE_TEST_ENGINE_SECRET;
 
 function makeEngine(): PolicyEngine {
   return new PolicyEngine({
@@ -399,7 +400,8 @@ async function extractEnvelopeVerification(): Promise<void> {
 
   const r1 = verifyEnvelope(withCheckpointBytes, {
     expectedPolicyId: engine.computePolicyId(),
-    mode: "strict"
+    mode: "strict",
+    trustedKeySets: DELEGATION_TEST_KEYSET as KeySet
   });
   const r2 = verifyEnvelope(validEnvelopeBytes, {
     expectedPolicyId: engine.computePolicyId(),
@@ -415,7 +417,8 @@ async function extractEnvelopeVerification(): Promise<void> {
   });
   const r5 = verifyEnvelope(validEnvelopeBytes, {
     expectedPolicyId: engine.computePolicyId(),
-    mode: "strict"
+    mode: "strict",
+    trustedKeySets: DELEGATION_TEST_KEYSET as KeySet
   });
 
   writeVector("envelope-verification.json", {

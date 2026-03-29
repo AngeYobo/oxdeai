@@ -18,6 +18,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
+import { generateKeyPairSync } from "node:crypto";
 
 import { PolicyEngine } from "../policy/PolicyEngine.js";
 import { encodeCanonicalState, decodeCanonicalState } from "../snapshot/CanonicalCodec.js";
@@ -27,6 +28,17 @@ import { verifyEnvelope } from "../verification/verifyEnvelope.js";
 import type { AuditEntry } from "../audit/AuditLog.js";
 import type { State } from "../types/state.js";
 import type { Intent } from "../types/intent.js";
+import type { KeySet } from "../types/keyset.js";
+
+const _SUF_KEYPAIR = generateKeyPairSync("ed25519", {
+  privateKeyEncoding: { format: "pem", type: "pkcs8" },
+  publicKeyEncoding: { format: "pem", type: "spki" },
+});
+const SUF_KEYSET: KeySet = {
+  issuer: "sufficiency-test-issuer",
+  version: "1",
+  keys: [{ kid: "suf-2026", alg: "Ed25519", public_key: _SUF_KEYPAIR.publicKey }]
+};
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -203,7 +215,7 @@ test("S-4 state-binding: correctly-built envelope — verifyEnvelope.stateHash m
   ];
 
   const envelopeBytes = encodeEnvelope({ formatVersion: 1, snapshot: snapshotBytes, events });
-  const out = verifyEnvelope(envelopeBytes, { mode: "strict" });
+  const out = verifyEnvelope(envelopeBytes, { mode: "strict", trustedKeySets: SUF_KEYSET });
 
   assert.equal(out.ok, true);
   assert.equal(out.stateHash, realStateHash,
@@ -268,7 +280,7 @@ test("S-5 state-binding gap: verifyEnvelope passes even when snapshot and STATE_
   ];
 
   const envelopeBytes = encodeEnvelope({ formatVersion: 1, snapshot: snapshotBytes, events });
-  const out = verifyEnvelope(envelopeBytes, { mode: "strict" });
+  const out = verifyEnvelope(envelopeBytes, { mode: "strict", trustedKeySets: SUF_KEYSET });
 
   // verifyEnvelope returns ok: true despite snapshot and checkpoint describing
   // different states — no automatic cross-check is performed.

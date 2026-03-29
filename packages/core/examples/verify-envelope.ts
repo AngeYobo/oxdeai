@@ -8,5 +8,8 @@ if (!path) {
 }
 
 const envelopeBytes = new Uint8Array(readFileSync(path));
+// Best-effort mode: structural checks only, no issuer trust required.
+// Production PEP code must use strict mode with explicit trustedKeySets:
+//   verifyEnvelope(bytes, { mode: "strict", trustedKeySets: [...] })
 const result = verifyEnvelope(envelopeBytes);
 console.log(JSON.stringify(result, null, 2));

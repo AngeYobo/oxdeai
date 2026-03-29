@@ -113,7 +113,7 @@ test("envelope verifier returns unified structure with propagated hashes", () =>
     events: makeEvents(policyId, true)
   });
 
-  const result = verifyEnvelope(envelopeBytes, { mode: "strict" });
+  const result = verifyEnvelope(envelopeBytes, { mode: "best-effort" });
   assert.equal(result.ok, true);
   assert.equal(result.status, "ok");
   assert.equal(result.policyId, policyId);

@@ -34,6 +34,15 @@ export function verifyEnvelope(
   const now = opts?.now ?? Math.floor(Date.now() / 1000);
   const trustedRaw = opts?.trustedKeySets;
   const trusted = trustedRaw ? (Array.isArray(trustedRaw) ? trustedRaw : [trustedRaw]) : [];
+
+  if (opts?.mode === "strict" && trusted.length === 0) {
+    return {
+      ok: false,
+      status: "invalid",
+      violations: [{ code: "TRUSTED_KEYSETS_REQUIRED", message: "strict mode requires trustedKeySets to be provided" }]
+    };
+  }
+
   const hasSignature = typeof envelope.signature === "string" && envelope.signature.length > 0;
 
   if (opts?.expectedIssuer !== undefined && envelope.issuer !== opts.expectedIssuer) {

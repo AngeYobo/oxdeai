@@ -12,6 +12,8 @@ const guard = createAgentgramGuard({
 });
 
 async function run(): Promise<void> {
+  console.log(" trust: explicit keyset required  ·  no trust → no execution");
+  console.log();
   const cases: Array<{ label: string; fn: () => Promise<unknown> }> = [
     // ── ALLOW cases ────────────────────────────────────────────────────────────
     {
