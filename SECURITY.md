@@ -55,6 +55,16 @@ Primary threats and required mitigations:
 A relying party MUST NOT trust agent assertions directly.
 A relying party MUST trust only valid artifacts under explicitly trusted issuers.
 
+### Important
+
+OxDeAI does not enforce global issuer authority by default.
+
+- Any entity with access to a valid signing key (`engine_secret` or Ed25519 private key) can issue valid authorizations
+- The protocol guarantees integrity and verification, not centralized trust
+- Trust must be established externally via trusted keysets or controlled issuers
+
+This is a deliberate design choice: OxDeAI enforces execution, not identity authority
+
 ## 4. Cryptographic Model
 
 - Preferred algorithm: `Ed25519`.
@@ -79,6 +89,16 @@ Legacy HMAC verification MAY be supported as explicit compatibility mode.
 - Keysets SHOULD support multiple active keys during rotation.
 - Compromise recovery SHOULD include key revocation, kid retirement, and signer replacement.
 - v1.2 key distribution MAY be local/offline; network discovery is optional and external to core protocol.
+
+### Engine Secret Requirements
+
+Implementations MUST enforce:
+
+- minimum length: 32 characters
+- no default or fallback values
+- explicit configuration via environment or secure storage
+
+The engine MUST fail fast if a valid secret is not provided.
 
 ## 6. Replay and TOCTOU Mitigations
 
@@ -112,7 +132,22 @@ Fail-closed conditions include:
 
 Implementations MUST NOT downgrade invalid artifacts to warnings for execution gating.
 
-## 8. Vulnerability Reporting
+### Important Distinction
+
+Verification ensures:
+
+- integrity of the artifact
+- authenticity of the signer
+- consistency with the evaluated intent and state
+
+Verification does NOT ensure:
+
+- that the policy was correct
+- that the state was legitimate
+- that the issuer is trusted globally
+
+These concerns must be handled at the system level.
+
 
 ## 8. Test Fixture Key Material
 
@@ -132,6 +167,30 @@ Repository scanners and reviewers SHOULD treat fixture-path key material as test
 
 Report vulnerabilities privately to:
 
-security@oxdeai.io
+security@oxdeai.dev
 
 Do not disclose publicly before coordinated disclosure.
+
+
+## 10. Issuer Model and Limitations
+
+OxDeAI separates authorization verification from issuer control.
+
+Current properties:
+
+- Authorization validity is based on cryptographic verification
+- Issuer trust is determined by the verifier's trusted keyset
+- No global issuer registry exists in the protocol
+- No remote policy authority is enforced by default
+
+Implications:
+
+- A fork can generate valid authorizations with its own keys
+- Verifiers must explicitly define which issuers they trust
+- `policyId` is not cryptographically anchored to a trusted authority
+
+Production systems SHOULD:
+
+- restrict accepted issuers via trusted keysets
+- isolate signing keys in controlled infrastructure
+- avoid distributing signing capabilities to untrusted environments
