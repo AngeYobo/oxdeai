@@ -277,6 +277,26 @@ Diagram source/editing policy:
 
 ---
 
+## Trust Boundary
+
+![OxDeAI Trust Boundary](../../docs/diagrams/trust-boundary.svg)
+
+The core model shows **what the protocol decides** (deterministic authorization logic).
+This diagram shows **who is trusted to make that decision** (issuer model + verifier configuration).
+
+The two concerns are deliberately separate:
+
+- Any party that controls a signing key can produce a cryptographically valid artifact. The protocol does not prevent this.
+- A cryptographically valid artifact is not trusted by default.
+- The verifier defines the trust boundary via `trustedKeySets`.
+- In strict mode, a missing or empty `trustedKeySets` is a hard failure (`TRUSTED_KEYSETS_REQUIRED`), not a warning.
+
+`policyId` is a content hash of the policy configuration — it identifies a specific policy but does not authenticate the authority that defined it. Verifiers MUST NOT treat a matching `policyId` as proof of issuer legitimacy.
+
+Trust is configured explicitly at the verifier. OxDeAI enforces the execution boundary; who is trusted is defined outside the protocol.
+
+---
+
 ## Concepts
 
 ### Intent

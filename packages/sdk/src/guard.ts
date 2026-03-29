@@ -33,6 +33,12 @@ export type GuardOptions = {
   auditAdapter?: AuditAdapter;
   clock?: ClockAdapter;
   mode?: "fail-fast" | "collect-all";
+  /**
+   * Engine-level HMAC binding check between the issued intent and authorization.
+   * This is the PDP's own internal consistency check — distinct from PEP-side
+   * cryptographic signature verification via `verifyAuthorization` from @oxdeai/core.
+   * Defaults to true. Set to false only in test scenarios.
+   */
   verifyAuthorization?: boolean;
 };
 
@@ -61,6 +67,14 @@ export type GuardFn = <T>(
   execute: (ctx: GuardExecuteContext) => MaybePromise<T>
 ) => Promise<GuardResult<T>>;
 
+/**
+ * Creates a guard that evaluates intents against policy and executes the callback
+ * only when the decision is ALLOW (PDP + inline PEP path).
+ *
+ * This is the issuing side of the authorization boundary: it evaluates policy and
+ * produces authorizations. For relying-party (PEP) verification of artifacts issued
+ * by an external party, use `createVerifier` with explicit `trustedKeySets` instead.
+ */
 export function createGuard(opts: GuardOptions): GuardFn {
   const clock = opts.clock ?? { now: () => Math.floor(Date.now() / 1000) };
   let auditCursor = 0;

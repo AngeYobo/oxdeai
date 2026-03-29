@@ -85,6 +85,16 @@ export class OxDeAIClient {
     return result.valid ? { valid: true } : { valid: false, reason: result.reason };
   }
 
+  /**
+   * Verifies the current in-memory snapshot, audit log, and envelope.
+   *
+   * Defaults to `mode: "best-effort"` — structural checks only, no `trustedKeySets`
+   * required. Passing `mode: "strict"` additionally requires a signed envelope with a
+   * STATE_CHECKPOINT; without `trustedKeySets` it will return `TRUSTED_KEYSETS_REQUIRED`.
+   *
+   * For PEP-side trust verification of artifacts issued by an external party, use
+   * `createVerifier` with explicit `trustedKeySets` rather than this method.
+   */
   async verifyCurrentArtifacts(opts?: { mode?: "strict" | "best-effort" }): Promise<VerifyBundleResult> {
     const state = await this.stateAdapter.load();
     const snapshotBytes = encodeCanonicalState(this.engine.exportState(state));

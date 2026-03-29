@@ -62,10 +62,11 @@ verifyAuthorization(auth, {
   trustedKeySets: [...]
 });
 // ok only if signature is valid AND issuer is trusted
+```
 
-**Wrong - no trust config, strict mode fails closed:**
+Wrong - no trust config, strict mode fails closed:
 
-```typescript
+```ts
 verifyAuthorization(auth, { mode: "strict" });
 // → invalid (TRUSTED_KEYSETS_REQUIRED)
 ```

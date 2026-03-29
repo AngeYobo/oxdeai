@@ -1,0 +1,71 @@
+<svg width="760" viewBox="0 0 760 490" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="a-gray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="a-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="a-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- ── Issuer ─────────────────────────────────────────── -->
+<rect x="270" y="28" width="220" height="52" rx="8" fill="#D3D1C7" stroke="#5F5E5A" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="380" y="51" text-anchor="middle" fill="#2C2C2A">Issuer</text>
+<text font-size="11" font-family="Arial,sans-serif" font-style="italic" x="380" y="69" text-anchor="middle" fill="#5F5E5A">any system · any party with a signing key</text>
+
+<!-- Arrow: Issuer → AuthorizationV1 -->
+<line x1="380" y1="80" x2="380" y2="120" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
+<text font-size="11" font-family="Arial,sans-serif" x="388" y="106" fill="#5F5E5A">signs artifact</text>
+
+<!-- ── AuthorizationV1 ─────────────────────────────────── -->
+<rect x="240" y="122" width="280" height="58" rx="8" fill="#CECBF6" stroke="#534AB7" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="380" y="145" text-anchor="middle" fill="#26215C">AuthorizationV1</text>
+<text font-size="10" font-family="Arial,sans-serif" x="380" y="164" text-anchor="middle" fill="#534AB7">signed · scoped · state-bound · short-lived</text>
+
+<!-- Arrow: AuthorizationV1 → Verifier -->
+<line x1="380" y1="180" x2="380" y2="230" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
+<text font-size="11" font-family="Arial,sans-serif" x="388" y="212" fill="#5F5E5A">presented to verifier</text>
+
+<!-- ── Verifier / PEP ─────────────────────────────────── -->
+<rect x="240" y="232" width="260" height="72" rx="8" fill="#B5D4F4" stroke="#185FA5" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="370" y="254" text-anchor="middle" fill="#042C53">Verifier / PEP</text>
+<text font-size="11" font-family="Arial,sans-serif" font-style="italic" x="370" y="272" text-anchor="middle" fill="#185FA5">verifyAuthorization · verifyEnvelope</text>
+<text font-size="11" font-family="Arial,sans-serif" x="370" y="290" text-anchor="middle" fill="#185FA5">fail-closed · strict mode</text>
+
+<!-- ── trustedKeySets ─────────────────────────────────── -->
+<rect x="534" y="244" width="196" height="52" rx="8" fill="#C3EDDF" stroke="#1A7A5E" stroke-width="0.75"/>
+<text font-size="13" font-family="Arial,sans-serif" font-weight="500" x="632" y="265" text-anchor="middle" fill="#04342C">trustedKeySets</text>
+<text font-size="10" font-family="Arial,sans-serif" font-style="italic" x="632" y="282" text-anchor="middle" fill="#085041">verifier config · trust boundary</text>
+
+<!-- Arrow: trustedKeySets → Verifier (right to left) -->
+<line x1="532" y1="268" x2="502" y2="268" stroke="#5F5E5A" stroke-width="1.5" marker-end="url(#a-gray)"/>
+
+<!-- ── Arrow: Verifier → Execution (green, left path) ─── -->
+<path d="M 310 304 L 310 356 L 160 356 L 160 386" stroke="#16a34a" stroke-width="2" fill="none" marker-end="url(#a-green)"/>
+<text font-size="10" font-family="Arial,sans-serif" font-weight="600" x="308" y="320" text-anchor="end" fill="#16a34a">trusted issuer</text>
+<text font-size="10" font-family="Arial,sans-serif" font-weight="600" x="308" y="332" text-anchor="end" fill="#16a34a">valid sig</text>
+
+<!-- ── Arrow: Verifier → Blocked (red, right path) ──────── -->
+<path d="M 430 304 L 430 356 L 590 356 L 590 386" stroke="#dc2626" stroke-width="2" fill="none" marker-end="url(#a-red)"/>
+<text font-size="10" font-family="Arial,sans-serif" font-weight="600" x="432" y="320" text-anchor="start" fill="#dc2626">no trust configured /</text>
+<text font-size="10" font-family="Arial,sans-serif" font-weight="600" x="432" y="332" text-anchor="start" fill="#dc2626">TRUSTED_KEYSETS_REQUIRED</text>
+
+<!-- ── Execution ──────────────────────────────────────── -->
+<rect x="60" y="386" width="200" height="52" rx="8" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="160" y="408" text-anchor="middle" fill="#04342C">Execution</text>
+<text font-size="11" font-family="Arial,sans-serif" x="160" y="426" text-anchor="middle" fill="#085041">allowed</text>
+
+<!-- ── Blocked ────────────────────────────────────────── -->
+<rect x="490" y="386" width="200" height="52" rx="8" fill="#F5C4B3" stroke="#993C1D" stroke-width="0.75"/>
+<text font-size="14" font-family="Arial,sans-serif" font-weight="500" x="590" y="408" text-anchor="middle" fill="#4A1B0C">Blocked</text>
+<text font-size="11" font-family="Arial,sans-serif" x="590" y="426" text-anchor="middle" fill="#712B13">fail-closed before execution</text>
+
+<!-- ── Caption ────────────────────────────────────────── -->
+<line x1="10" y1="456" x2="750" y2="456" stroke="#D3D1C7" stroke-width="0.75"/>
+<text font-size="11" font-family="Arial,sans-serif" font-style="italic" x="380" y="472" text-anchor="middle" fill="#5F5E5A">A valid artifact is not trusted by default.</text>
+<text font-size="11" font-family="Arial,sans-serif" font-style="italic" x="380" y="486" text-anchor="middle" fill="#5F5E5A">Trust is configured explicitly by the verifier.</text>
+
+</svg>
