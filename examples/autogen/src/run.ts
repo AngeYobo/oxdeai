@@ -5,7 +5,7 @@ import {
   verifyEnvelope,
   verifySnapshot,
 } from "@oxdeai/core";
-import type { State } from "@oxdeai/core";
+import type { KeySet, State } from "@oxdeai/core";
 import { AGENT_ID, engine, makeState, POLICY_ID } from "./policy.js";
 import { guardedProvision } from "./pep.js";
 import { proposeCallsViaAutoGen } from "./autogen.js";
@@ -30,6 +30,20 @@ const C = {
 };
 
 const c = (color: string, text: string) => `${color}${text}${C.reset}`;
+
+const DEMO_TRUSTED_KEYSET: KeySet = {
+  issuer: "oxdeai.policy-engine",
+  version: "1",
+  keys: [
+    {
+      kid: "2026-01",
+      alg: "Ed25519",
+      public_key: `-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAWiMMGTYK7zzHwZXLzDpCshxAH6Lgx8gVsJaixePuY7g=
+-----END PUBLIC KEY-----`,
+    },
+  ],
+};
 
 export async function runDemo(log: (msg: string) => void = (msg) => console.log(msg)): Promise<void> {
   const decisions: string[] = [];
@@ -123,6 +137,7 @@ export async function runDemo(log: (msg: string) => void = (msg) => console.log(
   const vr = verifyEnvelope(envelopeBytes, {
     expectedPolicyId: POLICY_ID,
     mode: "strict",
+    trustedKeySets: DEMO_TRUSTED_KEYSET,
   });
 
   log(`   ${c(C.dim, "status:")}        ${vr.status === "ok" ? c(C.bGreen, "ok") : c(C.bRed, vr.status)}`);
