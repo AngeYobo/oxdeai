@@ -23,7 +23,7 @@ import {
   TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
   TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
 } from "../src/fixtures/ed25519.test-only.fixture.js";
-import { CONFORMANCE_TEST_ENGINE_SECRET } from "../src/fixtures/conformance-engine-secret.fixture.js";
+import { CONFORMANCE_ENGINE_SECRET } from "../src/fixtures/conformance-engine-secret.fixture.js";
 type ExecuteIntent = Extract<Intent, { type?: "EXECUTE" }>;
 type EnvelopeEvent = Parameters<typeof encodeEnvelope>[0]["events"][number];
 
@@ -78,7 +78,7 @@ function writeVector(filename: string, data: object): void {
   console.log(`wrote ${filename}`);
 }
 
-const ENGINE_SECRET = CONFORMANCE_TEST_ENGINE_SECRET;
+const ENGINE_SECRET = CONFORMANCE_ENGINE_SECRET;
 
 function makeEngine(): PolicyEngine {
   return new PolicyEngine({

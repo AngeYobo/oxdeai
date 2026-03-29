@@ -21,7 +21,7 @@ import {
   TEST_ONLY_ED25519_PRIVATE_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
   TEST_ONLY_ED25519_PUBLIC_KEY_PEM_DO_NOT_USE_IN_PRODUCTION,
 } from "./fixtures/ed25519.test-only.fixture.js";
-import { CONFORMANCE_TEST_ENGINE_SECRET } from "./fixtures/conformance-engine-secret.fixture.js";
+import { CONFORMANCE_ENGINE_SECRET } from "./fixtures/conformance-engine-secret.fixture.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -89,7 +89,7 @@ const TEST_KEYSET: KeySet = {
   ]
 };
 
-const CORE_ENGINE_SECRET = process.env.OXDEAI_ENGINE_SECRET ?? CONFORMANCE_TEST_ENGINE_SECRET;
+const CORE_ENGINE_SECRET = CONFORMANCE_ENGINE_SECRET;
 
 const CORE_POLICY_ID = "a".repeat(64);
 const INTENT_BINDING_FIELDS = [
