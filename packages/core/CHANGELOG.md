@@ -7,6 +7,30 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.7.0] - 2026-03-29
+
+### Added
+
+- `createVerifier` with explicit `trustedKeySets` parameter as the canonical PEP-side trust entry point.
+- `TRUSTED_KEYSETS_REQUIRED` violation — strict mode now fails closed when no keyset is configured, rather than returning inconclusive silently.
+- Trust boundary diagram (`docs/diagrams/trust-boundary.svg`) and `## Trust Boundary` section in `packages/core/README.md`.
+
+### Changed
+
+- CLI `verify` commands (all 4 strict entry points) now require `--trusted-keyset` in strict mode or explicit `--mode best-effort`; missing keyset produces an actionable error rather than a silent inconclusive result.
+- `@oxdeai/sdk@1.3.2`: JSDoc on `createGuard`, `GuardOptions.verifyAuthorization`, and `verifyCurrentArtifacts` now explicitly distinguish the engine-level HMAC check (PDP) from PEP-side issuer trust via `createVerifier`.
+
+### Fixed
+
+- Conformance validator no longer reads `OXDEAI_ENGINE_SECRET` from the environment — both `extract-vectors` and `validate` now unconditionally use `CONFORMANCE_ENGINE_SECRET`, making the suite deterministic regardless of shell environment.
+
+### Notes
+
+- No breaking changes to existing `AuthorizationV1`, `DelegationV1`, or stateless verification semantics.
+- `createVerifier` was already available; this release makes it the documented, tested, and CLI-enforced primary entry point for relying-party verification.
+
+---
+
 ## [1.6.1] - 2026-03-25
 
 ### Fixed
