@@ -38,6 +38,8 @@ jobs:
 
       - name: Conformance
         run: pnpm -C packages/core build && pnpm -C packages/conformance validate
+        env:
+          OXDEAI_ENGINE_SECRET: ci-conformance-secret-for-testing-only!!
 
   adapter-validation:
     runs-on: ubuntu-latest
@@ -65,6 +67,8 @@ jobs:
 
       - name: Validate adapters
         run: pnpm validate:adapters
+        env:
+          OXDEAI_ENGINE_SECRET: ci-adapter-validation-secret-testing!!
 
 concurrency:
   group: ci-${{ github.ref }}
