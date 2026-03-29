@@ -12,9 +12,16 @@ Deterministic Execution Authorization Layer for Autonomous Systems
 
 `@oxdeai/core` is a stable protocol library.
 
-Current protocol stack line: **v1.6.x**. The first published release on this line is `1.6.1`; `1.6.0` was tagged in the repository but not published.
+Current protocol stack line: **v1.7.x**.
 
-v1.6.x adds on top of the preserved v1.5.x verification surface:
+v1.7.x adds on top of the preserved v1.6.x verification surface:
+
+- `createVerifier` with explicit `trustedKeySets` as the PEP-side trust entry point
+- Strict mode fails closed when no `trustedKeySets` configured (`TRUSTED_KEYSETS_REQUIRED`)
+- Trust boundary made explicit in API, documentation, and CLI tooling
+- Conformance suite: deterministic secret fixture, env var override removed
+
+Preserved from v1.6.x:
 
 - `DelegationV1` — first-class delegation artifact
 - `verifyDelegation()` / `verifyDelegationChain()` — stateless delegation verifiers
@@ -348,7 +355,7 @@ import type { State, Intent } from "@oxdeai/core";
 // Policy configuration is bound in the engine instance.
 // evaluatePure(intent, state) evaluates against that bound policy.
 const engine = new PolicyEngine({
-  policy_version: "v1.6",
+  policy_version: "v1.7",
   authorization_ttl_seconds: 60,
   authorization_signing_alg: "Ed25519",
   authorization_private_key_pem: process.env.OXDEAI_SIGNING_KEY_PEM!,
@@ -359,7 +366,7 @@ const engine = new PolicyEngine({
 const now = 1730000000; // injected timestamp (seconds)
 
 const state: State = {
-  policy_version: "v1.6",
+  policy_version: "v1.7",
   period_id: "2026-02",
   kill_switch: { global: false, agents: {} },
   allowlists: {},
@@ -501,7 +508,7 @@ const stateStore = new FileStateStore("./policy-state.bin");
 const auditSink = new FileAuditSink("./audit.ndjson");
 
 const engine = new PolicyEngine({
-  policy_version: "v1.6",
+  policy_version: "v1.7",
   authorization_ttl_seconds: 60,
   authorization_signing_alg: "Ed25519",
   authorization_private_key_pem: process.env.OXDEAI_SIGNING_KEY_PEM!,
@@ -530,7 +537,7 @@ In strict mode, verification returns `ok` once the audit trace includes at least
 ```ts
 import { PolicyEngine, verifyAuditEvents } from "@oxdeai/core";
 const engine = new PolicyEngine({
-  policy_version: "v1.6",
+  policy_version: "v1.7",
   authorization_ttl_seconds: 60,
   authorization_signing_alg: "Ed25519",
   authorization_private_key_pem: process.env.OXDEAI_SIGNING_KEY_PEM!,
@@ -629,6 +636,15 @@ Stateless verification layer for protocol artifacts.
 * `delegationParentHash` - cryptographic binding to the parent `AuthorizationV1` via `parent_auth_hash`
 * Property-based coverage: D-P1 through D-P5 (`delegation.property.test.ts`)
 * Cross-adapter delegation guard tests: G-D1 through G-D3 (`@oxdeai/guard`)
+
+### v1.7 - Explicit Trust Boundary (shipped)
+
+* `createVerifier` with explicit `trustedKeySets` as the canonical PEP-side entry point
+* Strict mode fails closed with `TRUSTED_KEYSETS_REQUIRED` when no keyset is configured
+* Trust boundary diagram and architecture documentation
+* CLI: all strict verification entry points require `--trusted-keyset` or `--mode best-effort`
+* `@oxdeai/sdk@1.3.2`: JSDoc clarifications pointing to `createVerifier` and explicit trust
+* Conformance: deterministic secret fixture, env var override removed from validator
 
 ### v2.x - Verifiable Execution Infrastructure (planned)
 
