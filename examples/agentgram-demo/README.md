@@ -12,46 +12,42 @@ This example shows how an agent can propose actions, while an external policy en
 
 What you are seeing:
 
-* **ALLOW → action reaches execution**
-* **DENY → action is blocked before execution**
-* **replay protection enforced**
-* **allowlist enforcement enforced**
+- **ALLOW → action reaches execution**
+- **DENY → action is blocked before execution**
+- **Replay protection enforced**
+- **Allowlist enforcement enforced**
 
 ---
 
 ## What this demonstrates
 
-* **Deterministic ALLOW / DENY before execution**
-* **No local policy logic (no evaluatePolicy)**
-* **Externalized enforcement via `@oxdeai/sdk`**
-* **Replay protection (`REPLAY_NONCE`)**
-* **Target allowlist enforcement (`ALLOWLIST_TARGET`)**
-* **Same behavior in offline and live modes**
+- Deterministic **ALLOW / DENY before execution**
+- No local policy logic (`evaluatePolicy` is not used in the app layer)
+- Externalized enforcement via `@oxdeai/sdk`
+- Replay protection (`REPLAY_NONCE`)
+- Target allowlist enforcement (`ALLOWLIST_TARGET`)
+- Same behavior in offline and live modes
 
 ---
 
 ## Architecture
 
-
 ```
+
 Agent action
-   ↓
+↓
 IntentBuilderInput
-   ↓
+↓
 OxDeAI PolicyEngine (evaluatePure)
-   ↓
+↓
 ALLOW / DENY
-   ↓
+↓
 (if ALLOW) → execute() → Agentgram API
 (if DENY)  → blocked before execution
-```
 
-Key property:
+````
 
-> No authorization → no execution
-
----
-
+**Key property:**
 
 > No authorization → no execution
 
@@ -59,14 +55,14 @@ Key property:
 
 ## Supported actions
 
-| Action | Tool |
-|------|------|
-| Read home | `agentgram.read.home` |
-| Read feed | `agentgram.read.feed` |
-| Like post | `agentgram.post.like` |
-| Comment post | `agentgram.comment.create` |
-| Register agent | `agentgram.agent.register` |
-| Fetch memory | `agentgram.memory.fetch` |
+| Action           | Tool                         |
+|------------------|------------------------------|
+| Read home        | `agentgram.read.home`        |
+| Read feed        | `agentgram.read.feed`        |
+| Like post        | `agentgram.post.like`        |
+| Comment post     | `agentgram.comment.create`   |
+| Register agent   | `agentgram.agent.register`   |
+| Fetch memory     | `agentgram.memory.fetch`     |
 
 ---
 
@@ -78,15 +74,17 @@ No network calls. Fully reproducible.
 
 ```bash
 pnpm --dir examples/agentgram-demo exec tsx src/run.ts
+````
 
 Demonstrates:
 
 * ALLOW flows
 * replay DENY
 * allowlist DENY
-```
 
-### 2. Live sandbox (real API)   
+---
+
+### 2. Live sandbox (real API)
 
 Runs against:
 
@@ -94,22 +92,32 @@ Runs against:
 https://agentgram-production.up.railway.app/api/v1
 ```
 
-#### Required env
+---
+
+## Required environment variables
 
 ```bash
 export AGENTGRAM_AGENT_NAME="your_agent_name"
 export AGENTGRAM_TARGET_AGENT_NAME="target_agent_name"
+export OXDEAI_ENGINE_SECRET="your-secure-secret-at-least-32-chars"
 ```
 
 Optional:
 
 ```bash
-export AGENTGRAM_API_KEY="..."              # skip bootstrap
-export AGENTGRAM_TARGET_POST_ID="..."      # force post selection
-export OXDEAI_ENGINE_SECRET="dev-secret"   # optional
+export AGENTGRAM_API_KEY="..."           # skip bootstrap
+export AGENTGRAM_TARGET_POST_ID="..."   # force post selection
 ```
 
-#### Run
+**Important:**
+
+* `OXDEAI_ENGINE_SECRET` is required
+* no default or fallback secret exists
+* the process will fail if not set
+
+---
+
+## Run
 
 ```bash
 pnpm --dir examples/agentgram-demo exec tsx src/run-live.ts
@@ -119,23 +127,23 @@ pnpm --dir examples/agentgram-demo exec tsx src/run-live.ts
 
 ## Live flow
 
-### Phase A - Bootstrap
+### Phase A — Bootstrap
 
 * registers agent if needed
-* still goes through OxDeAI guards
+* still enforced through OxDeAI boundary
 
-### Phase B - Discovery
+### Phase B — Discovery
 
 * `read_home`
 * `read_feed`
 * `fetch_memory`
 
-### Phase C - Interaction
+### Phase C — Interaction
 
 * `like_post`
 * `comment_post`
 
-### Phase D - Security checks
+### Phase D — Security checks
 
 * replay attack → DENY
 * invalid target → DENY
@@ -181,8 +189,25 @@ This is expected.
 In live mode:
 
 * Denied actions are **never sent to Agentgram**
-* Replay attacks are blocked pre-execution
-* Out-of-scope targets are blocked pre-execution
+* Replay attacks are blocked **pre-execution**
+* Out-of-scope targets are blocked **pre-execution**
+
+---
+
+## Trust model
+
+OxDeAI enforces authorization, but does not control key issuance by default.
+
+* Anyone with the `OXDEAI_ENGINE_SECRET` can mint authorizations
+* The engine does not fetch policy from a remote authority
+* `policyId` is not externally anchored
+* Verification ensures integrity, not correctness
+
+Production usage requires:
+
+* secure key management
+* controlled policy distribution
+* persistent audit storage
 
 ---
 
@@ -217,13 +242,14 @@ This example focuses on:
 
 * execution authorization
 * deterministic enforcement
-* Real APIintegration 
+* real API integration
 
 Out of scope:
 
 * retries / orchestration
 * auth lifecycle
 * production rate limiting
+* secure secret management
+* etc.
 
----
 

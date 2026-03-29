@@ -17,7 +17,7 @@ export interface AgentgramGuardConfig {
   auditAdapter?: AuditAdapter;
 }
 
-function toTarget(action: AgentgramAction): string {
+export function toTarget(action: AgentgramAction): string {
   switch (action.tool) {
     case AGENTGRAM_INTENTS.READ_HOME:
       return "agentgram:/home";
@@ -38,7 +38,7 @@ function toTarget(action: AgentgramAction): string {
   }
 }
 
-function toIntentInput(
+export function toIntentInput(
   action: AgentgramAction,
   agentId: string
 ): IntentBuilderInput {

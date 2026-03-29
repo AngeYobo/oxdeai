@@ -14,7 +14,7 @@ const TEST_RUNTIME_ED25519_KEYPAIR_DO_NOT_USE_IN_PRODUCTION = generateKeyPairSyn
 function makeEngine(): PolicyEngine {
   return new PolicyEngine({
     policy_version: "0.1.0",
-    engine_secret: "unit-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60,
     authorization_issuer: "issuer-A",
     authorization_audience: "rp-A",
