@@ -4,12 +4,10 @@ import { buildState } from "@oxdeai/sdk";
 export const AGENTGRAM_API_HOST = "agentgram-production.up.railway.app";
 export const LIVE_POLICY_ID =
   "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3";
-export const DEFAULT_ENGINE_SECRET = "demo-secret-replace-in-production";
-
-export function makeLiveEngine(engineSecret?: string): PolicyEngine {
+export function makeLiveEngine(engineSecret: string): PolicyEngine {
   return new PolicyEngine({
     policy_version: "v1.0.0",
-    engine_secret: engineSecret ?? DEFAULT_ENGINE_SECRET,
+    engine_secret: engineSecret,
     authorization_ttl_seconds: 60,
     policyId: LIVE_POLICY_ID
   });

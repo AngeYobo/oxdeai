@@ -1,8 +1,11 @@
 import { PolicyEngine } from "../../packages/core/dist/index.js";
 
+const _engineSecret = process.env.OXDEAI_ENGINE_SECRET;
+if (!_engineSecret) throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
+
 const engine = new PolicyEngine({
   policy_version: "v1.0.0",
-  engine_secret: "demo-secret",
+  engine_secret: _engineSecret,
   authorization_ttl_seconds: 60,
   policyId: "a".repeat(64)
 });

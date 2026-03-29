@@ -104,6 +104,15 @@ export class PolicyEngine {
   public readonly audit: HashChainedLog = new HashChainedLog();
 
   constructor(opts: EngineOptions) {
+    if (typeof opts.engine_secret !== "string" || opts.engine_secret.length < 32) {
+      throw new Error(
+        `engine_secret must be a string of at least 32 characters (got ${
+          typeof opts.engine_secret === "string"
+            ? `${opts.engine_secret.length} chars`
+            : typeof opts.engine_secret
+        })`
+      );
+    }
     this.opts = opts;
   }
 

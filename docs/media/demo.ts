@@ -2,11 +2,13 @@ import { PolicyEngine, verifyAuthorization } from "@oxdeai/core";
 import type { Intent, State } from "@oxdeai/core";
 
 const FIXED_TIMESTAMP = 1_730_000_000;
-const ENGINE_SECRET = "demo-secret-at-least-32-characters";
+
+const _engineSecret = process.env.OXDEAI_ENGINE_SECRET;
+if (!_engineSecret) throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
 
 const engine = new PolicyEngine({
   policy_version: "v1.6",
-  engine_secret: ENGINE_SECRET,
+  engine_secret: _engineSecret,
   authorization_ttl_seconds: 60
 });
 
@@ -88,7 +90,7 @@ function main(): void {
   const verified = verifyAuthorization(first.authorization, {
     now: FIXED_TIMESTAMP,
     expectedPolicyId: engine.computePolicyId(),
-    legacyHmacSecret: ENGINE_SECRET,
+    legacyHmacSecret: _engineSecret,
     requireSignatureVerification: true
   });
 

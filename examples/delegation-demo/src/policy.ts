@@ -46,9 +46,12 @@ export const { privateKey: AGENT_A_PRIVATE_KEY_PEM } = generateKeyPairSync("ed25
   publicKeyEncoding:  { type: "spki",  format: "pem" },
 });
 
+const _engineSecret = process.env.OXDEAI_ENGINE_SECRET;
+if (!_engineSecret) throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
+
 export const engine = new PolicyEngine({
   policy_version: "v1.0.0",
-  engine_secret: "demo-secret-replace-in-production",
+  engine_secret: _engineSecret,
   authorization_ttl_seconds: 300,
   // audience becomes delegation.delegator — set to Agent A's identity
   authorization_audience: AGENT_A,

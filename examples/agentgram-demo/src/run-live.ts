@@ -107,9 +107,6 @@ function printInfo(text: string): void {
   emit(full(c(C.dim, `    ${text.slice(0, W - 8)}`)));
 }
 
-function printWarn(text: string): void {
-  emit(full(c(C.yellow, `  ⚠  ${text.slice(0, W - 8)}`)));
-}
 
 function printFooter(ok: boolean): void {
   emit(DIV);
@@ -217,8 +214,9 @@ async function runLive(): Promise<void> {
   headerPrinted = true;
 
   if (!engineSecret) {
-    printWarn("OXDEAI_ENGINE_SECRET not set — using demo secret");
+    throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
   }
+  const secret: string = engineSecret;
 
   let nonce = 1n;
   const nextNonce = () => nonce++;
@@ -226,7 +224,7 @@ async function runLive(): Promise<void> {
 
   function makeGuard(postIds: string[]) {
     return createAgentgramGuard({
-      engine:       makeLiveEngine(engineSecret),
+      engine:       makeLiveEngine(secret),
       agentId:      agentName,
       stateAdapter: new InMemoryStateAdapter(
         makeLiveState({ agentId: agentName, targetAgentName, postIds })
