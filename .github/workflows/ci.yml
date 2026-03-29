@@ -39,7 +39,7 @@ jobs:
       - name: Conformance
         run: pnpm -C packages/core build && pnpm -C packages/conformance validate
         env:
-          OXDEAI_ENGINE_SECRET: ci-conformance-secret-for-testing-only!!
+          OXDEAI_ENGINE_SECRET: test-secret-must-be-at-least-32-chars!!
 
   adapter-validation:
     runs-on: ubuntu-latest

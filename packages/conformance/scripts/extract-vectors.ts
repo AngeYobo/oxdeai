@@ -77,7 +77,7 @@ function writeVector(filename: string, data: object): void {
   console.log(`wrote ${filename}`);
 }
 
-const ENGINE_SECRET = "test-secret";
+const ENGINE_SECRET = "test-secret-must-be-at-least-32-chars!!";
 
 function makeEngine(): PolicyEngine {
   return new PolicyEngine({
