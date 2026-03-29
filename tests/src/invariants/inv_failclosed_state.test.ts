@@ -6,7 +6,7 @@ import type { Intent } from "@oxdeai/core";
 test("INV-FailClosed: corrupted/incomplete state must DENY (never ALLOW)", () => {
   const engine = new PolicyEngine({
     policy_version: "0.1.0",
-    engine_secret: "failclosed-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60
   });
 

@@ -45,7 +45,7 @@ function baseState(): State {
 function buildSnapshotBytes() {
   const engine = new PolicyEngine({
     policy_version: "v0.9-test",
-    engine_secret: "secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60
   });
   const snapshot = engine.exportState(baseState());

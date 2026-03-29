@@ -7,7 +7,7 @@ import { makeState } from "../helpers/state.js";
 test("INV-4 Kill switch denies deterministically", () => {
   const engine = new PolicyEngine({
     policy_version: "0.1.0",
-    engine_secret: "s",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60
   });
 

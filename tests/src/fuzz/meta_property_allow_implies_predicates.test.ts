@@ -78,7 +78,7 @@ function predicatesHold(intent: Intent, state: State): { ok: boolean; failures: 
 test(`META(${ITERS}): ALLOW implies predicates hold (on pre-state)`, () => {
   const engine = new PolicyEngine({
     policy_version: "0.1.0",
-    engine_secret: "meta-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60
   });
 

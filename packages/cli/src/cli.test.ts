@@ -9,6 +9,9 @@ import type { State } from "@oxdeai/core";
 
 import { runCli } from "./main.js";
 
+// CLI tests invoke buildEngine() in-process; satisfy the mandatory secret requirement.
+process.env["OXDEAI_ENGINE_SECRET"] = "test-secret-must-be-at-least-32-chars!!";
+
 function baseState(): State {
   return {
     policy_version: "v1",
@@ -214,7 +217,7 @@ test("verify-envelope reads file and verifies", async () => {
 
   const engine = new PolicyEngine({
     policy_version: state.policy_version,
-    engine_secret: "dev-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 120
   });
   const snapshotBytes = encodeCanonicalState(engine.exportState(state));
@@ -338,7 +341,7 @@ test("verify supports --kind authorization from file", async () => {
 
   const engine = new PolicyEngine({
     policy_version: state.policy_version,
-    engine_secret: "dev-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 120
   });
   const intent = {

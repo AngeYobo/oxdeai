@@ -5,7 +5,7 @@ import { makeIntent } from "../helpers/intent.js";
 import { makeState } from "../helpers/state.js";
 
 test("authorization signature verifies", () => {
-  const secret = "unit-secret";
+  const secret = "test-secret-must-be-at-least-32-chars!!";
   const engine = new PolicyEngine({
     policy_version: "0.1.0",
     engine_secret: secret,

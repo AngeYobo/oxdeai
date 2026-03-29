@@ -105,7 +105,7 @@ function assert(condition: boolean, message: string): void {
 async function main() {
   const engine = new PolicyEngine({
     policy_version: "v0.2",
-    engine_secret: "dev-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60,
     deny_mode: "fail-fast",
     checkpoint_every_n_events: 2

@@ -71,7 +71,7 @@ const POLICY_VERSION = "v0.6-test";
 function makeEngine(): PolicyEngine {
   return new PolicyEngine({
     policy_version: POLICY_VERSION,
-    engine_secret: "test-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 120,
     deny_mode: "fail-fast",
     strictDeterminism: true
@@ -619,7 +619,7 @@ test("D-8 computePolicyId is stable for fixed engine configuration", () => {
     // Changes when a policy-identity-bearing option changes.
     const eDiffTtl = new PolicyEngine({
       policy_version: POLICY_VERSION,
-      engine_secret: "test-secret",
+      engine_secret: "test-secret-must-be-at-least-32-chars!!",
       authorization_ttl_seconds: 999,   // differs from makeEngine() (120)
       deny_mode: "fail-fast",
       strictDeterminism: true
@@ -629,7 +629,7 @@ test("D-8 computePolicyId is stable for fixed engine configuration", () => {
 
     const eDiffVersion = new PolicyEngine({
       policy_version: "v0.6-test-alt",  // differs from POLICY_VERSION
-      engine_secret: "test-secret",
+      engine_secret: "test-secret-must-be-at-least-32-chars!!",
       authorization_ttl_seconds: 120,
       deny_mode: "fail-fast",
       strictDeterminism: true

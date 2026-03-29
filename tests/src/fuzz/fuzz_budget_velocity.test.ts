@@ -47,7 +47,7 @@ function randInt(r: () => number, min: number, max: number): number {
 test(`FUZZ(${ITERS}): budget & per-action cap consistency`, () => {
   const engine = new PolicyEngine({
     policy_version: "0.1.0",
-    engine_secret: "fuzz-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60
   });
 
@@ -98,7 +98,7 @@ test(`FUZZ(${ITERS}): budget & per-action cap consistency`, () => {
 test(`FUZZ(${ITERS}): velocity window edge cases`, () => {
   const engine = new PolicyEngine({
     policy_version: "0.1.0",
-    engine_secret: "fuzz-secret-2",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60
   });
 

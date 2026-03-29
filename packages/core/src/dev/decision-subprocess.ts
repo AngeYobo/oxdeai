@@ -90,7 +90,7 @@ const INTENTS: Intent[] = [
 async function main(): Promise<void> {
   const engine = new PolicyEngine({
     policy_version: POLICY,
-    engine_secret: "xp-test-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 300
   });
 

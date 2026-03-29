@@ -10,7 +10,7 @@ import { createGuard } from "./guard.js";
 function makeEngine() {
   return new PolicyEngine({
     policy_version: "v1",
-    engine_secret: "dev-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60,
     authorization_issuer: "issuer-A",
     authorization_audience: "rp-A",

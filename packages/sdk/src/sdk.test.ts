@@ -26,7 +26,7 @@ test("builder helpers create engine-compatible intent/state", () => {
 
   const engine = new PolicyEngine({
     policy_version: "v1",
-    engine_secret: "dev-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60
   });
   const out = engine.evaluatePure(intent, state, { mode: "fail-fast" });
@@ -36,7 +36,7 @@ test("builder helpers create engine-compatible intent/state", () => {
 test("OxDeAIClient evaluate+persist+verify flow", async () => {
   const engine = new PolicyEngine({
     policy_version: "v1",
-    engine_secret: "dev-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60
   });
   const stateAdapter = new InMemoryStateAdapter(

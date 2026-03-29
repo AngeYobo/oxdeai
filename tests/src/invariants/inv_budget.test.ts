@@ -7,7 +7,7 @@ import { makeState } from "../helpers/state.js";
 test("INV-1 Budget Safety denies when exceeded", () => {
   const engine = new PolicyEngine({
     policy_version: "0.1.0",
-    engine_secret: "s",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60
   });
 
@@ -33,7 +33,7 @@ test("INV-1 Budget Safety denies when exceeded", () => {
 test("INV-2 Per-action cap denies when exceeded", () => {
   const engine = new PolicyEngine({
     policy_version: "0.1.0",
-    engine_secret: "s",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60
   });
 

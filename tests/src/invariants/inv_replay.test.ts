@@ -7,7 +7,7 @@ import { makeState } from "../helpers/state.js";
 test("INV-Replay: same (agent, nonce) cannot execute twice", () => {
   const engine = new PolicyEngine({
     policy_version: "0.1.0",
-    engine_secret: "replay-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60
   });
 

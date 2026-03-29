@@ -74,7 +74,7 @@ test("audit sink receives events in-order", async () => {
   const sink = new InMemoryAuditSink();
   const engine = new PolicyEngine({
     policy_version: "v0.6-test",
-    engine_secret: "secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60,
     auditSink: sink
   });
@@ -93,7 +93,7 @@ test("async audit sink preserves event order after flush", async () => {
   const sink = new AsyncAuditSink();
   const engine = new PolicyEngine({
     policy_version: "v0.6-test",
-    engine_secret: "secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 60,
     auditSink: sink
   });

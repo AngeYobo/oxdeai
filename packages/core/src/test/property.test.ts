@@ -50,7 +50,7 @@ function shuffleObjectKeys<T>(rng: () => number, record: Record<string, T>): Rec
 function makeEngine(): PolicyEngine {
   return new PolicyEngine({
     policy_version: "v0.6-test",
-    engine_secret: "test-secret",
+    engine_secret: "test-secret-must-be-at-least-32-chars!!",
     authorization_ttl_seconds: 120,
     deny_mode: "fail-fast",
     strictDeterminism: true
