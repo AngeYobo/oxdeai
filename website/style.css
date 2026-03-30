@@ -80,11 +80,11 @@ nav {
 
 .nav-logo {
   font-family: var(--font-mono);
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 1.15rem;
+  font-weight: 700;
   color: var(--text);
   text-decoration: none;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .nav-logo span { color: var(--green); }
@@ -189,12 +189,13 @@ nav {
 .btn-primary:hover { background: var(--green); }
 
 .btn-secondary {
-  background: var(--bg-elevated);
-  color: var(--text);
-  border: 1px solid var(--border);
+  background: #f4f4f5;
+  color: #0a0a0b;
+  border: 1px solid #f4f4f5;
+  font-weight: 600;
 }
 
-.btn-secondary:hover { border-color: #52525b; }
+.btn-secondary:hover { background: #ffffff; border-color: #ffffff; }
 
 .btn-ghost {
   color: var(--text-muted);
