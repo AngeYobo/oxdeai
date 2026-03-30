@@ -1,0 +1,9 @@
+{
+  "name": "website",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "serve": "pnpm dlx serve .",
+    "dev": "pnpm dlx serve . --listen 3000"
+  }
+}
