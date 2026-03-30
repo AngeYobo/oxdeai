@@ -7,17 +7,21 @@ This project follows Semantic Versioning.
 
 ---
 
-## [1.4.0] - 2026-03-25
+## [1.5.0] - 2026-03-30
 
 ### Changed
 
-- Version-line release alignment for `@oxdeai/conformance@1.4.0`.
-- Package metadata updated for the `1.4.x` publication line.
+- Secret constant made deterministic; `engine_secret` env var override removed from validator.
+- Conformance vectors regenerated with 32-char secret to meet enforced minimum-length requirement.
+- `envelope-001` hashes updated after `deepMerge` non-mutation correction in `@oxdeai/core`.
+- DelegationV1 chain and signature verification moved to independent recomputation path (no engine call).
 
 ### Notes
 
-- No conformance vector or validator semantic changes from `1.3.1`.
-- Frozen protocol behavior remains unchanged; this release keeps the package line current with the published metadata.
+- Protocol vector behavior has changed from `1.4.0` — vectors are not backward-compatible with the `1.4.x` line.
+- Protocol stack alignment: `@oxdeai/core@1.6.1`, `@oxdeai/sdk@1.3.2`.
+
+---
 
 ## [1.4.0] - 2026-03-25
 

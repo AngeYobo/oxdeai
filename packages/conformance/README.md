@@ -8,7 +8,7 @@ Conformance vectors and validator for the OxDeAI protocol.
 Passing validation means the implementation reproduces expected deterministic artifacts (hashes, statuses, and verification outputs) from frozen vectors.
 
 ## Version Coupling
-- `@oxdeai/conformance@1.3.x` targets protocol/core `1.3.x` behavior.
+- `@oxdeai/conformance@1.5.0` targets `@oxdeai/core@1.6.1` behavior.
 - Use matching major/minor protocol versions when validating.
 
 ## Included Vector Sets
