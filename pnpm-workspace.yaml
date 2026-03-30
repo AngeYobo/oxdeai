@@ -3,3 +3,4 @@ packages:
   - "tests"
   - "examples/*"
   - "bench"
+  - "website"
