@@ -84,11 +84,15 @@ const guard = OxDeAIGuard({
   getState,
   setState,
   mapActionToIntent(action) {
-    return buildProvisionIntent({
+    return buildIntent({
       agent_id: action.context?.agent_id as string,
+      action_type: "PROVISION",
       asset: action.args.asset as string,
-      region: action.args.region as string,
-      estimatedCost: action.estimatedCost ?? 0,
+      target: action.args.region as string,
+      amount: BigInt(Math.round((action.estimatedCost ?? 0) * 1_000_000)),
+      nonce: BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)),
+      intent_id: crypto.randomUUID(),
+      timestamp: action.timestampSeconds ?? Math.floor(Date.now() / 1000),
     });
   },
 });
@@ -153,7 +157,9 @@ OxDeAIGuard({
 When a sub-agent presents a `DelegationV1` chain, pass it in `opts.delegation`:
 
 ```typescript
-const result = await guard(action, execute, { delegation: delegationChain });
+const result = await guard(action, execute, {
+  delegation: { delegation: delegationChain, parentAuth },
+});
 ```
 
 The guard verifies the full delegation chain before policy evaluation:

@@ -7,6 +7,39 @@ This project follows Semantic Versioning.
 
 ---
 
+## [1.3.2] - 2026-03-30
+
+### Security
+
+- `engine_secret` minimum-length and entropy requirements now enforced at runtime — insecure defaults removed.
+- Timing-safe HMAC comparison (`timingSafeEqual`) applied in domain verification.
+
+### Added
+
+- Explicit verifier trust boundary with strict-mode enforcement in the trust model.
+- DelegationV1 protocol artifact: full implementation, verification, and conformance vectors (139 assertions).
+
+### Fixed
+
+- `deepMerge` is now non-mutating; property-based tests added.
+- `tool_limits` marked required in `State` type, aligning type with runtime behavior.
+- PolicyEngine output types exported; decision-path property surfaced correctly.
+- TypeScript type error for `engine_secret` resolved across examples and packages.
+- Conformance vectors regenerated with 32-char secret and CI environment aligned.
+
+### Changed
+
+- Protocol-stack version alignment with:
+  - `@oxdeai/core@1.6.1`
+  - `@oxdeai/conformance@1.4.0`
+- Trust boundary made explicit across SDK and documentation.
+
+### Notes
+
+- `@oxdeai/cli` remains on a separate tooling version line.
+
+---
+
 ## [1.3.1] - 2026-03-08
 
 ### Changed

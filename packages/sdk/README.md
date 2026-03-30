@@ -4,7 +4,7 @@ Developer-facing integration layer on top of `@oxdeai/core`.
 
 ## Status
 
-Current protocol stack line: **v1.3.x** (`@oxdeai/core`, `@oxdeai/sdk`, `@oxdeai/conformance`).
+Current protocol stack line: `@oxdeai/core@1.6.1`, `@oxdeai/sdk@1.3.2`, `@oxdeai/conformance@1.4.0`.
 
 The SDK is an integration surface and does not redefine protocol semantics.
 
@@ -64,7 +64,7 @@ import {
 
 const engine = new PolicyEngine({
   policy_version: "v1",
-  engine_secret: "dev-secret",
+  engine_secret: "example-secret-must-be-32-chars!",
   authorization_ttl_seconds: 120
 });
 
@@ -114,6 +114,7 @@ await guard(intent, async () => {
 
 - `buildIntent`, `buildState`
 - `OxDeAIClient`
+- `createGuard`
 - `InMemoryStateAdapter`, `InMemoryAuditAdapter`
 - `JsonFileStateAdapter`, `NdjsonFileAuditAdapter`
 
