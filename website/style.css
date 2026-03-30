@@ -841,6 +841,106 @@ hr.section-rule {
   margin: 32px 0;
 }
 
+/* ─── Light Mode ────────────────────────────────────────────────────────────── */
+html.light {
+  --bg:           #ffffff;
+  --bg-surface:   #f7f7f9;
+  --bg-elevated:  #efeff2;
+  --bg-code:      #f3f3f6;
+
+  --text:         #111113;
+  --text-muted:   #52525b;
+  --text-subtle:  #a1a1aa;
+
+  --border:       #d4d4d8;
+  --border-muted: #e4e4e7;
+
+  --green-bg:     rgba(22, 163, 74, 0.08);
+  --red-bg:       rgba(220, 38, 38, 0.08);
+}
+
+html.light body { color: var(--text); background: var(--bg); }
+
+html.light .nav-links {
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom-color: var(--border);
+}
+
+html.light .hero-title,
+html.light .section-title,
+html.light .flow-step-title,
+html.light .arch-node-name,
+html.light .why-card-title,
+html.light .proof-title,
+html.light .adapter-name { color: #111113; }
+
+html.light .arch-node { background: var(--bg-elevated); }
+html.light .arch-node.blocked { background: var(--red-bg); }
+html.light .arch-node.artifact { background: rgba(59, 130, 246, 0.06); }
+html.light .arch-node.verifier { background: rgba(202, 138, 4, 0.06); }
+html.light .arch-wrap  { background: var(--bg-surface); }
+html.light .arch-note  { background: var(--bg); }
+
+html.light .code-block,
+html.light .code-block pre { background: var(--bg-code); }
+html.light .code-block pre { color: #24292f; }
+html.light .code-block-header { background: var(--bg-elevated); }
+
+html.light .kw   { color: #cf222e; }
+html.light .fn   { color: #8250df; }
+html.light .str  { color: #0a3069; }
+html.light .cm   { color: #6e7781; }
+html.light .num  { color: #0550ae; }
+html.light .ty   { color: #953800; }
+html.light .prop { color: #0550ae; }
+
+html.light .callout-code { background: var(--bg-code); }
+html.light .demo-wrap,
+html.light .demo-header  { background: var(--bg-elevated); }
+
+html.light .btn-secondary {
+  background: #111113;
+  color: #f4f4f5;
+  border-color: #111113;
+}
+html.light .btn-secondary:hover { background: #27272a; border-color: #27272a; }
+
+html.light nav {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom-color: var(--border);
+}
+
+/* ─── Theme Toggle Button ────────────────────────────────────────────────────── */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover { border-color: #52525b; }
+
+/* Show sun icon in dark mode, moon in light mode */
+.theme-icon-dark  { display: inline; }
+.theme-icon-light { display: none; }
+
+html.light .theme-icon-dark  { display: none; }
+html.light .theme-icon-light { display: inline; }
+
 /* ─── Hamburger / Mobile Nav ────────────────────────────────────────────────── */
 .nav-toggle {
   display: none;
