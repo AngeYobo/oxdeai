@@ -16,11 +16,14 @@
 <nav>
   <div class="nav-inner">
     <a href="#" class="nav-logo">Ox<span>De</span>AI</a>
-    <ul class="nav-links">
-      <li><a href="#how">How it works</a></li>
-      <li><a href="#architecture">Architecture</a></li>
-      <li><a href="#code">Code</a></li>
-      <li><a href="#ecosystem">Adapters</a></li>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#how" onclick="closeNav()">How it works</a></li>
+      <li><a href="#architecture" onclick="closeNav()">Architecture</a></li>
+      <li><a href="#code" onclick="closeNav()">Code</a></li>
+      <li><a href="#ecosystem" onclick="closeNav()">Adapters</a></li>
       <li><a href="https://github.com/AngeYobo/oxdeai" target="_blank" rel="noopener">GitHub</a></li>
     </ul>
   </div>
@@ -341,9 +344,11 @@
     </div>
 
     <div class="install-strip" style="margin-top: 24px;">
-      <span class="install-code">
-        <span class="prefix">$ </span>git clone https://github.com/AngeYobo/oxdeai.git &amp;&amp; cd oxdeai &amp;&amp; pnpm install &amp;&amp; pnpm build
-      </span>
+      <div class="install-lines">
+        <div class="install-code"><span class="prefix">$ </span>git clone https://github.com/AngeYobo/oxdeai.git</div>
+        <div class="install-code"><span class="prefix">$ </span>cd oxdeai &amp;&amp; pnpm install &amp;&amp; pnpm build</div>
+        <div class="install-code"><span class="prefix">$ </span>pnpm -C examples/execution-boundary-demo start</div>
+      </div>
       <a class="btn btn-secondary" href="https://github.com/AngeYobo/oxdeai/tree/main/examples/execution-boundary-demo" target="_blank" rel="noopener">View example →</a>
     </div>
   </div>
@@ -490,6 +495,7 @@
       Who is trusted is defined outside the protocol, by the verifier.
     </p>
 
+    <div class="table-scroll">
     <table class="trust-table">
       <thead>
         <tr>
@@ -526,6 +532,7 @@
         </tr>
       </tbody>
     </table>
+    </div><!-- end table-scroll -->
 
     <div class="trust-callouts">
       <div class="callout correct">
@@ -619,13 +626,31 @@
 
 <script>
   function showTab(name, btn) {
-    // Hide all panels
     document.querySelectorAll('.code-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
-    // Show selected
     document.getElementById('tab-' + name).classList.add('active');
     btn.classList.add('active');
   }
+
+  const navToggle = document.getElementById('navToggle');
+  const navLinks  = document.getElementById('navLinks');
+
+  navToggle.addEventListener('click', () => {
+    const open = navLinks.classList.toggle('open');
+    navToggle.classList.toggle('open', open);
+    navToggle.setAttribute('aria-expanded', open);
+  });
+
+  function closeNav() {
+    navLinks.classList.remove('open');
+    navToggle.classList.remove('open');
+    navToggle.setAttribute('aria-expanded', false);
+  }
+
+  // Close nav on outside click
+  document.addEventListener('click', (e) => {
+    if (!navToggle.contains(e.target) && !navLinks.contains(e.target)) closeNav();
+  });
 </script>
 
 </body>
