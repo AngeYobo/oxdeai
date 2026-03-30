@@ -16,9 +16,15 @@
 <nav>
   <div class="nav-inner">
     <a href="#" class="nav-logo">Ox<span>De</span>AI</a>
-    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light/dark mode">
+        <span class="theme-icon theme-icon-dark">☀</span>
+        <span class="theme-icon theme-icon-light">☽</span>
+      </button>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
     <ul class="nav-links" id="navLinks">
       <li><a href="#how" onclick="closeNav()">How it works</a></li>
       <li><a href="#architecture" onclick="closeNav()">Architecture</a></li>
@@ -650,6 +656,19 @@
   // Close nav on outside click
   document.addEventListener('click', (e) => {
     if (!navToggle.contains(e.target) && !navLinks.contains(e.target)) closeNav();
+  });
+
+  // ── Theme toggle ──────────────────────────────────────────────────────────
+  const html        = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  const stored      = localStorage.getItem('oxdeai-theme');
+  const preferLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+
+  if (stored === 'light' || (!stored && preferLight)) html.classList.add('light');
+
+  themeToggle.addEventListener('click', () => {
+    const isLight = html.classList.toggle('light');
+    localStorage.setItem('oxdeai-theme', isLight ? 'light' : 'dark');
   });
 </script>
 
