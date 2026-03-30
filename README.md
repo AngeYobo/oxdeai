@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/AngeYobo/oxdeai/actions/workflows/ci.yml/badge.svg)](https://github.com/AngeYobo/oxdeai/actions/workflows/ci.yml)
 
-> **Website:** [`website/`](./website/) — static technical site, deploy to Vercel/Netlify/GitHub Pages.
 <!--
 [![Conformance](https://img.shields.io/badge/conformance-139_assertions-green)](...)
 -->
