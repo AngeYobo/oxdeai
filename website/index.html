@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OxDeAI — Deterministic Execution Authorization for AI Agents</title>
+  <title>OxDeAI - Deterministic Execution Authorization for AI Agents</title>
   <meta name="description" content="OxDeAI is a deterministic execution authorization protocol for AI agents. No authorization → no execution.">
-  <meta property="og:title" content="OxDeAI — Deterministic Execution Authorization for AI Agents">
+  <meta property="og:title" content="OxDeAI - Deterministic Execution Authorization for AI Agents">
   <meta property="og:description" content="Agent proposes. Policy evaluates. ALLOW or DENY. No authorization → no execution.">
   <meta property="og:type" content="website">
   <link rel="stylesheet" href="style.css">
@@ -57,7 +57,7 @@
 <section id="how">
   <div class="container">
     <div class="section-label">30-second explanation</div>
-    <h2 class="section-title">Agent proposes. Policy decides. Execution follows—or doesn't.</h2>
+    <h2 class="section-title">Agent proposes. Policy decides. Execution follows or doesn't.</h2>
     <p class="section-sub">The decision and the execution are separate. That separation is the guarantee.</p>
 
     <div class="flow-grid">
@@ -128,7 +128,7 @@
 
         <!-- Guard / PEP -->
         <div class="arch-node">
-          <div class="arch-node-name">Guard — Policy Enforcement Point</div>
+          <div class="arch-node-name">Guard - Policy Enforcement Point</div>
           <div class="arch-node-detail">intercepts, normalizes to Intent, calls PolicyEngine</div>
         </div>
 
@@ -140,7 +140,7 @@
 
         <!-- PolicyEngine / PDP -->
         <div class="arch-node">
-          <div class="arch-node-name">PolicyEngine — Policy Decision Point</div>
+          <div class="arch-node-name">PolicyEngine - Policy Decision Point</div>
           <div class="arch-node-detail">evaluates deterministically → ALLOW | DENY</div>
         </div>
 
@@ -177,7 +177,7 @@
             </div>
             <div class="arch-node executor">
               <div class="arch-node-name">Executor / Tool</div>
-              <div class="arch-node-detail">executes — side effect occurs here</div>
+              <div class="arch-node-detail">executes - side effect occurs here</div>
             </div>
           </div>
 
@@ -331,7 +331,7 @@
         <div class="demo-dots">
           <span></span><span></span><span></span>
         </div>
-        <div class="demo-title-bar">execution-boundary-demo — oxdeai</div>
+        <div class="demo-title-bar">execution-boundary-demo - oxdeai</div>
       </div>
       <img
         class="demo-gif"
@@ -345,7 +345,7 @@
         <span class="red">DENY</span> → replay attempt blocked before execution.
         <br>
         <code class="mono" style="color: var(--text-subtle);">verifyEnvelope() → ok</code>
-        — audit trail verified offline after the run.
+        - audit trail verified offline after the run.
       </div>
     </div>
 
@@ -393,7 +393,7 @@
   policyId:       <span class="str">"policy-production-v1"</span>,
 });
 
-<span class="cm">// 2. Create a guard — the Policy Enforcement Point</span>
+<span class="cm">// 2. Create a guard - the Policy Enforcement Point</span>
 <span class="kw">const</span> guard = <span class="fn">OxDeAIGuard</span>({
   engine,
   <span class="prop">getState</span>: () =&gt; <span class="fn">getAgentState</span>(),
@@ -414,7 +414,7 @@
   );
 } <span class="kw">catch</span> (err) {
   <span class="kw">if</span> (err <span class="kw">instanceof</span> <span class="ty">OxDeAIDenyError</span>) {
-    <span class="cm">// DENY — execution did not occur</span>
+    <span class="cm">// DENY - execution did not occur</span>
   }
 }</code></pre>
       </div>
@@ -518,7 +518,7 @@
         </tr>
         <tr>
           <td>Trusted keys</td>
-          <td>The verifier — <code class="mono">trustedKeySets</code></td>
+          <td>The verifier - <code class="mono">trustedKeySets</code></td>
           <td>Explicitly configured by the relying party. Not inferred from the artifact itself.</td>
         </tr>
         <tr>
@@ -534,7 +534,7 @@
         <tr>
           <td>Strict mode without keys</td>
           <td>Fails closed</td>
-          <td><code class="mono">TRUSTED_KEYSETS_REQUIRED</code> — no implicit trust, ever.</td>
+          <td><code class="mono">TRUSTED_KEYSETS_REQUIRED</code> - no implicit trust, ever.</td>
         </tr>
       </tbody>
     </table>
@@ -542,7 +542,7 @@
 
     <div class="trust-callouts">
       <div class="callout correct">
-        <div class="callout-label">Correct — explicit trust</div>
+        <div class="callout-label">Correct - explicit trust</div>
         <div class="callout-code"><span class="fn">verifyAuthorization</span>(auth, {
   <span class="prop">mode</span>: <span class="str">"strict"</span>,
   <span class="prop">trustedKeySets</span>: [myKeySet],
@@ -551,7 +551,7 @@
 <span class="cm">// AND issuer is in trustedKeySets</span></div>
       </div>
       <div class="callout wrong">
-        <div class="callout-label">Wrong — no trust configured</div>
+        <div class="callout-label">Wrong - no trust configured</div>
         <div class="callout-code"><span class="fn">verifyAuthorization</span>(auth, {
   <span class="prop">mode</span>: <span class="str">"strict"</span>,
   <span class="cm">// missing trustedKeySets</span>
