@@ -8,7 +8,7 @@ Set Framerate 24
 Set PlaybackSpeed 0.85
 
 # ── Hook (visible immédiatement) ─────────────────────────────────
-Type "# same action → allowed, allowed, then blocked before execution"
+Type ": Same action → allowed, allowed, then blocked before execution"
 Enter
 Sleep 1.2s
 

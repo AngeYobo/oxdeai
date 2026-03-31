@@ -162,7 +162,7 @@ export async function runOpenAIDemo(
 
       log(`\n  ${c(C.dim, `#${step}`)}  ${c(C.bCyan, "OpenAI →")} provision_gpu(${c(C.yellow, asset)}, ${c(C.yellow, region)})`);
 
-      // Route through OxDeAI PEP — suppress pep.ts internal log, render here
+      // Route through OxDeAI PEP - suppress pep.ts internal log, render here
       const result = guardedProvision(asset, region, oxState, DEMO_BASE_TIMESTAMP + callIndex, () => {});
 
       let toolContent: string;
@@ -212,8 +212,8 @@ export async function runOpenAIDemo(
 
   // ── Pause on online results before transitioning ─────────────────────────
   log("");
-  log(c(C.dim, "─".repeat(67)));
-  log(`  ${c(C.bGreen, "✓ Online phase complete.")}  ${c(C.dim, "Verifying artifact offline...")}`);
+  log(c(C.green, "─".repeat(67)));
+  log(`  ${c(C.bGreen, "✓ Online phase complete.")}  ${c(C.green, "Verifying artifact offline...")}`);
   await new Promise(r => setTimeout(r, 2500));
   process.stdout.write("\x1b[2J\x1b[H");
   log(c(C.cyan,   "╔══════════════════════════════════════════════════════════════════╗"));

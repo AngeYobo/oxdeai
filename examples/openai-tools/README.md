@@ -1,61 +1,73 @@
-# OxDeAI Demo - Pre-Execution Authorization Boundary
+# OxDeAI - Pre-Execution Authorization Boundary
 
-Proves that OxDeAI enforces authorization constraints **before** a tool executes -
-not by monitoring after the fact, but by requiring a signed Authorization artifact
-before the execution boundary is crossed.
+Authorization is evaluated **before** a tool executes. Not monitored after. Not logged after. Before.
+
+![OpenAI Demo](../../docs/media/openai-demo.gif)
 
 ---
 
-## What this demo shows
+> **Invariant:** No signed Authorization artifact → no execution. The tool code is unreachable on DENY.
 
-An agent proposes GPU provisioning three times. The policy allows exactly two.
+---
+
+## What this demo proves
+
+- A policy boundary can block tool execution structurally - not by rate-limiting or alerting
+- DENY means the tool function is never called - no code path reaches it
+- ALLOW requires a signed artifact at the PEP boundary, not just a truthy return value
+- The full decision history is independently verifiable offline, without re-running the engine
+
+---
+
+## Scenario
+
+An agent proposes the same GPU provisioning call three times. The policy budget allows exactly two.
 
 ```
-Proposal 1: provision_gpu(a100, us-east-1) → ALLOW  (500 spent,  500 remaining)
-Proposal 2: provision_gpu(a100, us-east-1) → ALLOW  (1000 spent,   0 remaining)
-Proposal 3: provision_gpu(a100, us-east-1) → DENY   (BUDGET_EXCEEDED - tool never called)
+#1  provision_gpu(a100, us-east-1)  →  ALLOW   500 / 1000 spent
+#2  provision_gpu(a100, us-east-1)  →  ALLOW  1000 / 1000 spent
+#3  provision_gpu(a100, us-east-1)  →  DENY   BUDGET_EXCEEDED - tool never called
 ```
-
-The third call is blocked at the policy boundary. No tool code runs. No side effects.
-
-The demo runs in two passes:
-
-- **Run 1** - live authorization: engine evaluates each proposal, emits a signed artifact
-- **Run 2** - offline replay: the artifact is verified independently, without the engine
 
 ---
 
 ## Architecture
 
 ```
-Agent (run.ts)
-  │
-  │  proposed tool call: provision_gpu(asset, region)
+Agent
+  │  proposed tool call
   ▼
-PEP - Policy Enforcement Point (pep.ts)
+PEP  (pep.ts)          ← enforcement point - thin by design, no policy logic
   │
-  │  1. builds Intent from proposed call
-  │  2. calls PDP: evaluatePure(intent, state)
-  │     ├─ DENY  → tool does not execute. Return denial. Done.
-  │     └─ ALLOW → Authorization artifact received
-  │  3. verifies Authorization is present (invariant check)
-  │  4. calls provision_gpu() only after Authorization confirmed
-  │  5. returns nextState from PDP for state commitment
+  ├─ evaluatePure(intent, state)
+  │     ├─ DENY  → return denial, execution structurally blocked
+  │     └─ ALLOW → Authorization artifact issued
   │
+  ├─ assert Authorization present      ← fail-closed invariant
+  ├─ call tool only after assertion    ← execution boundary
+  └─ commit nextState from PDP
   ▼
-PDP - Policy Decision Point (policy.ts)
+PDP  (policy.ts)       ← decision point - deterministic, pure, no side effects
   │
-  │  PolicyEngine.evaluatePure(intent, state)
+  │  modules: KillSwitch · Allowlist · Budget · PerActionCap
+  │           Velocity · Replay · Concurrency · Recursion · ToolAmplification
   │
-  │  Modules evaluated (in order):
-  │    KillSwitch · Allowlist · Budget · PerActionCap
-  │    Velocity · Replay · Concurrency · Recursion · ToolAmplification
-  │
-  └─ returns: { decision, authorization?, nextState?, reasons? }
+  └─ returns { decision, authorization?, nextState?, reasons? }
 ```
 
-**PDP** - evaluates policy deterministically, issues Authorizations, computes nextState.
-**PEP** - enforces the authorization requirement. Thin by design. No policy logic here.
+**PDP** decides. **PEP** enforces. Neither does the other's job.
+
+---
+
+## Execution flow
+
+1. Agent proposes `provision_gpu(asset, region)`
+2. PEP builds an Intent and calls `evaluatePure(intent, state)`
+3. **DENY** → PEP returns denial; tool is never invoked
+4. **ALLOW** → PEP asserts the Authorization artifact is present (throws if missing)
+5. PEP calls the tool; commits `nextState` from the PDP result
+6. Audit chain records every decision, hash-linked
+7. A Verification Envelope is produced for offline verification
 
 ---
 
@@ -65,132 +77,64 @@ PDP - Policy Decision Point (policy.ts)
 pnpm -C examples/openai-tools demo
 ```
 
-Or from inside `examples/openai-tools`:
-
-```bash
-pnpm demo
-```
-
 No paid API calls. Tool execution is mocked. The authorization boundary is real.
-The demo secret is hardcoded in the `demo` script - no env var setup needed.
+Engine secret is hardcoded in the script - no setup required.
 
 ---
 
-## Shared Demo Scenario
-
-This example is the reference implementation of the shared cross-adapter scenario in [`docs/integrations/shared-demo-scenario.md`](../../docs/integrations/shared-demo-scenario.md).
-
-Expected visible outcome:
-
-- proposal 1: `ALLOW`
-- proposal 2: `ALLOW`
-- proposal 3: `DENY`
-- Run 2 replay: `ok`
-
----
-
-## Expected output
+## Expected outcome
 
 ```
-╔══════════════════════════════════════════════════════════════════╗
-║  OxDeAI - Pre-Execution Authorization Demo  (Run 1: live)        ║
-║  Scenario: GPU provisioning - budget for exactly 2 proposals     ║
-╚══════════════════════════════════════════════════════════════════╝
+proposal 1: ALLOW
+proposal 2: ALLOW
+proposal 3: DENY   ← BUDGET_EXCEEDED
 
-Agent:   gpu-agent-1
-Policy:  budget=1000 minor units  max_per_action=500  (2× a100 allowed)
-
-── Agent proposals ──────────────────────────────────────────────────
-   provision_gpu(a100, us-east-1)  cost=500  nonce=1  → ALLOW  auth=...  instance=a100-us-east-1-demo-1
-   budget after: 500/1000 minor units spent
-   provision_gpu(a100, us-east-1)  cost=500  nonce=2  → ALLOW  auth=...  instance=a100-us-east-1-demo-2
-   budget after: 1000/1000 minor units spent
-   provision_gpu(a100, us-east-1)  cost=500  nonce=3  → DENY   BUDGET_EXCEEDED
-
-── Summary ───────────────────────────────────────────────────────────
-   proposal 1: ALLOW
-   proposal 2: ALLOW
-   proposal 3: DENY
-   Allowed: 2   Denied: 1
-
-── Audit chain ───────────────────────────────────────────────────────
-   events:   8 hash-chained  (head hash verified in Run 2)
-
-── Snapshot ──────────────────────────────────────────────────────────
-   stateHash: ...
-   size:      1275 bytes
-
-── Envelope ──────────────────────────────────────────────────────────
-   size: 4082 bytes  (ready for offline replay)
-
-✓ Run 1 complete.  Artifact produced - pass to Run 2 for replay verification.
-
-╔══════════════════════════════════════════════════════════════════╗
-║  OxDeAI - Offline Replay Verification       (Run 2: replay)      ║
-║  No engine. No agent. Artifact-only - simulates a remote PEP.    ║
-╚══════════════════════════════════════════════════════════════════╝
-
-  Input:   envelope from Run 1 (4082 bytes)
-  Keyset:  issuer=oxdeai.policy-engine  kid=2026-01
-
-── Replay result ─────────────────────────────────────────────────────
-   status:        ok
-   policyId:      ...
-   stateHash:     ...
-   auditHeadHash: ...
-   violations:    none
-
-✓ Replay passed.  Artifact verified independently - engine not involved.
+Run 1 complete.  Artifact produced.
+...
+Replay passed.  Artifact verified independently - engine not involved.
 ```
+
+This example is the reference implementation of the shared cross-adapter scenario:
+[`docs/integrations/shared-demo-scenario.md`](../../docs/integrations/shared-demo-scenario.md)
 
 ---
 
-## Real API Demo (OpenAI × OxDeAI)
+## Real API demo (OpenAI × OxDeAI)
 
-OpenAI proposes tool calls via the real API. OxDeAI enforces authorization before each
-execution. The third identical call is denied — budget exhausted. The full execution
-history is independently verifiable offline.
-
-![OpenAI Demo](../../docs/media/openai-demo.gif)
+OpenAI proposes tool calls via the live API. OxDeAI evaluates each at the boundary before execution.
 
 ```bash
 OPENAI_API_KEY=sk-... pnpm -C examples/openai-tools demo:openai
 ```
 
-Expected outcome:
-
 ```
-#1  provision_gpu(a100, us-east-1)  ALLOW    executed
-#2  provision_gpu(a100, us-east-1)  ALLOW    executed
-#3  provision_gpu(a100, us-east-1)  DENY     BUDGET_EXCEEDED
+#1  provision_gpu(a100, us-east-1)  ALLOW
+#2  provision_gpu(a100, us-east-1)  ALLOW
+#3  provision_gpu(a100, us-east-1)  DENY   BUDGET_EXCEEDED
 
 ✓ verifyEnvelope() => ok
 ```
 
-OpenAI proposes actions. OxDeAI enforces execution. The result is independently verifiable.
+OpenAI proposes. OxDeAI enforces. The artifact is independently verifiable.
 
 ---
 
-## Why this is "authorization before execution"
+## Why this is not monitoring
 
-Traditional approach: run first, check costs later (monitoring/alerting).
+| Monitoring | OxDeAI |
+|---|---|
+| Tool runs, then alert fires | Tool never runs on DENY |
+| Soft limit, can be exceeded | Hard pre-execution gate |
+| Log after the fact | Signed artifact before execution |
+| Re-run engine to verify | Verify offline from artifact alone |
 
-OxDeAI approach:
-1. Agent proposes action
-2. `evaluatePure(intent, state)` decides ALLOW or DENY **before any tool runs**
-3. DENY → execution is structurally impossible (no code path reaches the tool)
-4. ALLOW → signed Authorization is required at the PEP boundary
-5. Audit chain records every decision, hash-linked and tamper-evident
-6. Verification Envelope proves the history to any third party, offline - without re-running the engine
-
-The boundary is not a rate limiter or a monitoring hook.
-It is a hard pre-execution gate enforced by deterministic policy evaluation.
+The boundary is structural. DENY means no code path reaches the tool.
 
 ---
 
-## Determinism notes
+## Determinism
 
-- Timestamps: fixed `DEMO_BASE_TIMESTAMP = 1_700_000_000` - no `Date.now()`, fully deterministic
-- Instance IDs: stable counter (`a100-us-east-1-demo-1`, `-demo-2`) - no random entropy
-- Cost table: static map in `policy.ts`, no runtime lookup
-- State transitions: always via `result.nextState` from `evaluatePure`, never mutated directly
+- **Timestamps** - fixed `DEMO_BASE_TIMESTAMP = 1_700_000_000`, no `Date.now()`
+- **Instance IDs** - stable counter (`a100-us-east-1-demo-1`, `-demo-2`), no random entropy
+- **Cost table** - static map in `policy.ts`, no runtime lookup
+- **State transitions** - always via `result.nextState` from `evaluatePure`, never mutated in place
