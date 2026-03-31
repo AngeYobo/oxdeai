@@ -49,8 +49,8 @@ export async function runDemo(log: (msg: string) => void = (msg) => console.log(
   const decisions: string[] = [];
 
   log(c(C.cyan, "╔══════════════════════════════════════════════════════════════════╗"));
-  log(c(C.cyan, "║") + c(C.bWhite, "  OxDeAI — OpenAI Agents SDK Boundary Demo                       ") + c(C.cyan, "║"));
-  log(c(C.cyan, "║") + c(C.dim,    "  Scenario: GPU provisioning — budget for exactly 2 calls        ") + c(C.cyan, "║"));
+  log(c(C.cyan, "║") + c(C.bWhite, "  OxDeAI - OpenAI Agents SDK Boundary Demo                       ") + c(C.cyan, "║"));
+  log(c(C.cyan, "║") + c(C.dim,    "  Scenario: GPU provisioning - budget for exactly 2 calls        ") + c(C.cyan, "║"));
   log(c(C.cyan, "╚══════════════════════════════════════════════════════════════════╝"));
   log(`\n${c(C.dim, "Agent:")}   ${c(C.bCyan, AGENT_ID)}`);
   log(`${c(C.dim, "Policy:")}  budget=${c(C.yellow, "1000")} minor units  max_per_action=${c(C.yellow, "500")}  (2× a100 allowed)`);
@@ -141,9 +141,9 @@ export async function runDemo(log: (msg: string) => void = (msg) => console.log(
   });
 
   log(`   ${c(C.dim, "status:")}        ${vr.status === "ok" ? c(C.bGreen, "ok") : c(C.bRed, vr.status)}`);
-  log(`   ${c(C.dim, "policyId:")}      ${c(C.blue, (vr.policyId ?? "—").slice(0, 32) + "...")}`);
-  log(`   ${c(C.dim, "stateHash:")}     ${c(C.blue, (vr.stateHash ?? "—").slice(0, 32) + "...")}`);
-  log(`   ${c(C.dim, "auditHeadHash:")} ${c(C.blue, (vr.auditHeadHash ?? "—").slice(0, 32) + "...")}`);
+  log(`   ${c(C.dim, "policyId:")}      ${c(C.blue, (vr.policyId ?? "-").slice(0, 32) + "...")}`);
+  log(`   ${c(C.dim, "stateHash:")}     ${c(C.blue, (vr.stateHash ?? "-").slice(0, 32) + "...")}`);
+  log(`   ${c(C.dim, "auditHeadHash:")} ${c(C.blue, (vr.auditHeadHash ?? "-").slice(0, 32) + "...")}`);
   log(`   ${c(C.dim, "violations:")}    ${vr.violations.length === 0 ? c(C.bGreen, "none") : c(C.bRed, vr.violations.map((v) => v.code).join(", "))}`);
 
   if (vr.status !== "ok") {

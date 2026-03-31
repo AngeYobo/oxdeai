@@ -1,5 +1,5 @@
 /**
- * pep.ts — Policy Enforcement Point (PEP)
+ * pep.ts - Policy Enforcement Point (PEP)
  *
  * Uses @oxdeai/openai-agents to delegate all authorization logic to the
  * universal guard. No evaluatePure / verifyAuthorization calls here.
@@ -51,7 +51,7 @@ export async function guardedProvision(
 ): Promise<GuardedResult> {
   const cost = gpuCost(asset, region);
 
-  // Build the intent once — used for logging and passed directly via mapActionToIntent.
+  // Build the intent once - used for logging and passed directly via mapActionToIntent.
   // This avoids double-incrementing the nonce counter.
   const intent = buildProvisionIntent(asset, region, timestampSeconds);
 

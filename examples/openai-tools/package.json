@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "pnpm build && node dist/run.js",
+    "demo": "OXDEAI_ENGINE_SECRET=demo-secret-must-be-at-least-32-chars!! pnpm build && node dist/run.js",
     "validate": "node ../../scripts/validate-adapters.mjs --one openai-tools",
     "start:deny": "pnpm build && DEMO_DENY=1 node dist/run.js",
     "demo:openai-tools": "pnpm -C examples/openai-tools build && node examples/openai-tools/dist/run.js"
