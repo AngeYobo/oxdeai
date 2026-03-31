@@ -1,23 +1,34 @@
 Output docs/media/openai-demo.gif
 
-Set Shell  "bash"
-Set FontSize   13
-Set Width     860
-Set Height    520
-Set Framerate  24
-Set PlaybackSpeed 0.75
+Set Shell "bash"
+Set FontSize 14
+Set Width 860
+Set Height 520
+Set Framerate 24
+Set PlaybackSpeed 0.85
 
-# ── Type the command visibly ─────────────────────────────────────────────────
-Type "pnpm -C examples/openai-tools demo:openai"
-
-# ── Hide during build only (pnpm noise + tsc) ────────────────────────────────
-# Build takes ~5–8s. clear runs after. Demo starts streaming at ~8s.
-# Show resumes while demo is still live → VHS captures the stream.
-Hide
+# ── Hook (visible immédiatement) ─────────────────────────────────
+Type "# same action → allowed, allowed, then blocked before execution"
 Enter
-Sleep 8s
+Sleep 1.2s
+
+# ── Command ─────────────────────────────────────────────────────
+Type "pnpm -C examples/openai-tools demo:openai"
+Enter
+
+# ── Hide build ──────────────────────────────────────────────────
+Hide
+Sleep 7s
 Show
 
-# ── Demo streams from here — sleep is the only pacing control ────────────────
-# 25s covers: header + 3 API calls + timeline + verification + summary box.
-Sleep 25s
+# ── Live decisions (core signal) ─────────────────────────────────
+Sleep 12s
+
+# ── Pause on DENY (critical moment) ─────────────────────────────
+Sleep 2.5s
+
+# ── Verification (short) ────────────────────────────────────────
+Sleep 6s
+
+# ── Final pause ─────────────────────────────────────────────────
+Sleep 2s

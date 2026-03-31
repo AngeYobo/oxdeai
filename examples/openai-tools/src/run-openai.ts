@@ -210,6 +210,18 @@ export async function runOpenAIDemo(
     log(`  ${c(C.dim, String(d.step))}   ${action}${verdict}  ${outcome}`);
   }
 
+  // ── Pause on online results before transitioning ─────────────────────────
+  log("");
+  log(c(C.dim, "─".repeat(67)));
+  log(`  ${c(C.bGreen, "✓ Online phase complete.")}  ${c(C.dim, "Verifying artifact offline...")}`);
+  await new Promise(r => setTimeout(r, 2500));
+  process.stdout.write("\x1b[2J\x1b[H");
+  log(c(C.cyan,   "╔══════════════════════════════════════════════════════════════════╗"));
+  log(c(C.cyan,   "║") + c(C.bWhite, "  OxDeAI × OpenAI  ·  Execution Authorization Demo               ") + c(C.cyan, "║"));
+  log(c(C.cyan,   "║") + c(C.dim,    "  Verification + Summary                                         ") + c(C.cyan, "║"));
+  log(c(C.cyan,   "╚══════════════════════════════════════════════════════════════════╝"));
+  log("");
+
   // ── Build + verify envelope ───────────────────────────────────────────────
   const auditEvents   = engine.audit.snapshot();
   const canonicalState = engine.exportState(oxState);
