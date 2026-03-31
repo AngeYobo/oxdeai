@@ -145,6 +145,32 @@ Policy:  budget=1000 minor units  max_per_action=500  (2× a100 allowed)
 
 ---
 
+## Real API Demo (OpenAI × OxDeAI)
+
+OpenAI proposes tool calls via the real API. OxDeAI enforces authorization before each
+execution. The third identical call is denied — budget exhausted. The full execution
+history is independently verifiable offline.
+
+![OpenAI Demo](../../docs/media/openai-demo.gif)
+
+```bash
+OPENAI_API_KEY=sk-... pnpm -C examples/openai-tools demo:openai
+```
+
+Expected outcome:
+
+```
+#1  provision_gpu(a100, us-east-1)  ALLOW    executed
+#2  provision_gpu(a100, us-east-1)  ALLOW    executed
+#3  provision_gpu(a100, us-east-1)  DENY     BUDGET_EXCEEDED
+
+✓ verifyEnvelope() => ok
+```
+
+OpenAI proposes actions. OxDeAI enforces execution. The result is independently verifiable.
+
+---
+
 ## Why this is "authorization before execution"
 
 Traditional approach: run first, check costs later (monitoring/alerting).
