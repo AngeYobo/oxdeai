@@ -19,12 +19,13 @@ import { engine, buildProvisionIntent, gpuCost } from "./policy.js";
 
 // ── Mocked tool ───────────────────────────────────────────────────────────────
 // In production: real infrastructure API call.
-// Here: deterministic mock that logs and returns a fake instance ID.
+// Here: deterministic mock that returns a stable instance ID (demo mode).
+
+let _instanceCounter = 0;
 
 function provision_gpu(asset: string, region: string): string {
   // This function body only runs when the PEP has confirmed authorization.
-  const instanceId = `${asset}-${region}-${Date.now().toString(36)}`;
-  return instanceId;
+  return `${asset}-${region}-demo-${++_instanceCounter}`;
 }
 
 // ── Result types ──────────────────────────────────────────────────────────────
@@ -47,9 +48,6 @@ export function guardedProvision(
 
   // ── Step 1: Build intent ─────────────────────────────────────────────────
   const intent = buildProvisionIntent(asset, region, timestampSeconds);
-  log(`\n┌─ Proposed tool call`);
-  log(`│  provision_gpu(asset=${asset}, region=${region})`);
-  log(`│  cost=${cost} minor units  nonce=${intent.nonce}  intent_id=${intent.intent_id}`);
 
   // ── Step 2: PDP evaluation (pre-execution boundary) ──────────────────────
   const result = engine.evaluatePure(intent, state);
@@ -57,7 +55,7 @@ export function guardedProvision(
   if (result.decision === "DENY") {
     // Tool does not execute. State is unchanged.
     const reasons = result.reasons ?? ["unknown"];
-    log(`└─ DENY  reasons: ${reasons.join(", ")}`);
+    log(`   provision_gpu(${asset}, ${region})  cost=${cost}  nonce=${intent.nonce}  → DENY   ${reasons.join(", ")}`);
     return { allowed: false, reasons };
   }
 
@@ -71,12 +69,9 @@ export function guardedProvision(
     );
   }
 
-  log(`│  ALLOW  auth_id=${authorization.authorization_id.slice(0, 16)}...`);
-  log(`│         expires=${authorization.expires_at}  state_hash=${authorization.state_snapshot_hash.slice(0, 16)}...`);
-
   // ── Step 4: Execute tool (only after Authorization confirmed) ────────────
   const instanceId = provision_gpu(asset, region);
-  log(`└─ EXECUTED  instance_id=${instanceId}`);
+  log(`   provision_gpu(${asset}, ${region})  cost=${cost}  nonce=${intent.nonce}  → ALLOW  auth=${authorization.authorization_id.slice(0, 12)}...  instance=${instanceId}`);
 
   // nextState from PDP must be used for the next evaluation.
   // Never mutate state directly — always use result.nextState.
