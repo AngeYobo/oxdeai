@@ -80,13 +80,22 @@ function countMatches(text, pattern) {
 function assertOutput(adapter, output) {
   const plain = stripAnsi(output);
 
-  const required = [
-    "proposal 1: ALLOW",
-    "proposal 2: ALLOW",
-    "proposal 3: DENY",
-    "Run 1 complete.",
-    "BUDGET_EXCEEDED",
-  ];
+  // openai-tools uses "proposal N" (updated demo format) + two-run structure
+  const required = adapter === "openai-tools"
+    ? [
+        "proposal 1: ALLOW",
+        "proposal 2: ALLOW",
+        "proposal 3: DENY",
+        "Run 1 complete.",
+        "BUDGET_EXCEEDED",
+      ]
+    : [
+        "decision 1: ALLOW",
+        "decision 2: ALLOW",
+        "decision 3: DENY",
+        "verifyEnvelope() => ok",
+        "BUDGET_EXCEEDED",
+      ];
 
   for (const needle of required) {
     if (!plain.includes(needle)) {
@@ -94,7 +103,9 @@ function assertOutput(adapter, output) {
     }
   }
 
-  const executedCount = countMatches(output, /→ ALLOW/g);
+  const executedCount = adapter === "openai-tools"
+    ? countMatches(output, /→ ALLOW/g)
+    : countMatches(output, /└─ EXECUTED/g);
   if (executedCount !== 2) {
     throw new Error(`${adapter}: expected exactly 2 executed actions, got ${executedCount}`);
   }
