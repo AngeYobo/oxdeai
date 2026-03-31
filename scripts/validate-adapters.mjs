@@ -81,11 +81,11 @@ function assertOutput(adapter, output) {
   const plain = stripAnsi(output);
 
   const required = [
-    "decision 1: ALLOW",
-    "decision 2: ALLOW",
-    "decision 3: DENY",
-    "verifyEnvelope() => ok",
-    "└─ DENY  reasons: BUDGET_EXCEEDED",
+    "proposal 1: ALLOW",
+    "proposal 2: ALLOW",
+    "proposal 3: DENY",
+    "Run 1 complete.",
+    "BUDGET_EXCEEDED",
   ];
 
   for (const needle of required) {
@@ -94,7 +94,7 @@ function assertOutput(adapter, output) {
     }
   }
 
-  const executedCount = countMatches(output, /└─ EXECUTED/g);
+  const executedCount = countMatches(output, /→ ALLOW/g);
   if (executedCount !== 2) {
     throw new Error(`${adapter}: expected exactly 2 executed actions, got ${executedCount}`);
   }

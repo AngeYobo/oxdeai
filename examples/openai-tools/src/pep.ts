@@ -1,12 +1,12 @@
 /**
- * pep.ts — Policy Enforcement Point (PEP)
+ * pep.ts - Policy Enforcement Point (PEP)
  *
  * The execution boundary. The tool MUST NOT run without a valid Authorization.
  *
  * Flow:
  *   1. Build intent from proposed tool call
  *   2. Ask PDP: evaluatePure(intent, state)
- *   3. DENY  → print denial, return — tool does not execute
+ *   3. DENY  → print denial, return - tool does not execute
  *   4. ALLOW → verify Authorization present (invariant check)
  *   5. Execute tool with Authorization in hand
  *   6. Commit nextState from PDP for next evaluation
@@ -59,9 +59,9 @@ export function guardedProvision(
     return { allowed: false, reasons };
   }
 
-  // ── Step 3: PEP enforcement — Authorization MUST be present ─────────────
+  // ── Step 3: PEP enforcement - Authorization MUST be present ─────────────
   // If evaluatePure returns ALLOW without an Authorization, that is a
-  // protocol violation — throw rather than silently proceeding.
+  // protocol violation - throw rather than silently proceeding.
   const authorization = result.authorization;
   if (!authorization) {
     throw new Error(
@@ -74,7 +74,7 @@ export function guardedProvision(
   log(`   provision_gpu(${asset}, ${region})  cost=${cost}  nonce=${intent.nonce}  → ALLOW  auth=${authorization.authorization_id.slice(0, 12)}...  instance=${instanceId}`);
 
   // nextState from PDP must be used for the next evaluation.
-  // Never mutate state directly — always use result.nextState.
+  // Never mutate state directly - always use result.nextState.
   const nextState = result.nextState;
   if (!nextState) {
     throw new Error(`PDP returned ALLOW but no nextState for ${intent.intent_id}`);

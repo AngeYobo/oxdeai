@@ -1,5 +1,5 @@
 /**
- * run.ts — Demo entry point
+ * run.ts - Demo entry point
  *
  * Simulates an agent proposing GPU provisioning calls.
  * OxDeAI enforces the economic boundary before each execution.
@@ -67,10 +67,10 @@ MCowBQYDK2VwAyEAWiMMGTYK7zzHwZXLzDpCshxAH6Lgx8gVsJaixePuY7g=
 const PLANNED_CALLS = [
   { asset: "a100", region: "us-east-1" },
   { asset: "a100", region: "us-east-1" },
-  { asset: "a100", region: "us-east-1" }, // will be DENIED — budget exhausted
+  { asset: "a100", region: "us-east-1" }, // will be DENIED - budget exhausted
 ];
 
-// Stable demo timestamp — no Date.now(), output is fully deterministic.
+// Stable demo timestamp - no Date.now(), output is fully deterministic.
 const DEMO_BASE_TIMESTAMP = 1_700_000_000; // 2023-11-14T22:13:20Z
 
 // ── Run 1: Live authorization demo ────────────────────────────────────────────
@@ -81,8 +81,8 @@ export async function runDemo(
   const decisions: string[] = [];
 
   log(c(C.cyan, "╔══════════════════════════════════════════════════════════════════╗"));
-  log(c(C.cyan, "║") + c(C.bWhite, "  OxDeAI — Pre-Execution Authorization Demo  (Run 1: live)       ") + c(C.cyan, "║"));
-  log(c(C.cyan, "║") + c(C.dim,    "  Scenario: GPU provisioning — budget for exactly 2 proposals     ") + c(C.cyan, "║"));
+  log(c(C.cyan, "║") + c(C.bWhite, "  OxDeAI - Pre-Execution Authorization Demo  (Run 1: live)       ") + c(C.cyan, "║"));
+  log(c(C.cyan, "║") + c(C.dim,    "  Scenario: GPU provisioning - budget for exactly 2 proposals     ") + c(C.cyan, "║"));
   log(c(C.cyan, "╚══════════════════════════════════════════════════════════════════╝"));
 
   log(`\n${c(C.dim, "Agent:")}   ${c(C.bCyan, AGENT_ID)}`);
@@ -164,7 +164,7 @@ export async function runDemo(
   log(`\n${c(C.dim, "── Envelope ─────────────────────────────────────────────────────────")}`);
   log(`   ${c(C.dim, "size:")} ${envelopeBytes.length} bytes  ${c(C.dim, "(ready for offline replay)")}`);
 
-  log(`\n${c(C.bGreen, "✓ Run 1 complete.")}  Artifact produced — pass to Run 2 for replay verification.`);
+  log(`\n${c(C.bGreen, "✓ Run 1 complete.")}  Artifact produced - pass to Run 2 for replay verification.`);
 
   return { envelopeBytes };
 }
@@ -176,8 +176,8 @@ export async function runReplay(
   log: (msg: string) => void = (msg) => console.log(msg)
 ): Promise<void> {
   log(`\n${c(C.cyan, "╔══════════════════════════════════════════════════════════════════╗")}`);
-  log(`${c(C.cyan, "║")}${c(C.bWhite, "  OxDeAI — Offline Replay Verification       (Run 2: replay)   ")}${c(C.cyan, "║")}`);
-  log(`${c(C.cyan, "║")}${c(C.dim,    "  No engine. No agent. Artifact-only — simulates a remote PEP.  ")}${c(C.cyan, "║")}`);
+  log(`${c(C.cyan, "║")}${c(C.bWhite, "  OxDeAI - Offline Replay Verification       (Run 2: replay)   ")}${c(C.cyan, "║")}`);
+  log(`${c(C.cyan, "║")}${c(C.dim,    "  No engine. No agent. Artifact-only - simulates a remote PEP.  ")}${c(C.cyan, "║")}`);
   log(`${c(C.cyan, "╚══════════════════════════════════════════════════════════════════╝")}`);
 
   log(`\n${c(C.dim, "  Input:")}   envelope from Run 1 (${envelopeBytes.length} bytes)`);
@@ -193,21 +193,21 @@ export async function runReplay(
 
   log(`\n${c(C.dim, "── Replay result ────────────────────────────────────────────────────")}`);
   log(`   ${c(C.dim, "status:")}        ${statusColor}`);
-  log(`   ${c(C.dim, "policyId:")}      ${c(C.blue, (vr.policyId      ?? "—").slice(0, 32) + "...")}`);
-  log(`   ${c(C.dim, "stateHash:")}     ${c(C.blue, (vr.stateHash     ?? "—").slice(0, 32) + "...")}`);
-  log(`   ${c(C.dim, "auditHeadHash:")} ${c(C.blue, (vr.auditHeadHash ?? "—").slice(0, 32) + "...")}`);
+  log(`   ${c(C.dim, "policyId:")}      ${c(C.blue, (vr.policyId      ?? "-").slice(0, 32) + "...")}`);
+  log(`   ${c(C.dim, "stateHash:")}     ${c(C.blue, (vr.stateHash     ?? "-").slice(0, 32) + "...")}`);
+  log(`   ${c(C.dim, "auditHeadHash:")} ${c(C.blue, (vr.auditHeadHash ?? "-").slice(0, 32) + "...")}`);
   log(`   ${c(C.dim, "violations:")}    ${vr.violations.length === 0 ? c(C.bGreen, "none") : c(C.bRed, vr.violations.map((v) => v.code).join(", "))}`);
 
   if (vr.status !== "ok") {
     throw new Error(`Replay verification failed: ${vr.status}`);
   }
 
-  log(`\n${c(C.bGreen, "✓ Replay passed.")}  Artifact verified independently — engine not involved.`);
+  log(`\n${c(C.bGreen, "✓ Replay passed.")}  Artifact verified independently - engine not involved.`);
   log("");
   log(`  ${c(C.bWhite, "What just happened:")}`);
   log(`  ${c(C.cyan, "┌─────────────────────────────────────────────────────────────────┐")}`);
   log(`  ${c(C.cyan, "│")} ${c(C.bCyan, "PDP")}  Run 1 evaluated each proposal before any tool ran.          ${c(C.cyan, "│")}`);
-  log(`  ${c(C.cyan, "│")}      Proposal 3 was ${c(C.bRed, "denied")} at the boundary — tool never ran.      ${c(C.cyan, "│")}`);
+  log(`  ${c(C.cyan, "│")}      Proposal 3 was ${c(C.bRed, "denied")} at the boundary - tool never ran.      ${c(C.cyan, "│")}`);
   log(`  ${c(C.cyan, "│")}                                                                 ${c(C.cyan, "│")}`);
   log(`  ${c(C.cyan, "│")} ${c(C.bCyan, "PEP")}  Tool only executed after Authorization was confirmed.       ${c(C.cyan, "│")}`);
   log(`  ${c(C.cyan, "│")}      No Authorization = no execution, even on ${c(C.bGreen, "ALLOW")}.             ${c(C.cyan, "│")}`);
