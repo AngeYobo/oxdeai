@@ -104,7 +104,9 @@ nav {
   transition: color 0.15s;
 }
 
-.nav-links a:hover { color: var(--text); }
+.nav-links a:hover {
+  color: var(--text);
+}
 
 /* ─── Hero ──────────────────────────────────────────────────────────────────── */
 #hero {
@@ -206,7 +208,9 @@ nav {
   color: #f0fdf4;
 }
 
-.btn-primary:hover { background: var(--green); }
+.btn-primary:hover {
+  background: var(--green);
+}
 
 .btn-secondary {
   background: #f4f4f5;
@@ -215,7 +219,10 @@ nav {
   font-weight: 600;
 }
 
-.btn-secondary:hover { background: #ffffff; border-color: #ffffff; }
+.btn-secondary:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+}
 
 .btn-ghost {
   color: var(--text-muted);
@@ -223,7 +230,9 @@ nav {
   padding-left: 0;
 }
 
-.btn-ghost:hover { color: var(--text); }
+.btn-ghost:hover {
+  color: var(--text);
+}
 
 /* ─── Section Headers ───────────────────────────────────────────────────────── */
 .section-label {
@@ -592,7 +601,9 @@ nav {
   border-bottom-color: var(--green);
 }
 
-.code-tab:hover { color: var(--text); }
+.code-tab:hover {
+  color: var(--text);
+}
 
 .code-panel {
   display: none;
@@ -746,7 +757,9 @@ nav {
   transition: border-color 0.15s;
 }
 
-.adapter-card:hover { border-color: #52525b; }
+.adapter-card:hover {
+  border-color: #52525b;
+}
 
 .adapter-name {
   font-weight: 600;
@@ -839,7 +852,9 @@ footer {
   transition: color 0.15s;
 }
 
-.footer-links a:hover { color: var(--text); }
+.footer-links a:hover {
+  color: var(--text);
+}
 
 .footer-note {
   width: 100%;
@@ -922,7 +937,10 @@ html.light .btn-secondary {
   color: #f4f4f5;
   border-color: #111113;
 }
-html.light .btn-secondary:hover { background: #27272a; border-color: #27272a; }
+html.light .btn-secondary:hover {
+  background: #27272a;
+  border-color: #27272a;
+}
 
 html.light nav {
   background: rgba(255, 255, 255, 0.92);
@@ -951,7 +969,9 @@ html.light nav {
   flex-shrink: 0;
 }
 
-.theme-toggle:hover { border-color: #52525b; }
+.theme-toggle:hover {
+  border-color: #52525b;
+}
 
 /* Show sun icon in dark mode, moon in light mode */
 .theme-icon-dark  { display: inline; }
