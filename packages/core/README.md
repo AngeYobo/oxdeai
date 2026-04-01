@@ -2,11 +2,85 @@
 
 Deterministic Execution Authorization Layer for Autonomous Systems
 
+[High-signal] Controls whether actions are allowed to execute - before any side effect occurs.
+
 [![npm version](https://img.shields.io/npm/v/@oxdeai/core.svg)](https://www.npmjs.com/package/@oxdeai/core)
 [![Snyk](https://snyk.io/test/github/AngeYobo/oxdeai-core/badge.svg)](https://snyk.io/test/github/AngeYobo/oxdeai-core)
 [![license](https://img.shields.io/npm/l/@oxdeai/core.svg)](https://github.com/AngeYobo/oxdeai-core/blob/main/packages/core/LICENSE)
 [![build](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml/badge.svg)](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml)
 
+**Package:** deterministic, fail-closed execution authorization layer that decides whether an agent action may execute *before* any side effect, emitting verifiable artifacts for allowed actions. Not an agent framework.
+
+**Core invariant:** No valid authorization → no execution path.
+
+Sits between agent runtimes and external side effects (APIs, infrastructure, payments).
+
+## Core invariant
+
+**No valid authorization → no execution path.** Same `(intent, state, policy, engine)` ⇒ same decision and hashes; missing trust or policy mismatch fails closed.
+
+Prevents retries, loops, and unintended side effects from ever reaching execution.
+
+## Quickstart (minimal)
+
+```ts
+import { PolicyEngine, verifyAuthorization } from "@oxdeai/core";
+
+const engine = new PolicyEngine({
+  policy_version: "v1.7",
+  authorization_ttl_seconds: 60,
+  authorization_signing_alg: "Ed25519",
+  authorization_private_key_pem: process.env.OXDEAI_SIGNING_KEY_PEM!,
+  engine_secret: process.env.OXDEAI_ENGINE_SECRET!,
+  strictDeterminism: true
+});
+
+const intent = {
+  intent_id: "intent-1",
+  agent_id: "agent-123",
+  type: "EXECUTE",
+  action_type: "PAYMENT",
+  target: "tool/openai",
+  metadata_hash: "0".repeat(64),
+  nonce: 1n,
+  amount: 100n,
+  timestamp: 1_730_000_000,
+  depth: 0
+};
+
+const state = {
+  policy_version: "v1.7",
+  period_id: "2026-02",
+  kill_switch: { global: false, agents: {} },
+  allowlists: {},
+  budget: { budget_limit: { "agent-123": 10_000n }, spent_in_period: {} },
+  max_amount_per_action: { "agent-123": 5_000n },
+  velocity: { config: { window_seconds: 60, max_actions: 100 }, counters: {} },
+  replay: { window_seconds: 3600, max_nonces_per_agent: 256, nonces: {} },
+  recursion: { max_depth: { "agent-123": 2 } },
+  concurrency: { max_concurrent: { "agent-123": 2 }, active: {}, active_auths: {} },
+  tool_limits: { window_seconds: 60, max_calls: { "agent-123": 10 }, calls: {} }
+};
+
+const decision = engine.evaluatePure(intent, state);
+
+if (decision.decision === "DENY") {
+  throw new Error(decision.reasons.join(", "));
+}
+
+// Allowed: authorization artifact is attached
+const auth = decision.authorization;
+const verified = verifyAuthorization(auth, { policyId: engine.computePolicyId() });
+if (verified.status !== "ok") throw new Error("authorization failed verification");
+
+if (decision.decision === "ALLOW") {
+  // execute tool
+} else {
+  // tool never runs
+}
+
+// persist decision.nextState and proceed to execution boundary
+```
 
 ## Status
 
@@ -23,9 +97,9 @@ v1.7.x adds on top of the preserved v1.6.x verification surface:
 
 Preserved from v1.6.x:
 
-- `DelegationV1` — first-class delegation artifact
-- `verifyDelegation()` / `verifyDelegationChain()` — stateless delegation verifiers
-- `createDelegation()` — delegation signing helper
+- `DelegationV1` - first-class delegation artifact
+- `verifyDelegation()` / `verifyDelegationChain()` - stateless delegation verifiers
+- `createDelegation()` - delegation signing helper
 - Scope narrowing enforcement (budget ceiling, tool allowlist, expiry ceiling)
 
 Preserved stateless verification surface (v1.2+):
@@ -63,6 +137,7 @@ No dashboards.
 No LLM classifiers.
 No heuristics.
 No post-fact monitoring.
+No post-execution monitoring. The decision happens before execution.
 
 Just deterministic pre-execution authorization with verifiable artifacts.
 
@@ -75,6 +150,8 @@ Just deterministic pre-execution authorization with verifiable artifacts.
 `@oxdeai/core` is the TypeScript reference implementation of the OxDeAI execution authorization protocol.
 
 It enforces authorization invariants before an action executes and emits cryptographically verifiable artifacts that can be verified independently - offline, without access to the running system.
+It is an execution boundary layer, not an agent framework.
+evaluatePure is side-effect free and deterministic. evaluate may interact with configured adapters (state/audit).
 
 The library exposes:
 
@@ -183,6 +260,7 @@ Same inputs ⇒ same outputs. Policy domains are enforced as deterministic autho
 * Not a prompt filter or model-output classifier
 * Not an observability or post-execution monitoring tool
 * Not distributed coordination infrastructure
+* Not an agent framework or runtime
 
 `@oxdeai/core` can enforce spend, velocity, concurrency, and capability policies as authorization invariants. Its core role is execution authorization and verifiable artifacts - not downstream accounting.
 
@@ -203,7 +281,7 @@ Deterministic invariants enforced and tested:
 * D-3 `structuredClone` inputs yield identical outputs (no aliasing between clone and engine working state)
 * D-4 Object key insertion order does not affect decisions or derived hashes
 * D-5 Same inputs produce identical decisions and state hashes across separate processes
-* D-6 Strict mode rejects missing explicit time inputs — no implicit `Date.now()` fallback
+* D-6 Strict mode rejects missing explicit time inputs - no implicit `Date.now()` fallback
 
 * `policyId` - content-addressed engine configuration
 * `stateHash` - canonical snapshot hash
@@ -247,10 +325,13 @@ No non-deterministic ordering.
 
 ```ts
 import { PolicyEngine, verifyEnvelope } from "@oxdeai/core";
-const decision = engine.evaluate(intent, state);
+const engine = new PolicyEngine({...});
+const decision = engine.evaluatePure(intent, state);
+if (decision.decision !== "ALLOW") throw new Error(decision.reasons.join(", "));
+
 const result = verifyEnvelope(envelopeBytes);
-if (result.ok) console.log("artifact verified");
-// result.ok is true only when the envelope contains a STATE_CHECKPOINT.
+if (result.status === "ok") console.log("artifact verified");
+// status === "ok" only when the envelope contains a STATE_CHECKPOINT.
 // Set checkpoint_every_n_events: 1 (or N) in the engine options to emit one.
 ```
 
@@ -277,16 +358,16 @@ npm install @oxdeai/core
 
 ## Core Model
 
-![OxDeAI Core - Protocol Responsibilities](../../docs/diagrams/core-model.svg)
+![OxDeAI Core - Protocol Responsibilities](https://raw.githubusercontent.com/AngeYobo/oxdeai/main/docs/diagrams/core-model.svg)
 
 Diagram source/editing policy:
-- [`docs/diagrams/README.md`](../../docs/diagrams/README.md)
+- [`docs/diagrams/README.md`](https://github.com/AngeYobo/oxdeai/blob/main/docs/diagrams/README.md)
 
 ---
 
 ## Trust Boundary
 
-![OxDeAI Trust Boundary](../../docs/diagrams/trust-boundary.svg)
+![OxDeAI Trust Boundary](https://raw.githubusercontent.com/AngeYobo/oxdeai/main/docs/diagrams/trust-boundary.svg)
 
 The core model shows **what the protocol decides** (deterministic authorization logic).
 This diagram shows **who is trusted to make that decision** (issuer model + verifier configuration).
@@ -297,8 +378,9 @@ The two concerns are deliberately separate:
 - A cryptographically valid artifact is not trusted by default.
 - The verifier defines the trust boundary via `trustedKeySets`.
 - In strict mode, a missing or empty `trustedKeySets` is a hard failure (`TRUSTED_KEYSETS_REQUIRED`), not a warning.
+- Validity is cryptographic. Trust is explicit.
 
-`policyId` is a content hash of the policy configuration — it identifies a specific policy but does not authenticate the authority that defined it. Verifiers MUST NOT treat a matching `policyId` as proof of issuer legitimacy.
+`policyId` is a content hash of the policy configuration - it identifies a specific policy but does not authenticate the authority that defined it. Verifiers MUST NOT treat a matching `policyId` as proof of issuer legitimacy.
 
 Trust is configured explicitly at the verifier. OxDeAI enforces the execution boundary; who is trusted is defined outside the protocol.
 
@@ -378,7 +460,7 @@ const state: State = {
   concurrency: { max_concurrent: { "agent-1": 2 }, active: {}, active_auths: {} },
   tool_limits: { window_seconds: 60, max_calls: { "agent-1": 10 }, calls: {} }
 };
-// policy_version must match engine.opts.policy_version — evaluatePure fails-closed on mismatch
+// policy_version must match engine.opts.policy_version - evaluatePure fails-closed on mismatch
 
 const intent: Intent = {
   intent_id: "intent-1",
@@ -548,7 +630,7 @@ if (first.decision !== "ALLOW") throw new Error(first.reasons.join(", "));
 const out = engine.evaluatePure(intent2, first.nextState);
 const events = engine.audit.snapshot();
 const verified = verifyAuditEvents(events, { policyId: engine.computePolicyId() }); // strict by default
-console.log(verified.ok, verified.status); // true, "ok" when checkpoints exist
+console.log(verified.status === "ok"); // true when checkpoints exist
 ```
 
 ---
@@ -656,12 +738,12 @@ Stateless verification layer for protocol artifacts.
 
 ## See also
 
-- [Root README](../../README.md)
-- [Architecture](../../docs/architecture.md)
-- [Why OxDeAI](../../docs/architecture/why-oxdeai.md)
-- [Adapter stack](../../docs/integrations/adapter-stack.md)
-- [Integrations index](../../docs/integrations/README.md)
-- [Conformance vectors](../../docs/conformance-vectors.md)
+- [Root README](https://github.com/AngeYobo/oxdeai/blob/main/README.md)
+- [Architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/architecture.md)
+- [Why OxDeAI](https://github.com/AngeYobo/oxdeai/blob/main/docs/architecture/why-oxdeai.md)
+- [Adapter stack](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/adapter-stack.md)
+- [Integrations index](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/README.md)
+- [Conformance vectors](https://github.com/AngeYobo/oxdeai/blob/main/docs/conformance-vectors.md)
 
 ## License
 

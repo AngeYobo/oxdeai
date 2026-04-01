@@ -19,7 +19,10 @@
     "ci": "pnpm install --frozen-lockfile && pnpm -r build && pnpm test && pnpm validate:adapters",
     "oxdeai": "pnpm -C packages/cli start --",
     "cli": "pnpm -C packages/cli start --",
-    "run:bench": "pnpm --filter oxdeai-bench run run"
+    "run:bench": "pnpm --filter oxdeai-bench run run",
+    "tags:audit": "node scripts/audit-tags.mjs",
+    "tags:cleanup:dry": "node scripts/cleanup-legacy-tags.mjs",
+    "tags:cleanup:local": "node scripts/cleanup-legacy-tags.mjs --apply-local --confirm=DELETE_LEGACY_TAGS"
   },
   "devDependencies": {
     "@types/node": "^22.19.11",
