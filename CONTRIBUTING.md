@@ -32,10 +32,18 @@ Common contribution categories:
 
 ## Pull Request Workflow
 
+Environment:
+
+- Node.js 20+ (CI uses Node 22)
+- pnpm 9+
+
+Linting: We currently rely on strict TypeScript typechecking (`pnpm lint`) instead of a separate ESLint/Prettier stack to keep the surface small; proposals to add full linting are welcome but should stay deterministic and lightweight.
+
 1. Fork the repository.
 2. Create a feature branch from `main`.
 3. Implement the change with focused commits.
 4. Run validation before opening a PR:
+   - `pnpm lint` (alias for repo-wide `pnpm typecheck`)
    - `pnpm build`
    - `pnpm test`
    - `pnpm -C packages/conformance validate`

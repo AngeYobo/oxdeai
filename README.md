@@ -84,6 +84,8 @@ Agent proposed the same action twice. Executed exactly once. Replay blocked at t
 
 ## Try it in 2 minutes
 
+Prereqs: Node.js 20+ and pnpm 9+ (CI runs on Node 22).
+
 ```bash
 git clone https://github.com/AngeYobo/oxdeai.git
 cd oxdeai && pnpm install && pnpm build
@@ -349,4 +351,3 @@ See:
 * [packages/conformance](./packages/conformance)
 
 ---
-

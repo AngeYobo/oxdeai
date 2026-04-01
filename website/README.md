@@ -36,7 +36,7 @@ cd website && pnpm dlx serve .
 ### GitHub Pages
 
 ```bash
-# From repo root — publish the website/ subdirectory as a subtree
+# From repo root - publish the website/ subdirectory as a subtree
 git subtree push --prefix website origin gh-pages
 ```
 
@@ -44,7 +44,7 @@ Or configure GitHub Pages in Settings → Pages → Source: `website/` folder on
 
 ## Assets
 
-- `assets/demo.gif` — copied from `docs/media/demo.gif` at build time.
+- `assets/demo.gif` - copied from `docs/media/demo.gif` at build time.
 
 To refresh the demo GIF after regenerating it:
 
@@ -68,4 +68,8 @@ website/
 All content lives in `index.html`. Sections follow the page order:
 `#hero` → `#how` → `#architecture` → `#why` → `#proof` → `#demo` → `#code` → `#trust` → `#ecosystem`
 
-The site uses no external dependencies — no CDN, no analytics, no tracking.
+The site uses no external dependencies - no CDN, no analytics, no tracking.
+
+## Checks
+
+- `pnpm --filter website lint` - Prettier check for `index.html` and `style.css` (also run in CI)

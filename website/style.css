@@ -162,6 +162,25 @@ nav {
   font-weight: 500;
 }
 
+.hero-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  letter-spacing: -0.01em;
+}
+
 .cta-group {
   display: flex;
   flex-wrap: wrap;

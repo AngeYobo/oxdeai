@@ -27,6 +27,8 @@ A fuller run-specific summary is available in [`BENCHMARK_SUMMARY.md`](./BENCHMA
 
 The OxDeAI benchmark suite measures the performance characteristics of the OxDeAI authorization primitives.
 
+Repo note: `bench/node_modules` is vendored to keep chart/canvas bindings stable for offline graph generation. If you need to trim the repo, delete that folder and run `pnpm -C bench install` to restore it.
+
 The benchmark evaluates the latency and throughput of the deterministic authorization boundary used in agent execution environments.
 
 Measured primitives:
