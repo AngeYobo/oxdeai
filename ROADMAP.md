@@ -191,16 +191,36 @@ References:
 ### v2.5 - Adoption & Execution Pressure
 Status: `Planned`
 
+This phase aligns OxDeAI with the Execution-Time Authorization (ETA) core profile, ensuring deterministic, non-bypassable authorization before execution. 
 This phase turns OxDeAI from a protocol and reference implementation into a production-adoptable execution control layer. 
 The focus is not new core semantics, it is making OxDeAI easier to try, integrate, pressure-test, and compare against real agent failure modes.
 
 Scope:
 - production failure playbooks mapping real failure modes to OxDeAI mitigations
 - drop-in guard integration paths for all maintained adapters
-- opinionated policy presets for common execution constraints
+- enforcement invariants (non-bypassable constraints):
+  - capability invariant (no unauthorized actions)
+  - budget invariant (no overflow under any trajectory)
+  - failure invariant (limit repeated failures)
 - failure demos showing agent behavior without boundary vs. with OxDeAI enforcing it
 - lightweight structured event hooks around authorization decisions (ALLOW / DENY / VERIFY)
 - adoption pressure testing across maintained adapters under realistic execution patterns
+- non-bypassable enforcement modes:
+  - sidecar deployment pattern
+  - gateway / proxy enforcement pattern
+  - enforcement outside the agent runtime
+  - invariant: "no execution path without valid authorization"
+- formal canonicalization specification:
+  - deterministic JSON encoding rules
+  - canonical signing input definition
+  - cross-language reproducibility (Node / Go / Python)
+  - canonical test vectors
+  - canonicalization is part of the protocol (not an implementation detail)
+- ETA conformance profile:
+  - determinism validation
+  - fail-closed behavior tests
+  - artifact verification consistency
+  - replay invariants
 
 Focus:
 - publish concrete case studies:
@@ -209,11 +229,8 @@ Focus:
   - stale state execution
   - permission leakage across delegated agents
 - first successful integration achievable in under 5 minutes from docs
-- reusable policy presets for common controls:
-  - budget limits
-  - tool allowlists
-  - replay protection
-  - concurrency limits
+- demonstrate enforcement at infra boundary (not only SDK)
+- ensure execution cannot occur without prior authorization verification
 - one "break your agent" failure demo: no boundary vs. OxDeAI hard stop, reproducible from docs
 - structured decision events documented and consumable by external tooling without requiring a full observability platform
 
@@ -229,9 +246,12 @@ Completion criteria:
 - at least 3 production-style failure playbooks published
 - all maintained adapters have copy-paste quickstarts
 - failure demo reproducible from docs in under 2 minutes
-- policy presets exist for common execution controls
+- enforcement invariants exist for common execution controls
 - structured decision events documented and consumable by external tooling
 - at least one external builder can adopt OxDeAI without reading core source deeply
+- ETA core profile (`docs/spec/eta-core-v1.md`) implemented
+- conformance tests reproducible across at least 2 runtimes
+- deterministic outputs verified across environments
 
 Planned references:
 - [`docs/cases/README.md`](./docs/cases/README.md)
@@ -246,14 +266,19 @@ Planned references:
 ---
 
 ### v3.x - Verifiable Execution Infrastructure
-Status: `Planned`
+Status: Planned
 
 Scope:
+
 - deterministic execution receipts
+- verification envelopes (VerificationEnvelopeV1) as aggregated execution evidence
 - binary Merkle batching of receipt hashes
 - proof-of-inclusion for individual receipts
 - optional on-chain proof anchoring / smart-contract verifier
+- cross-language artifact verification (ETA interoperability)
+- canonicalization stability guarantees
 
 Constraint:
+
 - authorization remains off-chain-first
 - on-chain integration is optional proof anchoring, not the core execution flow

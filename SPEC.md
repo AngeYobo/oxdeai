@@ -1,5 +1,7 @@
 # OxDeAI Specification (v1.3.0)
 
+See: docs/spec/eta-core-v1.md for the minimal Execution-Time Authorization profile.
+
 This is the canonical normative specification for the OxDeAI protocol.
 Other documents (e.g. under /protocol) are companion references and must not be treated as normative.
 
