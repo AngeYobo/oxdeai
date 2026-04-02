@@ -80,6 +80,10 @@ export async function runDemo(
 ): Promise<{ envelopeBytes: Uint8Array }> {
   const decisions: string[] = [];
 
+  if (!process.env.OXDEAI_ENGINE_SECRET) {
+    log(c(C.dim, "(using built-in demo engine secret; no setup required)"));
+  }
+
   log(c(C.cyan, "╔══════════════════════════════════════════════════════════════════╗"));
   log(c(C.cyan, "║") + c(C.bWhite, "  OxDeAI - Pre-Execution Authorization Demo  (Run 1: live)       ") + c(C.cyan, "║"));
   log(c(C.cyan, "║") + c(C.dim,    "  Scenario: GPU provisioning - budget for exactly 2 proposals     ") + c(C.cyan, "║"));

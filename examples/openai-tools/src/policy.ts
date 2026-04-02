@@ -36,8 +36,8 @@ export const POLICY_ID =
 
 export const AGENT_ID = "gpu-agent-1";
 
-const _engineSecret = process.env.OXDEAI_ENGINE_SECRET ?? "";
-if (!_engineSecret) throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
+const _engineSecret =
+  process.env.OXDEAI_ENGINE_SECRET ?? "demo-secret-must-be-at-least-32-chars!!";
 
 export const engine = new PolicyEngine({
   policy_version: "v1.0.0",

@@ -6,12 +6,12 @@
   "description": "OxDeAI pre-execution economic boundary demo - OpenAI Tools pattern",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "OXDEAI_ENGINE_SECRET=demo-secret-must-be-at-least-32-chars!! sh -c 'pnpm build > /dev/null 2>&1 && clear && node dist/run.js'",
-    "demo": "OXDEAI_ENGINE_SECRET=demo-secret-must-be-at-least-32-chars!! sh -c 'pnpm build && node dist/run.js'",
-    "validate": "OXDEAI_ENGINE_SECRET=demo-secret-must-be-at-least-32-chars!! node ../../scripts/validate-adapters.mjs --one openai-tools",
-    "start:deny": "OXDEAI_ENGINE_SECRET=demo-secret-must-be-at-least-32-chars!! sh -c 'pnpm build && DEMO_DENY=1 node dist/run.js'",
-    "demo:openai-tools": "OXDEAI_ENGINE_SECRET=demo-secret-must-be-at-least-32-chars!! sh -c 'pnpm -C examples/openai-tools build && node examples/openai-tools/dist/run.js'",
-    "demo:openai": "OXDEAI_ENGINE_SECRET=demo-secret-must-be-at-least-32-chars!! sh -c 'pnpm build > /dev/null 2>&1 && clear && NODE_NO_WARNINGS=1 node dist/run-openai.js'",
+    "start": "sh -c 'pnpm build > /dev/null 2>&1 && clear && node dist/run.js'",
+    "demo": "sh -c 'pnpm build && node dist/run.js'",
+    "validate": "node ../../scripts/validate-adapters.mjs --one openai-tools",
+    "start:deny": "sh -c 'pnpm build && DEMO_DENY=1 node dist/run.js'",
+    "demo:openai-tools": "sh -c 'pnpm -C examples/openai-tools build && node examples/openai-tools/dist/run.js'",
+    "demo:openai": "sh -c 'pnpm build > /dev/null 2>&1 && clear && NODE_NO_WARNINGS=1 node dist/run-openai.js'",
     "demo:gif": "vhs ../../docs/media/openai-demo.tape"
   },
   "dependencies": {

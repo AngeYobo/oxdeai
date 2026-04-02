@@ -96,7 +96,10 @@ export async function runOpenAIDemo(
   log: (msg: string) => void = (msg) => console.log(msg)
 ): Promise<void> {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("Missing required env var: OPENAI_API_KEY");
+  if (!apiKey) {
+    console.error("Missing OPENAI_API_KEY. Run the local demo with: pnpm -C examples/openai-tools demo");
+    process.exit(1);
+  }
 
   const openai = new OpenAI({ apiKey });
 

@@ -77,8 +77,7 @@ PDP  (policy.ts)       ← decision point - deterministic, pure, no side effects
 pnpm -C examples/openai-tools demo
 ```
 
-No paid API calls. Tool execution is mocked. The authorization boundary is real.
-Engine secret is hardcoded in the script - no setup required.
+Zero-setup local demo (no API keys, no secrets to export, no browser). Tool execution is mocked; the authorization boundary is real. A built-in demo engine secret is used by default.
 
 ---
 
@@ -116,6 +115,8 @@ OPENAI_API_KEY=sk-... pnpm -C examples/openai-tools demo:openai
 ```
 
 OpenAI proposes. OxDeAI enforces. The artifact is independently verifiable.
+
+If OPENAI_API_KEY is missing, the command exits with guidance to run the local demo. Browsers are never auto-opened.
 
 ---
 
