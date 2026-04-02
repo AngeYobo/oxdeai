@@ -1,0 +1,11 @@
+{
+  "exceptions": [
+    {
+      "id": "TEST-MED-1",
+      "package": "leftpad",
+      "severity": "moderate",
+      "reason": "expired exception for test",
+      "expires_on": "2020-01-01"
+    }
+  ]
+}

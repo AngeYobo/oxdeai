@@ -1,0 +1,10 @@
+{
+  "vulnerabilities": [
+    {
+      "id": "TEST-MED-1",
+      "package": "leftpad",
+      "severity": "moderate",
+      "path": "root>leftpad@1.0.0"
+    }
+  ]
+}
