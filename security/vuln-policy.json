@@ -1,18 +1,3 @@
 {
-  "exceptions": [
-    {
-      "id": "1115543",
-      "package": "brace-expansion",
-      "severity": "moderate",
-      "reason": "waiting for minimatch patch via api-extractor",
-      "expires_on": "2026-05-15"
-    },
-    {
-      "id": "1115810",
-      "package": "lodash",
-      "severity": "moderate",
-      "reason": "waiting for api-extractor patch",
-      "expires_on": "2026-05-15"
-    }
-  ]
+  "exceptions": []
 }
