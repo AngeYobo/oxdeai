@@ -1,0 +1,10 @@
+{
+  "vulnerabilities": [
+    {
+      "id": "TEST-LOW-1",
+      "package": "lowpkg",
+      "severity": "low",
+      "path": "root>lowpkg@1.0.0"
+    }
+  ]
+}

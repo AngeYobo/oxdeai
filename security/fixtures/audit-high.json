@@ -1,0 +1,10 @@
+{
+  "vulnerabilities": [
+    {
+      "id": "TEST-HIGH-1",
+      "package": "risky",
+      "severity": "high",
+      "path": "root>risky@1.0.0"
+    }
+  ]
+}

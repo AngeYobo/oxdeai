@@ -16,6 +16,23 @@ OxDeAI blocks or authorizes execution **before anything happens**.
 
 Control execution, not just behavior.
 
+## Security Authorization Gate
+
+The repository itself is protected by a deterministic pre-merge authorization boundary. The gate evaluates findings, exceptions, and policy.rules, and produces a decision: **ALLOW** or **DENY** with a reason.
+
+- OxDeAI model: intent + state + policy → ALLOW / DENY
+- Security gate model: findings + exceptions + policy → ALLOW / DENY
+
+### Core invariant
+
+No valid exception → no merge path.
+High and critical severities are always denied, regardless of policy rules.
+
+The gate can optionally emit a deterministic decision artifact that can be verified offline. It is an integrity proof for the merge gate (not a signed runtime authorization).
+
+We apply the same principle internally that OxDeAI enforces externally:
+no valid justification → no merge path; no valid authorization → no execution path.
+
 ---
 
 <p align="center">

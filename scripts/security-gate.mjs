@@ -5,10 +5,16 @@
  * Usage: node scripts/security-gate.mjs audit.json security/vuln-policy.json
  */
 import fs from "node:fs";
+import crypto from "node:crypto";
 
-const [auditPath, policyPath] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const [auditPath, policyPath] = args.filter((a) => !a.startsWith("--"));
+const artifactOut = args.find((a) => a.startsWith("--artifact-out="))?.split("=", 2)[1] ?? null;
+
 if (!auditPath || !policyPath) {
-  console.error("Usage: node scripts/security-gate.mjs <audit.json> <vuln-policy.json>");
+  console.error(
+    "Usage: node scripts/security-gate.mjs <audit.json> <vuln-policy.json> [--artifact-out=path]"
+  );
   process.exit(2);
 }
 
@@ -16,6 +22,13 @@ const loadJson = (p) => JSON.parse(fs.readFileSync(p, "utf8"));
 const audit = loadJson(auditPath);
 const policy = loadJson(policyPath);
 const exceptions = policy.exceptions ?? [];
+const rules = policy.rules ?? {
+  critical: "deny",
+  high: "deny",
+  moderate: "require_exception",
+  medium: "require_exception",
+  low: "warn"
+};
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
@@ -62,6 +75,24 @@ const normSeverity = (s) => {
   return val === "medium" ? "moderate" : val;
 };
 
+const stableStringify = (value) => {
+  const sorter = (v) => {
+    if (Array.isArray(v)) return v.map(sorter);
+    if (v && typeof v === "object") {
+      return Object.keys(v)
+        .sort()
+        .reduce((acc, k) => {
+          acc[k] = sorter(v[k]);
+          return acc;
+        }, {});
+    }
+    return v;
+  };
+  return JSON.stringify(sorter(value));
+};
+
+const sha256 = (v) => crypto.createHash("sha256").update(stableStringify(v)).digest("hex");
+
 function matchException(f) {
   return exceptions.find((ex) => {
     const severityMatch = normSeverity(ex.severity) === normSeverity(f.severity);
@@ -74,6 +105,7 @@ function matchException(f) {
 const blocking = [];
 const matched = [];
 const expired = [];
+const warnings = [];
 
 for (const f of findings) {
   const sev = normSeverity(f.severity);
@@ -91,13 +123,25 @@ for (const f of findings) {
 
   if (hasValidEx) matched.push({ finding: f, exception: ex });
 
-  const isHigh = sev === "high" || sev === "critical";
-  const isMedium = sev === "moderate" || sev === "medium";
+  // policy-driven action, fail-closed if missing
+  let action = rules[sev] ?? "deny";
+  // enforce invariant: high/critical always deny
+  if (sev === "high" || sev === "critical") action = "deny";
 
-  if (isHigh) {
-    blocking.push({ finding: f, exception: ex, reason: "high/critical vulnerability" });
-  } else if (isMedium && !hasValidEx) {
-    blocking.push({ finding: f, exception: ex, reason: "missing or invalid exception" });
+  if (action === "deny") {
+    blocking.push({ finding: f, exception: ex, reason: "policy denies this severity" });
+  } else if (action === "require_exception") {
+    if (!hasValidEx) {
+      blocking.push({
+        finding: f,
+        exception: ex,
+        reason: "moderate vulnerability without valid, non-expired exception"
+      });
+    }
+  } else if (action === "warn") {
+    warnings.push(f);
+  } else {
+    blocking.push({ finding: f, exception: ex, reason: `unknown action '${action}'` });
   }
 }
 
@@ -109,6 +153,7 @@ console.log(`Findings: ${findings.length}`);
 console.log(`Blocking: ${blocking.length}`);
 console.log(`Matched exceptions: ${matched.length}`);
 console.log(`Expired exceptions: ${expired.length}`);
+console.log(`Warnings: ${warnings.length}`);
 
 if (blocking.length) {
   console.log("\nBlocking findings:");
@@ -123,5 +168,41 @@ if (expired.length) {
 if (!exceptions.length) console.log("\nNo exceptions configured.");
 
 const ok = blocking.length === 0 && expired.length === 0;
-console.log(`\nResult: ${ok ? "PASS" : "FAIL"}`);
+const decision = ok ? "ALLOW" : "DENY";
+const reason = ok
+  ? "no blocking findings"
+  : blocking[0]
+  ? blocking[0].reason
+  : expired[0]
+  ? "expired exception"
+  : "unknown reason";
+
+console.log(`\nDecision: ${decision}`);
+console.log(`Reason: ${reason}`);
+
+if (artifactOut) {
+  const policyHash = sha256(rules);
+  const exceptionsHash = sha256(exceptions);
+  const findingsHash = sha256(findings);
+  const inputHash = sha256({ policyHash, exceptionsHash, findingsHash, decision, reason });
+
+  const artifact = {
+    formatVersion: 1,
+    type: "SecurityGateDecision",
+    decision,
+    reason,
+    timestamp: new Date().toISOString(),
+    policyHash,
+    exceptionsHash,
+    findingsHash,
+    inputHash
+  };
+
+  const artifactHash = sha256(artifact);
+  artifact.artifactHash = artifactHash;
+
+  fs.writeFileSync(artifactOut, stableStringify(artifact) + "\n", "utf8");
+  console.log(`Artifact written to ${artifactOut}`);
+}
+
 process.exit(ok ? 0 : 1);

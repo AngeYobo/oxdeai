@@ -1,4 +1,10 @@
 {
+  "rules": {
+    "critical": "deny",
+    "high": "deny",
+    "moderate": "require_exception",
+    "low": "warn"
+  },
   "exceptions": [
     {
       "id": "TEST-MED-1",
