@@ -28,7 +28,7 @@
     "regen:vectors": "tsx scripts/generate-canonicalization-vectors.ts",
     "test:vectors": "pnpm test:vectors:ts",
     "test:vectors:ts": "tsx scripts/verify-canonicalization-vectors.ts",
-    "test:vectors:go": "go -C go-harness run .",
+    "test:vectors:go": "cd go-harness && go run .",
     "test:vectors:py": "python3 python-harness/verify_canonicalization_vectors.py",
     "test:vectors:all": "pnpm test:vectors:ts && pnpm test:vectors:go && pnpm test:vectors:py"
   },
