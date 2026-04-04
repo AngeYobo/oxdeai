@@ -1,0 +1,121 @@
+[
+  {
+    "id": "v1-object-key-ordering",
+    "description": "simple object key ordering",
+    "status": "ok",
+    "input": {
+      "b": 1,
+      "a": 2
+    },
+    "expected_canonical_json": "{\"a\":2,\"b\":1}",
+    "expected_sha256": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772"
+  },
+  {
+    "id": "v2-nested-ordering",
+    "description": "nested object ordering",
+    "status": "ok",
+    "input": {
+      "z": {
+        "b": 2,
+        "a": 1
+      }
+    },
+    "expected_canonical_json": "{\"z\":{\"a\":1,\"b\":2}}",
+    "expected_sha256": "0560517cc75a67b3c41aaf18da6d75dff0d66b5874f9c38e6f420913f9035b64"
+  },
+  {
+    "id": "v3-array-order-preserved",
+    "description": "array ordering must be preserved",
+    "status": "ok",
+    "input": [
+      "b",
+      "a"
+    ],
+    "expected_canonical_json": "[\"b\",\"a\"]",
+    "expected_sha256": "02d8bc3008a9bb0dcc4b86d7fd3428ced792355c733c19756bec5a56dc61b2c5"
+  },
+  {
+    "id": "v4-unicode-nfc",
+    "description": "unicode NFC normalization",
+    "status": "ok",
+    "input": {
+      "text": "é"
+    },
+    "expected_canonical_json": "{\"text\":\"é\"}",
+    "expected_sha256": "42d3cbf59fdccced04e5dff14433fb52d34d58e385e9770ffd896ff517d63b92"
+  },
+  {
+    "id": "v5-safe-integer",
+    "description": "safe integer as JSON number",
+    "status": "ok",
+    "input": {
+      "value": 9007199254740991
+    },
+    "expected_canonical_json": "{\"value\":9007199254740991}",
+    "expected_sha256": "16c63bddb910905c4ee8abf36273baa20dba53020dbaf265da5936013ded185d"
+  },
+  {
+    "id": "v6-bigint-as-string",
+    "description": "big integer encoded as string",
+    "status": "ok",
+    "input": {
+      "value": "9007199254740993"
+    },
+    "expected_canonical_json": "{\"value\":\"9007199254740993\"}",
+    "expected_sha256": "c061a71507a5574768f5bdbb701f297f2e06f33183d3fae1615561e7c56c1549"
+  },
+  {
+    "id": "v7-boolean-null",
+    "description": "boolean and null serialization",
+    "status": "ok",
+    "input": {
+      "a": true,
+      "b": false,
+      "c": null
+    },
+    "expected_canonical_json": "{\"a\":true,\"b\":false,\"c\":null}",
+    "expected_sha256": "58ea9f23c715c4f8fee078efd41139485403f053775482d58b6f4f454b34ecf0"
+  },
+  {
+    "id": "v8-intent-example",
+    "description": "realistic EXECUTE intent",
+    "status": "ok",
+    "input": {
+      "type": "EXECUTE",
+      "tool": "payments.charge",
+      "params": {
+        "amount": "500",
+        "currency": "USD"
+      }
+    },
+    "expected_canonical_json": "{\"params\":{\"amount\":\"500\",\"currency\":\"USD\"},\"tool\":\"payments.charge\",\"type\":\"EXECUTE\"}",
+    "expected_sha256": "b75c8d1d9952254b2386f4e412f8fd0b8ac7361ddb54e50c22b19ffc1a3c8c2d"
+  },
+  {
+    "id": "i1-float-rejected",
+    "description": "float must fail",
+    "status": "error",
+    "input": {
+      "value": 1.5
+    },
+    "expected_error": "FLOAT_NOT_ALLOWED"
+  },
+  {
+    "id": "i3-string-timestamp-rejected",
+    "description": "timestamp string must fail if timestamp field is canonicalized under integer-only rule",
+    "status": "error",
+    "input": {
+      "ts": "2026-04-03T12:00:00Z"
+    },
+    "expected_error": "INVALID_TIMESTAMP"
+  },
+  {
+    "id": "i4-float-timestamp-rejected",
+    "description": "float timestamp must fail",
+    "status": "error",
+    "input": {
+      "ts": 1712448000.5
+    },
+    "expected_error": "INVALID_TIMESTAMP"
+  }
+]
