@@ -15,10 +15,10 @@ This index helps non-TypeScript implementers choose where to start in `packages/
 
 ## DelegationV1 Vector Categories (v1.3+)
 
-- `delegation-parent-hash.json`: `SHA256(canonical_json(AuthorizationV1))` — key-order invariance (I1); no crypto required
-- `delegation-verification.json`: `verifyDelegation()` field/structural checks — expiry, scope narrowing, replay, trust-missing; no crypto required
-- `delegation-chain-verification.json`: `verifyDelegationChain()` — hash recomputation, delegator match, parent expiry, expiry ceiling, single-hop, policy binding; independently verifiable
-- `delegation-signature-verification.json`: Ed25519 path — valid, tampered sig, wrong kid, tampered field, expired; independently verifiable via `opts.trustedKeySets`
+- `delegation-parent-hash.json`: `SHA256(canonical_json(AuthorizationV1))` - key-order invariance (I1); no crypto required
+- `delegation-verification.json`: `verifyDelegation()` field/structural checks - expiry, scope narrowing, replay, trust-missing; no crypto required
+- `delegation-chain-verification.json`: `verifyDelegationChain()` - hash recomputation, delegator match, parent expiry, expiry ceiling, single-hop, policy binding; independently verifiable
+- `delegation-signature-verification.json`: Ed25519 path - valid, tampered sig, wrong kid, tampered field, expired; independently verifiable via `opts.trustedKeySets`
 
 ## Suggested Start Order
 
