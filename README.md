@@ -41,6 +41,23 @@ no valid justification → no merge path; no valid authorization → no executio
 
 ---
 
+## Execution Boundary
+
+OxDeAI enforces a strict rule:
+
+No authorization → no execution
+
+All tool calls MUST pass through the PEP Gateway:
+
+- authorization verified before execution
+- intent hash must match canonical input
+- replay protection enforced
+- fail-closed by default
+
+There is no execution path outside the authorization boundary.
+
+---
+
 ## TL;DR
 
 Agents propose actions.
@@ -49,6 +66,34 @@ OxDeAI decides - deterministically - whether execution is allowed.
 No authorization → no execution.
 
 ---
+
+## Specification
+
+OxDeAI defines a deterministic execution authorization protocol composed of:
+
+- Canonicalization → deterministic bytes
+- ETA Core → authorization function
+- Conformance → verification rules
+- PEP Gateway → execution boundary
+
+→ [`docs/spec/`](./docs/spec)
+
+---
+
+## Determinism Proof
+
+Canonicalization is validated across independent implementations:
+
+- TypeScript (reference)
+- Go verifier
+- Python verifier
+
+Run:
+
+```bash
+pnpm test:vectors:all
+```
+All implementations produce identical canonical bytes and hashes.
 
 ## Trust Model
 
@@ -152,15 +197,30 @@ This runs a simple OpenClaw agent that provisions a GPU and queries a database, 
 
 ## Why this is different
 
-Prompt guardrails → probabilistic
-Monitoring → after execution
-OxDeAI → before execution, deterministic
+- Prompt guardrails → probabilistic
+- Monitoring → after execution
+- OxDeAI → deterministic, before execution
 
-Logs explain what happened. Authorization artifacts prove what was allowed.
+Logs explain what happened.
+Authorization artifacts prove what was allowed.
+
+Without an execution boundary, agent systems rely on best-effort enforcement.
+OxDeAI makes execution conditional.
 
 ---
 
 **Validated by frozen conformance vectors, cross-adapter tests, and independent Go/Python verification - continuously validated via CI.**
+
+---
+
+## Proof
+
+- frozen canonicalization vectors (locked)
+- cross-language determinism (TS / Go / Python)
+- conformance suite (CI validated)
+- cross-adapter equivalence (same decisions everywhere)
+
+This is not a claim. It is continuously verified.
 
 ---
 
@@ -181,8 +241,6 @@ separate from execution and enforced before any side effect.
 
 If ALLOW → emits a signed AuthorizationV1
 If DENY → nothing executes (fail-closed)
-
-
 
 ---
 
@@ -214,6 +272,19 @@ Execution only becomes reachable after this decision succeeds.
 4. Execution becomes reachable only after verification
 5. PEP verifies artifact before execution
 6. DENY → execution blocked before side effects
+
+---
+
+## Minimal Flow
+
+Agent → propose action
+↓
+Authorization (ETA Core)
+↓
+PEP Gateway (verify)
+↓
+ALLOW → execute
+DENY  → blocked
 
 ---
 
