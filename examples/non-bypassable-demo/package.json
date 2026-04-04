@@ -1,0 +1,10 @@
+{
+  "name": "non-bypassable-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "upstream": "node protected-upstream.mjs",
+    "gateway": "node pep-gateway.mjs",
+    "agent": "node agent.mjs"
+  }
+}
