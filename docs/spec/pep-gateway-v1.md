@@ -78,6 +78,61 @@ The following invariant is **REQUIRED**:
 
 > A protected action **MUST NOT** be reachable without valid authorization verified by the PEP Gateway.
 
+---
+
+## 6. Request / Response Contract (normative profile)
+
+Transport: HTTP/1.1 or HTTP/2
+
+### 6.1 Endpoint
+`POST /execute`
+
+### 6.2 Request Body
+```json
+{
+  "action": <canonicalizable object>,
+  "authorization": <AuthorizationV1 object>
+}
+```
+
+### 6.3 Response Bodies
+- 200 OK (ALLOW):
+```json
+{
+  "ok": true,
+  "decision": "ALLOW",
+  "executed": true,
+  "auth_id": "...",
+  "intent_hash": "...",
+  "upstream_result": <object>
+}
+```
+- 403 Forbidden (DENY):
+```json
+{
+  "ok": false,
+  "decision": "DENY",
+  "reason": "<string>"
+}
+```
+
+### 6.4 Verification Requirements
+- Canonicalize `action` using `canonicalization-v1`; compute `intent_hash`; MUST match `authorization.intent_hash`.
+- Verify signature of AuthorizationV1 (`alg`, `kid`), audience, expiry, issuer trust config; fail closed.
+- Enforce replay protection on `auth_id` (single-use or bounded window).
+- Reject if any step fails; MUST NOT forward to upstream.
+
+### 6.5 Upstream Call
+- PEP MUST be the sole caller of upstream.
+- PEP MUST inject the internal header `x-internal-executor-token` with the shared secret known only to PEP and upstream.
+- Upstream MUST reject requests missing/invalid `x-internal-executor-token`.
+
+### 6.6 Error Semantics
+- Any parsing/canonicalization/verification error → 403 with `reason`.
+- Upstream execution failure/invalid response → 502 Bad Gateway (MUST NOT report executed=true).
+- Upstream timeout → 504 Gateway Timeout.
+- Gateway-local unexpected failure → 500 Internal Server Error (MUST be rare; still MUST NOT report executed=true).
+
 Any system violating this invariant is **NON-CONFORMANT**.
 
 ---
@@ -509,4 +564,3 @@ The specification MAY evolve into a multi-document standard:
 This separation would improve modularity, clarity, and independent evolution.
 
 ---
-

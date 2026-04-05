@@ -61,6 +61,46 @@ Invalid UTF-8 sequences MUST cause canonicalization failure.
 
 ---
 
+## 6. Serialization Rules (normative)
+
+Implementations MUST apply the following rules, in order, to produce the canonical JSON bytes:
+
+- Strings: normalize to Unicode NFC; encode as JSON strings.
+- Object keys: NFC-normalize, reject duplicates after normalization, then sort keys by byte-wise UTF-8 order.
+- Arrays: preserve element order.
+- Numbers: only integers in the safe IEEE-754 range **[-9007199254740991, 9007199254740991]** are allowed; floats and `NaN`/`±Inf` MUST be rejected.
+- BigInt (when present in runtime): serialize as JSON strings.
+- Timestamps: if key == `"ts"`, the value MUST be an integer within the safe range; otherwise reject.
+- Unsupported runtime types (function, symbol, undefined, etc.) MUST be rejected.
+- Output MUST be minified (no insignificant whitespace) and UTF-8 encoded without BOM.
+
+---
+
+## 7. Error Codes (normative)
+
+When rejecting inputs, implementations MUST fail closed and SHOULD use these canonical error codes to enable cross-language parity:
+
+- `FLOAT_NOT_ALLOWED`
+- `UNSAFE_INTEGER_NUMBER`
+- `DUPLICATE_KEY`
+- `INVALID_TIMESTAMP`
+- `UNSUPPORTED_TYPE`
+- `KEY_RESOLUTION_FAILED` (if post-normalization lookup cannot resolve)
+
+Additional runtime-specific errors MUST NOT leak implementation details and MUST result in failure.
+
+### 7.1 Common invalid cases → required error codes
+
+| Invalid input                                   | Error code              |
+|-------------------------------------------------|-------------------------|
+| Any float / NaN / ±Inf                          | `FLOAT_NOT_ALLOWED`     |
+| Integer outside safe range                      | `UNSAFE_INTEGER_NUMBER` |
+| Duplicate key after NFC normalization           | `DUPLICATE_KEY`         |
+| Key `ts` with non-integer / unsafe value        | `INVALID_TIMESTAMP`     |
+| Unsupported runtime type (function/symbol/etc.) | `UNSUPPORTED_TYPE`      |
+
+---
+
 ## 6. Allowed Types
 
 The following types are allowed:

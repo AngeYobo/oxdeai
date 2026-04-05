@@ -76,8 +76,25 @@ Fail-closed semantics apply:
 ---
 
 ## 5. Authorization Artifact (AuthorizationV1)
+`AuthorizationV1` is the core ETA artifact. It MUST contain, at minimum:
 
-`AuthorizationV1` is the core ETA artifact.
+- `auth_id` (string, unique)
+- `issuer` (string)
+- `audience` (string)
+- `decision` (`ALLOW` | `DENY`)
+- `intent_hash` (hex lowercase SHA-256 of canonicalized intent)
+- `issued_at` (unix integer)
+- `expiry` (unix integer, > issued_at)
+- `alg` (e.g., `ed25519`)
+- `kid` (key identifier)
+- `signature` (bytes, base64/hex as profiled)
+
+Signing and Verification:
+
+- The signature preimage MUST be the canonical JSON bytes of the AuthorizationV1 object, **excluding the `signature` field**, using the canonicalization rules in `canonicalization-v1.md`.
+- Verifiers MUST canonicalize the received authorization (excluding `signature`) identically before signature check.
+- Verifiers MUST canonicalize using `canonicalization-v1` and validate signature, audience, expiry, and decision.
+- Missing trust config MUST fail closed.
 
 It represents a deterministic authorization decision that can be verified independently.
 
@@ -126,6 +143,7 @@ Canonicalization MUST be deterministic and fully specified.
 - No insignificant whitespace.
 - Signing MUST NOT depend on language runtime behavior.
 - The `signature` field MUST NOT be included in the signed payload.
+- The authorization payload used for signing MUST be canonicalized with `canonicalization-v1` and MUST include all AuthorizationV1 fields except the signature bytes/value.
 
 ### Signing Input
 

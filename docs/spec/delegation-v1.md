@@ -2,7 +2,7 @@
 
 **Status:** Stable
 **Version:** v1.3.0
-**Depends on:** OxDeAI Specification v1.2+, AuthorizationV1
+**Depends on:** `canonicalization-v1`, `AuthorizationV1`
 
 ---
 
@@ -194,6 +194,7 @@ Verification MUST return DENY if any of the following are true:
 - `expiry` has passed at verification time
 - `delegation_id` has been previously consumed (if replay tracking is active)
 - the artifact is structurally malformed
+- Suggested denial reasons: `invalid_signature`, `unknown_kid`, `parent_auth_hash_mismatch`, `scope_violation`, `audience_mismatch`, `policy_mismatch`, `expired`, `replay`.
 
 ---
 
@@ -207,6 +208,7 @@ Inputs:
 - `consumed_ids`: optional set of previously seen delegation IDs
 
 Returns: `ALLOW` or `DENY` with a reason list.
+Canonicalization: all `canonicalJson(...)` calls use `canonicalization-v1` rules.
 
 ```
 function verifyDelegation(delegation, parent_auth, keyset, now, consumed_ids?):
@@ -220,12 +222,12 @@ function verifyDelegation(delegation, parent_auth, keyset, now, consumed_ids?):
   if key is null:
     return DENY("unknown kid")
 
-  signing_input = "OXDEAI_DELEGATION_V1\n" + canonicalJson(delegation without signature)
+  signing_input = "OXDEAI_DELEGATION_V1\n" + canonicalJson(delegation without signature) // canonicalization-v1
   if not Ed25519.verify(key, signing_input, delegation.signature):
     return DENY("invalid signature")
 
   // Step 3: Resolve and bind parent authorization
-  computed_hash = SHA256(canonicalJson(parent_auth))
+  computed_hash = SHA256(canonicalJson(parent_auth)) // canonicalization-v1
   if computed_hash != delegation.parent_auth_hash:
     return DENY("parent_auth_hash mismatch")
 

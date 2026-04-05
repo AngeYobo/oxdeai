@@ -63,6 +63,11 @@ Requirement:
 - canonical bytes MUST be identical across equivalent inputs
 - invalid inputs MUST fail
 
+Conformance vector source of truth:
+- `docs/spec/test-vectors/canonicalization-v1.json`
+  - canonical JSON and SHA-256 hex MUST match exactly
+  - expected error codes MUST match exactly
+
 ---
 
 ### 3.3 Fail-Closed Tests
@@ -78,6 +83,42 @@ Inject failures:
 
 Requirement:
 - decision MUST be DENY
+
+### 3.4 PEP Gateway Boundary Tests
+
+Goal: no execution path without authorization.
+
+Tests:
+- Direct call to upstream without internal token MUST be 403.
+- Gateway must return structured ALLOW/DENY per `pep-gateway-v1` §6.
+- Replay of `auth_id` MUST be denied.
+
+### 3.5 Authorization Verification
+
+Requirement: signature, audience, expiry, intent_hash match, and trust config MUST be verified; any failure → DENY.
+
+### 3.6 Delegation (if implemented)
+
+Requirement: DelegationV1 chain MUST be strictly narrowing, single-hop, signed, and parent AuthorizationV1 valid; otherwise DENY.
+
+---
+
+## 4. Conformance Artifacts and Execution
+
+Normative vector files:
+- `docs/spec/test-vectors/canonicalization-v1.json`
+
+Implementations SHOULD provide runnable harnesses that consume the same vectors and exit non-zero on any mismatch (e.g., TS/Go/Python verifiers).
+
+### 4.1 Minimal runnable checks (current repository)
+
+From repo root:
+- TypeScript reference: `pnpm test:vectors:ts`
+- Go verifier: `pnpm test:vectors:go`
+- Python verifier: `pnpm test:vectors:py`
+- All canonicalization verifiers: `pnpm test:vectors:all`
+
+Pass/Fail rule: any mismatch in canonical JSON, SHA-256, or expected error code MUST exit non-zero and is non-conformant.
 
 Failure condition:
 - any ALLOW under invalid conditions
@@ -272,6 +313,4 @@ Any violation:
 
 → DENY 
 → NO EXECUTION
-
-
 

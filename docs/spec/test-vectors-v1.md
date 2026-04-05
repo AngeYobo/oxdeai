@@ -33,6 +33,12 @@ This Markdown document is **non-normative** and provided for readability only.
 
 ---
 
+## 3.1 Scope Note
+
+The only locked, normative vectors currently published are for canonicalization (`canonicalization-v1.json`). ETA, PEP, and Delegation conformance currently rely on the code-level conformance harnesses; future versions may add vectors for those components.
+
+---
+
 ## 3. Hash Function
 
 All hashes are defined as:
