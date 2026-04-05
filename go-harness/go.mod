@@ -1,5 +1,5 @@
 module oxdeai/go-harness
 
-go 1.22
+go 1.18
 
-require golang.org/x/text v0.35.0
+require golang.org/x/text v0.21.0
