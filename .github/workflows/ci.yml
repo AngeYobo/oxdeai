@@ -24,6 +24,11 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
+      - name: Setup Go 1.22
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
