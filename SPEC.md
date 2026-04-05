@@ -1,6 +1,6 @@
 # OxDeAI Specification (v1.3.0)
 
-See: docs/spec/eta-core-v1.md for the minimal Execution-Time Authorization profile. AuthorizationV1 is currently specified as a Draft normative artifact (see docs/spec/authorization-v1.md) while SPEC overall is v1.3.0.
+See: docs/spec/eta-core-v1.md for the minimal Execution-Time Authorization profile. AuthorizationV1, PEP Gateway, and Delegation are currently specified as Draft normative artifacts until locked vectors/CI harnesses are published; SPEC overall is v1.3.0.
 
 This is the canonical normative specification for the OxDeAI protocol.
 Other documents (e.g. under /protocol) are companion references and must not be treated as normative.
