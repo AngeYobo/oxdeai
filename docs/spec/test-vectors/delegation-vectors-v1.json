@@ -1,0 +1,817 @@
+{
+  "keys": [
+    {
+      "kid": "auth-parent-key-1",
+      "alg": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAwGH8qfyIVmxgc+q8AN+mgCKOb7mCBy95ZAlUE7MpczQ=\n-----END PUBLIC KEY-----\n"
+    },
+    {
+      "kid": "delegation-key-1",
+      "alg": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAvUWf5CDiuKjEIDPs+wbLZCyob4LG18TvpX5fjuVSSEs=\n-----END PUBLIC KEY-----\n"
+    }
+  ],
+  "meta": {
+    "now": 1712448100
+  },
+  "vectors": [
+    {
+      "id": "delegation-valid",
+      "description": "valid delegated execution",
+      "status": "ok",
+      "parent_authorization": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-parent-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "1b5636def55eb23ecbd1cfd61fd68caea89b0e8d4c9641c022fc34654f92df07",
+        "state_hash": "68e170118d612b10832d991801c33ff921f470e2e057581d11652723e37f3b7f",
+        "policy_id": "policy-1",
+        "scope": {
+          "tools": [
+            "payments.charge",
+            "payments.refund"
+          ],
+          "max_amount": 1000
+        },
+        "issued_at": 1712448000,
+        "expiry": 1712448800,
+        "alg": "Ed25519",
+        "kid": "auth-parent-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-parent-key-1",
+          "sig": "zY/FbX8DRu3vhnmEOVCMHgmbd/GDDCIt4pqb7H6MKc8C/HKIk9eBoRiGssKxdumzmfjEEpznI+c/AMpY3WXjAA=="
+        },
+        "parent_hash": "17ba8c75e05c656fb467fff5b8681a7a9bd31b1a7e6fa26d51b7cb8c41ed5bde"
+      },
+      "delegation": {
+        "version": "DelegationV1",
+        "delegation_id": "del-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "agent-123",
+        "parent_auth_hash": "a1199d43b1749a1246e7f6dc0735a8e8b369e74b8d85ab5514f923b84b587aa5",
+        "scope": {
+          "tools": [
+            "payments.charge"
+          ],
+          "max_amount": 500
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448500,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "7gHnQP7hZ8wYJwnAZjVtP0SdBJam6SdK1nOJGTXByuCggVkDUG2ZL6VpF1jDCd2IYtkPXDfRn+NLZIEFAC1LAg=="
+        }
+      },
+      "action": {
+        "type": "EXECUTE",
+        "tool": "payments.charge",
+        "params": {
+          "amount": "400",
+          "currency": "USD",
+          "user_id": "user_123"
+        }
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "reason_code": "AUTHORIZED"
+      }
+    },
+    {
+      "id": "delegation-valid-narrowed-tool",
+      "description": "child narrows tool set",
+      "status": "ok",
+      "parent_authorization": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-parent-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "1b5636def55eb23ecbd1cfd61fd68caea89b0e8d4c9641c022fc34654f92df07",
+        "state_hash": "68e170118d612b10832d991801c33ff921f470e2e057581d11652723e37f3b7f",
+        "policy_id": "policy-1",
+        "scope": {
+          "tools": [
+            "payments.charge",
+            "payments.refund"
+          ],
+          "max_amount": 1000
+        },
+        "issued_at": 1712448000,
+        "expiry": 1712448800,
+        "alg": "Ed25519",
+        "kid": "auth-parent-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-parent-key-1",
+          "sig": "zY/FbX8DRu3vhnmEOVCMHgmbd/GDDCIt4pqb7H6MKc8C/HKIk9eBoRiGssKxdumzmfjEEpznI+c/AMpY3WXjAA=="
+        },
+        "parent_hash": "17ba8c75e05c656fb467fff5b8681a7a9bd31b1a7e6fa26d51b7cb8c41ed5bde"
+      },
+      "delegation": {
+        "version": "DelegationV1",
+        "delegation_id": "del-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "agent-123",
+        "parent_auth_hash": "a1199d43b1749a1246e7f6dc0735a8e8b369e74b8d85ab5514f923b84b587aa5",
+        "scope": {
+          "tools": [
+            "payments.charge"
+          ],
+          "max_amount": 500
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448500,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "7gHnQP7hZ8wYJwnAZjVtP0SdBJam6SdK1nOJGTXByuCggVkDUG2ZL6VpF1jDCd2IYtkPXDfRn+NLZIEFAC1LAg=="
+        }
+      },
+      "action": {
+        "type": "EXECUTE",
+        "tool": "payments.charge",
+        "params": {
+          "amount": "400",
+          "currency": "USD",
+          "user_id": "user_123"
+        }
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "reason_code": "AUTHORIZED"
+      }
+    },
+    {
+      "id": "delegation-parent-hash-mismatch",
+      "description": "parent hash mismatch",
+      "status": "error",
+      "parent_authorization": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-parent-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "1b5636def55eb23ecbd1cfd61fd68caea89b0e8d4c9641c022fc34654f92df07",
+        "state_hash": "68e170118d612b10832d991801c33ff921f470e2e057581d11652723e37f3b7f",
+        "policy_id": "policy-1",
+        "scope": {
+          "tools": [
+            "payments.charge",
+            "payments.refund"
+          ],
+          "max_amount": 1000
+        },
+        "issued_at": 1712448000,
+        "expiry": 1712448800,
+        "alg": "Ed25519",
+        "kid": "auth-parent-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-parent-key-1",
+          "sig": "zY/FbX8DRu3vhnmEOVCMHgmbd/GDDCIt4pqb7H6MKc8C/HKIk9eBoRiGssKxdumzmfjEEpznI+c/AMpY3WXjAA=="
+        },
+        "parent_hash": "17ba8c75e05c656fb467fff5b8681a7a9bd31b1a7e6fa26d51b7cb8c41ed5bde"
+      },
+      "delegation": {
+        "version": "DelegationV1",
+        "delegation_id": "del-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "agent-123",
+        "parent_auth_hash": "deadbeef00000000000000000000000000000000000000000000000000000000",
+        "scope": {
+          "tools": [
+            "payments.charge"
+          ],
+          "max_amount": 500
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448500,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "7gHnQP7hZ8wYJwnAZjVtP0SdBJam6SdK1nOJGTXByuCggVkDUG2ZL6VpF1jDCd2IYtkPXDfRn+NLZIEFAC1LAg=="
+        }
+      },
+      "action": {
+        "type": "EXECUTE",
+        "tool": "payments.charge",
+        "params": {
+          "amount": "400",
+          "currency": "USD",
+          "user_id": "user_123"
+        }
+      },
+      "expected_error": "DELEGATION_PARENT_HASH_MISMATCH"
+    },
+    {
+      "id": "delegation-signature-invalid",
+      "description": "invalid delegation signature",
+      "status": "error",
+      "parent_authorization": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-parent-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "1b5636def55eb23ecbd1cfd61fd68caea89b0e8d4c9641c022fc34654f92df07",
+        "state_hash": "68e170118d612b10832d991801c33ff921f470e2e057581d11652723e37f3b7f",
+        "policy_id": "policy-1",
+        "scope": {
+          "tools": [
+            "payments.charge",
+            "payments.refund"
+          ],
+          "max_amount": 1000
+        },
+        "issued_at": 1712448000,
+        "expiry": 1712448800,
+        "alg": "Ed25519",
+        "kid": "auth-parent-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-parent-key-1",
+          "sig": "zY/FbX8DRu3vhnmEOVCMHgmbd/GDDCIt4pqb7H6MKc8C/HKIk9eBoRiGssKxdumzmfjEEpznI+c/AMpY3WXjAA=="
+        },
+        "parent_hash": "17ba8c75e05c656fb467fff5b8681a7a9bd31b1a7e6fa26d51b7cb8c41ed5bde"
+      },
+      "delegation": {
+        "version": "DelegationV1",
+        "delegation_id": "del-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "agent-123",
+        "parent_auth_hash": "a1199d43b1749a1246e7f6dc0735a8e8b369e74b8d85ab5514f923b84b587aa5",
+        "scope": {
+          "tools": [
+            "payments.charge"
+          ],
+          "max_amount": 500
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448500,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "AAAA"
+        }
+      },
+      "action": {
+        "type": "EXECUTE",
+        "tool": "payments.charge",
+        "params": {
+          "amount": "400",
+          "currency": "USD",
+          "user_id": "user_123"
+        }
+      },
+      "expected_error": "DELEGATION_SIGNATURE_INVALID"
+    },
+    {
+      "id": "delegation-expired",
+      "description": "delegation expired",
+      "status": "error",
+      "parent_authorization": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-parent-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "1b5636def55eb23ecbd1cfd61fd68caea89b0e8d4c9641c022fc34654f92df07",
+        "state_hash": "68e170118d612b10832d991801c33ff921f470e2e057581d11652723e37f3b7f",
+        "policy_id": "policy-1",
+        "scope": {
+          "tools": [
+            "payments.charge",
+            "payments.refund"
+          ],
+          "max_amount": 1000
+        },
+        "issued_at": 1712448000,
+        "expiry": 1712448800,
+        "alg": "Ed25519",
+        "kid": "auth-parent-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-parent-key-1",
+          "sig": "zY/FbX8DRu3vhnmEOVCMHgmbd/GDDCIt4pqb7H6MKc8C/HKIk9eBoRiGssKxdumzmfjEEpznI+c/AMpY3WXjAA=="
+        },
+        "parent_hash": "17ba8c75e05c656fb467fff5b8681a7a9bd31b1a7e6fa26d51b7cb8c41ed5bde"
+      },
+      "delegation": {
+        "version": "DelegationV1",
+        "delegation_id": "del-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "agent-123",
+        "parent_auth_hash": "a1199d43b1749a1246e7f6dc0735a8e8b369e74b8d85ab5514f923b84b587aa5",
+        "scope": {
+          "tools": [
+            "payments.charge"
+          ],
+          "max_amount": 500
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448001,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "DtOP8q4S+pkpJ/8UvaQJAiHGp7vOgN42BB83Yl7aBhIBT4TxebEbt0SAYYkrcPZ0Kr5WYLK6a+m3pr61/BtOCA=="
+        }
+      },
+      "action": {
+        "type": "EXECUTE",
+        "tool": "payments.charge",
+        "params": {
+          "amount": "400",
+          "currency": "USD",
+          "user_id": "user_123"
+        }
+      },
+      "expected_error": "DELEGATION_EXPIRED"
+    },
+    {
+      "id": "delegation-parent-expired",
+      "description": "parent expired",
+      "status": "error",
+      "parent_authorization": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-parent-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "1b5636def55eb23ecbd1cfd61fd68caea89b0e8d4c9641c022fc34654f92df07",
+        "state_hash": "68e170118d612b10832d991801c33ff921f470e2e057581d11652723e37f3b7f",
+        "policy_id": "policy-1",
+        "scope": {
+          "tools": [
+            "payments.charge",
+            "payments.refund"
+          ],
+          "max_amount": 1000
+        },
+        "issued_at": 1712448000,
+        "expiry": 1712448001,
+        "alg": "Ed25519",
+        "kid": "auth-parent-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-parent-key-1",
+          "sig": "57GaEtdKlhmkExYDQDUCg2c13FvPA5r11quZYLRH3pfC8Wf6iqt5XAiWcZ5/OGdh6R1wnE0a6VMx+WRgjWjRBg=="
+        },
+        "parent_hash": "8312b7089004718acacbf3d04d3d3162a61557223838419534326474c098deb3"
+      },
+      "delegation": {
+        "version": "DelegationV1",
+        "delegation_id": "del-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "agent-123",
+        "parent_auth_hash": "29f47c0ca147dea1c586371b512302fb15f8912f6fcfd2ad5efe7a016f11accd",
+        "scope": {
+          "tools": [
+            "payments.charge"
+          ],
+          "max_amount": 500
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448500,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "e80nL7/DRlhoVFpgm3Zw2wZ6nXMNDoKlTEbuf7u5aA9JPrh/jzq/JfYF/qvXmUiirpDz7XA1oA3tTZJ95kdMDw=="
+        }
+      },
+      "action": {
+        "type": "EXECUTE",
+        "tool": "payments.charge",
+        "params": {
+          "amount": "400",
+          "currency": "USD",
+          "user_id": "user_123"
+        }
+      },
+      "expected_error": "DELEGATION_PARENT_EXPIRED"
+    },
+    {
+      "id": "delegation-delegatee-mismatch",
+      "description": "delegatee mismatch",
+      "status": "error",
+      "parent_authorization": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-parent-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "1b5636def55eb23ecbd1cfd61fd68caea89b0e8d4c9641c022fc34654f92df07",
+        "state_hash": "68e170118d612b10832d991801c33ff921f470e2e057581d11652723e37f3b7f",
+        "policy_id": "policy-1",
+        "scope": {
+          "tools": [
+            "payments.charge",
+            "payments.refund"
+          ],
+          "max_amount": 1000
+        },
+        "issued_at": 1712448000,
+        "expiry": 1712448800,
+        "alg": "Ed25519",
+        "kid": "auth-parent-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-parent-key-1",
+          "sig": "zY/FbX8DRu3vhnmEOVCMHgmbd/GDDCIt4pqb7H6MKc8C/HKIk9eBoRiGssKxdumzmfjEEpznI+c/AMpY3WXjAA=="
+        },
+        "parent_hash": "17ba8c75e05c656fb467fff5b8681a7a9bd31b1a7e6fa26d51b7cb8c41ed5bde"
+      },
+      "delegation": {
+        "version": "DelegationV1",
+        "delegation_id": "del-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "other-agent",
+        "parent_auth_hash": "a1199d43b1749a1246e7f6dc0735a8e8b369e74b8d85ab5514f923b84b587aa5",
+        "scope": {
+          "tools": [
+            "payments.charge"
+          ],
+          "max_amount": 500
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448500,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "mdWhs6yHhFiHwn1EkjxRaTDEFXkUH6CGwv9UNcSuOxDp6tWCpQrsXzcK33yd09XRjpG2hWMc0ooKYtd7B0ykBA=="
+        }
+      },
+      "action": {
+        "type": "EXECUTE",
+        "tool": "payments.charge",
+        "params": {
+          "amount": "400",
+          "currency": "USD",
+          "user_id": "user_123"
+        }
+      },
+      "expected_error": "DELEGATION_DELEGATEE_MISMATCH"
+    },
+    {
+      "id": "delegation-scope-widening-tool",
+      "description": "child tools widen parent",
+      "status": "error",
+      "parent_authorization": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-parent-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "1b5636def55eb23ecbd1cfd61fd68caea89b0e8d4c9641c022fc34654f92df07",
+        "state_hash": "68e170118d612b10832d991801c33ff921f470e2e057581d11652723e37f3b7f",
+        "policy_id": "policy-1",
+        "scope": {
+          "tools": [
+            "payments.charge",
+            "payments.refund"
+          ],
+          "max_amount": 1000
+        },
+        "issued_at": 1712448000,
+        "expiry": 1712448800,
+        "alg": "Ed25519",
+        "kid": "auth-parent-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-parent-key-1",
+          "sig": "zY/FbX8DRu3vhnmEOVCMHgmbd/GDDCIt4pqb7H6MKc8C/HKIk9eBoRiGssKxdumzmfjEEpznI+c/AMpY3WXjAA=="
+        },
+        "parent_hash": "17ba8c75e05c656fb467fff5b8681a7a9bd31b1a7e6fa26d51b7cb8c41ed5bde"
+      },
+      "delegation": {
+        "version": "DelegationV1",
+        "delegation_id": "del-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "agent-123",
+        "parent_auth_hash": "a1199d43b1749a1246e7f6dc0735a8e8b369e74b8d85ab5514f923b84b587aa5",
+        "scope": {
+          "tools": [
+            "payments.charge",
+            "payments.refund",
+            "payments.inject"
+          ],
+          "max_amount": 500
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448500,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "TqMKXhDa6wTPbizVWHE0nb9J58efgE9PZaYGM7/lvf5Cy8Lhhb0h+YlYfv2QRbTIRKk+wIq+EH1g7boZrW1WBQ=="
+        }
+      },
+      "action": {
+        "type": "EXECUTE",
+        "tool": "payments.charge",
+        "params": {
+          "amount": "400",
+          "currency": "USD",
+          "user_id": "user_123"
+        }
+      },
+      "expected_error": "DELEGATION_SCOPE_WIDENING"
+    },
+    {
+      "id": "delegation-scope-widening-amount",
+      "description": "child max_amount exceeds parent",
+      "status": "error",
+      "parent_authorization": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-parent-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "1b5636def55eb23ecbd1cfd61fd68caea89b0e8d4c9641c022fc34654f92df07",
+        "state_hash": "68e170118d612b10832d991801c33ff921f470e2e057581d11652723e37f3b7f",
+        "policy_id": "policy-1",
+        "scope": {
+          "tools": [
+            "payments.charge",
+            "payments.refund"
+          ],
+          "max_amount": 1000
+        },
+        "issued_at": 1712448000,
+        "expiry": 1712448800,
+        "alg": "Ed25519",
+        "kid": "auth-parent-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-parent-key-1",
+          "sig": "zY/FbX8DRu3vhnmEOVCMHgmbd/GDDCIt4pqb7H6MKc8C/HKIk9eBoRiGssKxdumzmfjEEpznI+c/AMpY3WXjAA=="
+        },
+        "parent_hash": "17ba8c75e05c656fb467fff5b8681a7a9bd31b1a7e6fa26d51b7cb8c41ed5bde"
+      },
+      "delegation": {
+        "version": "DelegationV1",
+        "delegation_id": "del-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "agent-123",
+        "parent_auth_hash": "a1199d43b1749a1246e7f6dc0735a8e8b369e74b8d85ab5514f923b84b587aa5",
+        "scope": {
+          "tools": [
+            "payments.charge"
+          ],
+          "max_amount": 5000
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448500,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "jCO1obMCUMC6lKrLIFiYyiyCaHP/tsFeBXGmZcQnYX/WFX5chvQCHC8OkS744ksdDDl9dMEc1cgKJTU+5ZQOBg=="
+        }
+      },
+      "action": {
+        "type": "EXECUTE",
+        "tool": "payments.charge",
+        "params": {
+          "amount": "400",
+          "currency": "USD",
+          "user_id": "user_123"
+        }
+      },
+      "expected_error": "DELEGATION_SCOPE_WIDENING"
+    },
+    {
+      "id": "delegation-action-out-of-scope",
+      "description": "action tool not in child scope",
+      "status": "error",
+      "parent_authorization": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-parent-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "1b5636def55eb23ecbd1cfd61fd68caea89b0e8d4c9641c022fc34654f92df07",
+        "state_hash": "68e170118d612b10832d991801c33ff921f470e2e057581d11652723e37f3b7f",
+        "policy_id": "policy-1",
+        "scope": {
+          "tools": [
+            "payments.charge",
+            "payments.refund"
+          ],
+          "max_amount": 1000
+        },
+        "issued_at": 1712448000,
+        "expiry": 1712448800,
+        "alg": "Ed25519",
+        "kid": "auth-parent-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-parent-key-1",
+          "sig": "zY/FbX8DRu3vhnmEOVCMHgmbd/GDDCIt4pqb7H6MKc8C/HKIk9eBoRiGssKxdumzmfjEEpznI+c/AMpY3WXjAA=="
+        },
+        "parent_hash": "17ba8c75e05c656fb467fff5b8681a7a9bd31b1a7e6fa26d51b7cb8c41ed5bde"
+      },
+      "delegation": {
+        "version": "DelegationV1",
+        "delegation_id": "del-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "agent-123",
+        "parent_auth_hash": "a1199d43b1749a1246e7f6dc0735a8e8b369e74b8d85ab5514f923b84b587aa5",
+        "scope": {
+          "tools": [
+            "payments.refund"
+          ],
+          "max_amount": 500
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448500,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "8shAd+U6zyIhBvT6xOWcpvrFdzFvFblZClE29AFzev/vniX1rt3qU3GgDxJ2z/QA1h/sxE4M8MCw2oUNH8ddAw=="
+        }
+      },
+      "action": {
+        "type": "EXECUTE",
+        "tool": "payments.charge",
+        "params": {
+          "amount": "400",
+          "currency": "USD",
+          "user_id": "user_123"
+        }
+      },
+      "expected_error": "DELEGATION_SCOPE_VIOLATION"
+    },
+    {
+      "id": "delegation-multihop-denied",
+      "description": "parent is a delegation",
+      "status": "error",
+      "parent_authorization": {
+        "version": "DelegationV1",
+        "delegation_id": "del-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "agent-123",
+        "parent_auth_hash": "a1199d43b1749a1246e7f6dc0735a8e8b369e74b8d85ab5514f923b84b587aa5",
+        "scope": {
+          "tools": [
+            "payments.charge"
+          ],
+          "max_amount": 500
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448500,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "7gHnQP7hZ8wYJwnAZjVtP0SdBJam6SdK1nOJGTXByuCggVkDUG2ZL6VpF1jDCd2IYtkPXDfRn+NLZIEFAC1LAg=="
+        }
+      },
+      "delegation": {
+        "version": "DelegationV1",
+        "delegation_id": "del-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "agent-123",
+        "parent_auth_hash": "a1199d43b1749a1246e7f6dc0735a8e8b369e74b8d85ab5514f923b84b587aa5",
+        "scope": {
+          "tools": [
+            "payments.charge"
+          ],
+          "max_amount": 500
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448500,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "7gHnQP7hZ8wYJwnAZjVtP0SdBJam6SdK1nOJGTXByuCggVkDUG2ZL6VpF1jDCd2IYtkPXDfRn+NLZIEFAC1LAg=="
+        }
+      },
+      "action": {
+        "type": "EXECUTE",
+        "tool": "payments.charge",
+        "params": {
+          "amount": "400",
+          "currency": "USD",
+          "user_id": "user_123"
+        }
+      },
+      "expected_error": "DELEGATION_MULTIHOP_DENIED"
+    },
+    {
+      "id": "delegation-replay",
+      "description": "delegation id already consumed",
+      "status": "error",
+      "parent_authorization": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-parent-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "1b5636def55eb23ecbd1cfd61fd68caea89b0e8d4c9641c022fc34654f92df07",
+        "state_hash": "68e170118d612b10832d991801c33ff921f470e2e057581d11652723e37f3b7f",
+        "policy_id": "policy-1",
+        "scope": {
+          "tools": [
+            "payments.charge",
+            "payments.refund"
+          ],
+          "max_amount": 1000
+        },
+        "issued_at": 1712448000,
+        "expiry": 1712448800,
+        "alg": "Ed25519",
+        "kid": "auth-parent-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-parent-key-1",
+          "sig": "zY/FbX8DRu3vhnmEOVCMHgmbd/GDDCIt4pqb7H6MKc8C/HKIk9eBoRiGssKxdumzmfjEEpznI+c/AMpY3WXjAA=="
+        },
+        "parent_hash": "17ba8c75e05c656fb467fff5b8681a7a9bd31b1a7e6fa26d51b7cb8c41ed5bde"
+      },
+      "delegation": {
+        "version": "DelegationV1",
+        "delegation_id": "del-reused-1",
+        "issuer": "issuer-1",
+        "delegator": "pep-gateway.local",
+        "delegatee": "agent-123",
+        "parent_auth_hash": "a1199d43b1749a1246e7f6dc0735a8e8b369e74b8d85ab5514f923b84b587aa5",
+        "scope": {
+          "tools": [
+            "payments.charge"
+          ],
+          "max_amount": 500
+        },
+        "policy_id": "policy-1",
+        "issued_at": 1712448050,
+        "expiry": 1712448500,
+        "alg": "Ed25519",
+        "kid": "delegation-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "delegation-key-1",
+          "sig": "nyrDEe9vMRQhgCuNblSceHlbcH7BYCAqtJO13Ia0awJ7yIAF6zsx9I2z4tCSLgAjLnLm2502qOLI3fznUJeEBw=="
+        }
+      },
+      "action": {
+        "type": "EXECUTE",
+        "tool": "payments.charge",
+        "params": {
+          "amount": "400",
+          "currency": "USD",
+          "user_id": "user_123"
+        }
+      },
+      "preconsume_delegation_id": "del-reused-1",
+      "expected_error": "DELEGATION_REPLAY"
+    }
+  ]
+}

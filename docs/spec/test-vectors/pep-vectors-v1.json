@@ -1,0 +1,97 @@
+{
+  "gateway_secret": "demo-internal-token",
+  "upstream_header": "x-internal-executor-token",
+  "vectors": [
+    {
+      "id": "pep-allow-upstream-success",
+      "description": "valid authorization, upstream returns success",
+      "request": {
+        "action": {
+          "type": "EXECUTE",
+          "tool": "payments.charge",
+          "params": { "amount": "500", "currency": "USD", "user_id": "user_123" }
+        },
+        "authorization_ref": "auth-allow-valid",
+        "upstream_behavior": "success"
+      },
+      "expected": {
+        "status": 200,
+        "decision": "ALLOW",
+        "executed": true
+      }
+    },
+    {
+      "id": "pep-auth-invalid-signature",
+      "description": "authorization signature fails verification",
+      "request": {
+        "action": {
+          "type": "EXECUTE",
+          "tool": "payments.charge",
+          "params": { "amount": "500", "currency": "USD", "user_id": "user_123" }
+        },
+        "authorization_ref": "auth-invalid-signature",
+        "upstream_behavior": "not_called"
+      },
+      "expected": {
+        "status": 403,
+        "decision": "DENY",
+        "executed": false
+      }
+    },
+    {
+      "id": "pep-auth-intent-mismatch",
+      "description": "intent hash mismatch blocks execution",
+      "request": {
+        "action": {
+          "type": "EXECUTE",
+          "tool": "payments.charge",
+          "params": { "amount": "500", "currency": "USD", "user_id": "user_123" }
+        },
+        "authorization_ref": "auth-intent-mismatch",
+        "upstream_behavior": "not_called"
+      },
+      "expected": {
+        "status": 403,
+        "decision": "DENY",
+        "executed": false
+      }
+    },
+    {
+      "id": "pep-upstream-error",
+      "description": "upstream returns error -> gateway surfaces 502",
+      "request": {
+        "action": {
+          "type": "EXECUTE",
+          "tool": "payments.charge",
+          "params": { "amount": "500", "currency": "USD", "user_id": "user_123" }
+        },
+        "authorization_ref": "auth-allow-valid",
+        "upstream_behavior": "error"
+      },
+      "expected": {
+        "status": 502,
+        "decision": "DENY",
+        "executed": false
+      }
+    },
+    {
+      "id": "pep-upstream-timeout",
+      "description": "upstream timeout -> gateway returns 504",
+      "request": {
+        "action": {
+          "type": "EXECUTE",
+          "tool": "payments.charge",
+          "params": { "amount": "500", "currency": "USD", "user_id": "user_123" }
+        },
+        "authorization_ref": "auth-allow-valid",
+        "upstream_behavior": "timeout"
+      },
+      "expected": {
+        "status": 504,
+        "decision": "DENY",
+        "executed": false
+      }
+    }
+  ],
+  "authorization_fixture_file": "authorization-v1.json"
+}

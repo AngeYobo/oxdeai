@@ -107,6 +107,8 @@ Requirement: DelegationV1 chain MUST be strictly narrowing, single-hop, signed, 
 
 Normative vector files:
 - `docs/spec/test-vectors/canonicalization-v1.json`
+- `docs/spec/test-vectors/authorization-v1.json`
+- `docs/spec/test-vectors/pep-vectors-v1.json`
 
 Implementations SHOULD provide runnable harnesses that consume the same vectors and exit non-zero on any mismatch (e.g., TS/Go/Python verifiers).
 
@@ -116,13 +118,15 @@ From repo root:
 - TypeScript reference: `pnpm test:vectors:ts`
 - Go verifier: `pnpm test:vectors:go`
 - Python verifier: `pnpm test:vectors:py`
-- All canonicalization verifiers: `pnpm test:vectors:all`
+- Authorization vectors: `pnpm test:vectors:auth`
+- PEP vectors: `pnpm test:vectors:pep`
+- Aggregate: `pnpm test:vectors:all`
 
 Pass/Fail rule: any mismatch in canonical JSON, SHA-256, or expected error code MUST exit non-zero and is non-conformant.
 
 ### 4.2 Pending vectors
 
-Locked vectors currently exist only for canonicalization. PEP, Authorization, and Delegation conformance are presently validated via code-level harnesses; additional locked vectors MAY be added in future versions.
+Locked vectors exist for canonicalization, authorization, and PEP gateway behavior as listed above. Delegation conformance is presently validated via code-level harnesses; additional locked vectors MAY be added in future versions.
 
 Failure condition:
 - any ALLOW under invalid conditions

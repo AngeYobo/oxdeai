@@ -1,0 +1,119 @@
+{
+  "keys": [
+    {
+      "kid": "auth-key-1",
+      "alg": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEASyQL4zdR435kMZBiqIKq87JvPivVmhOsAnGWZV4HJDY=\n-----END PUBLIC KEY-----\n"
+    }
+  ],
+  "vectors": [
+    {
+      "id": "auth-allow-valid",
+      "description": "valid AuthorizationV1 allow",
+      "artifact": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-allow-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "8fbb30c8419a1c88a7799b39d77c77ef19dbdcdf82476bfb6c3d08b644683fa7",
+        "state_hash": "89d739f4d161ed9c8de4319bd2ab140d4d2f7de0d0ae172133cb79cd70187823",
+        "policy_id": "policy-1",
+        "issued_at": 1712448000,
+        "expiry": 1712448600,
+        "alg": "Ed25519",
+        "kid": "auth-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-key-1",
+          "sig": "Zef4gpQ+YpEtM8IyzLl3T3/sUEdTvGEvdbt45CtLNBkEROBZh2qYMNfuo1mer4mRC0VC5GSrRxCVAzNiaZUTBg=="
+        }
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "error": null
+      }
+    },
+    {
+      "id": "auth-expired",
+      "description": "expired authorization",
+      "artifact": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-expired-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "764dd2f9dfe7f7da441545f5b5933ce1b7beecfdea3e944e451b50d0cdb2460f",
+        "state_hash": "89d739f4d161ed9c8de4319bd2ab140d4d2f7de0d0ae172133cb79cd70187823",
+        "policy_id": "policy-1",
+        "issued_at": 1712447000,
+        "expiry": 1712447100,
+        "alg": "Ed25519",
+        "kid": "auth-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-key-1",
+          "sig": "UBz1+nmPjhTX9S/Jil9ryuqSj7+akOcOCX+WDKCLdaOshIFPsiF0qR96R38kr4VhkMBPJs18vMcT5xxfEwZbAw=="
+        }
+      },
+      "expected": {
+        "decision": "DENY",
+        "error": "EXPIRED"
+      }
+    },
+    {
+      "id": "auth-intent-mismatch",
+      "description": "intent hash mismatch",
+      "artifact": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-intent-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "state_hash": "89d739f4d161ed9c8de4319bd2ab140d4d2f7de0d0ae172133cb79cd70187823",
+        "policy_id": "policy-1",
+        "issued_at": 1712448000,
+        "expiry": 1712448600,
+        "alg": "Ed25519",
+        "kid": "auth-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-key-1",
+          "sig": "WV0CFa7cSOBAnMbzVpSPxiEIJoCPEQJhAbCwcqOyemO1XeQcGrwGzpQhgNOPJtYewV1CvhksHpclbWEZqQpACg=="
+        }
+      },
+      "expected": {
+        "decision": "DENY",
+        "error": "INTENT_HASH_MISMATCH"
+      }
+    },
+    {
+      "id": "auth-invalid-signature",
+      "description": "tampered payload invalidates signature",
+      "artifact": {
+        "version": "AuthorizationV1",
+        "auth_id": "auth-invalid-sig",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "8fbb30c8419a1c88a7799b39d77c77ef19dbdcdf82476bfb6c3d08b644683fa7",
+        "state_hash": "89d739f4d161ed9c8de4319bd2ab140d4d2f7de0d0ae172133cb79cd70187823",
+        "policy_id": "policy-1",
+        "issued_at": 1712448000,
+        "expiry": 1712448600,
+        "alg": "Ed25519",
+        "kid": "auth-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "auth-key-1",
+          "sig": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      },
+      "expected": {
+        "decision": "DENY",
+        "error": "INVALID_SIGNATURE"
+      }
+    }
+  ]
+}

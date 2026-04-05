@@ -45,6 +45,24 @@ jobs:
         env:
           OXDEAI_ENGINE_SECRET: test-secret-must-be-at-least-32-chars!!
 
+      - name: Vectors (TS canonicalization)
+        run: pnpm test:vectors:ts
+
+      - name: Vectors (Authorization)
+        run: pnpm test:vectors:auth
+
+      - name: Vectors (PEP gateway)
+        run: pnpm test:vectors:pep
+
+      - name: Vectors (Delegation)
+        run: pnpm test:vectors:delegation
+
+      - name: Vectors (Go canonicalization)
+        run: pnpm test:vectors:go
+
+      - name: Vectors (Python canonicalization)
+        run: pnpm test:vectors:py
+
   adapter-validation:
     runs-on: ubuntu-latest
 

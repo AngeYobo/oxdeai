@@ -35,7 +35,12 @@ This Markdown document is **non-normative** and provided for readability only.
 
 ## 3.1 Scope Note
 
-The only locked, normative vectors currently published are for canonicalization (`canonicalization-v1.json`). ETA, PEP, and Delegation conformance currently rely on the code-level conformance harnesses; future versions may add vectors for those components.
+Locked, normative vectors currently published:
+- canonicalization: `canonicalization-v1.json`
+- authorization: `authorization-v1.json`
+- PEP gateway: `pep-vectors-v1.json`
+
+Delegation vectors are not yet published; conformance for Delegation remains harness-based until vectors are added.
 
 ---
 
