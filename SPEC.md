@@ -1,6 +1,6 @@
 # OxDeAI Specification (v1.3.0)
 
-See: docs/spec/eta-core-v1.md for the minimal Execution-Time Authorization profile.
+See: docs/spec/eta-core-v1.md for the minimal Execution-Time Authorization profile. AuthorizationV1 is currently specified as a Draft normative artifact (see docs/spec/authorization-v1.md) while SPEC overall is v1.3.0.
 
 This is the canonical normative specification for the OxDeAI protocol.
 Other documents (e.g. under /protocol) are companion references and must not be treated as normative.
@@ -24,6 +24,8 @@ A Policy Enforcement Point (PEP) verifies authorization artifacts and executes t
 The TypeScript implementation in this repository is the reference implementation of this protocol, but conformant implementations MAY exist in any language if they reproduce the same artifacts and verification behavior.
 
 Normative protocol text uses RFC 2119 terms: MUST, MUST NOT, SHOULD, SHOULD NOT, MAY.
+
+Note: locked conformance vectors are currently published only for canonicalization; PEP/Authorization/Delegation are validated via harnesses until vectors are added.
 
 ## 1. Scope
 
@@ -64,6 +66,7 @@ For identical `(intent, state, policy configuration)` inputs, a conformant imple
 Implementations MUST use canonical encoding for signed and hashed payloads.
 Verification ordering and violation ordering MUST be deterministic.
 Policy-critical logic MUST NOT depend on ambient randomness.
+Malformed or ambiguous artifacts (including canonicalization failure) MUST be treated as DENY/fail-closed.
 
 ### 3.1 Evaluation Semantics
 
@@ -171,7 +174,7 @@ An `AuthorizationV1` artifact MUST include all of the following fields:
 - `audience`
 - `intent_hash`
 - `state_hash`
-- `policy_id`
+- `policy_id` (may be named `policy_version` in artifacts; issuer and verifier MUST use a consistent field name)
 - `decision`
 - `issued_at`
 - `expiry`
@@ -245,10 +248,10 @@ In v1.2, `AuthorizationV1` MUST support public-key verification via `alg`, `kid`
 
 For signed verification:
 
-- The signature MUST be computed over canonical payload bytes.
-- The `signature` field itself MUST NOT be included in the signed payload.
+- The signature MUST be computed over the canonicalized AuthorizationV1 object using `canonicalization-v1` rules, **excluding** the `signature` field value.
 - Different artifact classes MUST use distinct signing domains to prevent cross-artifact signature confusion.
 - Unsupported algorithms MUST fail closed.
+- Canonicalization for authorization payloads MUST follow `docs/spec/canonicalization-v1.md`.
 
 Verifiers MUST NOT accept unsigned substitutions for artifacts that require signature validation under local policy.
 

@@ -120,6 +120,10 @@ From repo root:
 
 Pass/Fail rule: any mismatch in canonical JSON, SHA-256, or expected error code MUST exit non-zero and is non-conformant.
 
+### 4.2 Pending vectors
+
+Locked vectors currently exist only for canonicalization. PEP, Authorization, and Delegation conformance are presently validated via code-level harnesses; additional locked vectors MAY be added in future versions.
+
 Failure condition:
 - any ALLOW under invalid conditions
 
@@ -313,4 +317,3 @@ Any violation:
 
 → DENY 
 → NO EXECUTION
-
