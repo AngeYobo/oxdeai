@@ -27,7 +27,7 @@ Related boundary view:
 - [`Agent authorization boundary`](./diagrams/agent-authorization-boundary.svg)
 
 Diagram source/editing policy:
-- [`docs/diagrams/README.md`](./diagrams/README.md)
+- [`docs/diagrams/README.md`](../diagrams/README.md)
 
 ## Component Roles
 

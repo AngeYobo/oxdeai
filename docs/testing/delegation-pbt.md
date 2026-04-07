@@ -192,4 +192,4 @@ const STATE = buildState({
 
 ## Invariant I6 - Evaluation Isolation
 
-See [invariants.md](../invariants.md#i6--evaluation-isolation).
+See [invariants.md](../architecture/invariants.md#i6--evaluation-isolation).

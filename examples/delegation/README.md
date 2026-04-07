@@ -49,6 +49,6 @@ child-agent
 
 ## Protocol Reference
 
-- Spec: [`docs/spec/delegation-v1.md`](../../docs/spec/delegation-v1.md)
+- Spec: [`docs/spec/delegation-v1.md`](../../docs/spec/artifacts/delegation-v1.md)
 - Implementation plan: [`docs/spec/delegation-v1-implementation.md`](../../docs/spec/delegation-v1-implementation.md)
 - Roadmap: [`v2.x - Delegated Agent Authorization (shipped)`](../../ROADMAP.md)

@@ -160,7 +160,7 @@ If publication fails, resolve and retry from the same committed state, or cut a 
 - npm publication is immutable; Git tags/commits provide provenance context.
 - Published versions MUST correspond to committed and tagged repository state.
 - Post-release fixes MUST ship as new versions; published versions MUST NOT be rewritten.
-- Follow coordinated disclosure process in [SECURITY.md](./SECURITY.md).
+- Follow coordinated disclosure process in [SECURITY.md](../security/SECURITY.md).
 - Release notes MUST mention security-relevant changes.
 - Test signing material MUST be explicitly test-only and non-production.
 

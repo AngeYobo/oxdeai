@@ -84,7 +84,7 @@ node scripts/validate-adapters.mjs
 
 ## References
 
-- [Adapter stack architecture](./integrations/adapter-stack.md)
+- [Adapter stack architecture](../archive/integrations/adapter-stack.md)
 - [Adapter reference architecture](./adapter-reference-architecture.md)
-- [Shared demo scenario](./integrations/shared-demo-scenario.md)
-- [Adapter validation](./integrations/adapter-validation.md)
+- [Shared demo scenario](../archive/integrations/shared-demo-scenario.md)
+- [Adapter validation](../archive/integrations/adapter-validation.md)
