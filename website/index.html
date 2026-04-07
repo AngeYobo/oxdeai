@@ -423,8 +423,8 @@
         <div class="section-label">demo</div>
         <h2 class="section-title">Non-bypassable execution demo.</h2>
         <p class="section-sub">
-          Direct calls fail. Authorized path succeeds. Execution is only
-          reachable through the boundary.
+          Two paths: direct calls fail. Authorized path succeeds. Execution is
+          only reachable through the boundary.
         </p>
 
         <div class="demo-wrap">
@@ -440,7 +440,7 @@
             loading="lazy"
           />
 
-          <div class="demo-caption">
+          <div class="demo-caption" style="text-align:center">
             <div><strong>Direct upstream call</strong> → 403</div>
             <div>
               <strong>Gateway path</strong> → authorization verified (intent +
@@ -448,16 +448,19 @@
             </div>
           </div>
 
-          <ul class="demo-outcomes">
-            <li>ALLOW → executed</li>
-            <li>DENY → blocked</li>
-            <li>REPLAY → blocked</li>
-            <li>BYPASS → rejected (403)</li>
-          </ul>
-
-          <div class="demo-conclusion">
-            <strong>No valid authorization → no execution path.</strong>
+          <div
+            class="demo-outcomes pills-inline"
+            style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center"
+          >
+            <span class="pill">ALLOW → executed</span>
+            <span class="pill">DENY → blocked</span>
+            <span class="pill">REPLAY → blocked</span>
+            <span class="pill">BYPASS → rejected (403)</span>
           </div>
+
+          <p class="demo-conclusion" style="text-align:center">
+            <strong>No valid authorization → no execution path.</strong>
+          </p>
         </div>
 
         <div class="install-strip" style="margin-top: 24px">
@@ -836,8 +839,15 @@
         <div class="footer-note">
           @oxdeai/core · @oxdeai/guard · @oxdeai/sdk · @oxdeai/conformance
         </div>
+        <div
+          class="container"
+          style="text-align:center; padding:20px 0; color: var(--text-subtle); font-size: 0.7rem;">
+          © 2026 OxDeAI - Deterministic execution authorization. No authorization → no execution.
+        </div>
       </div>
     </footer>
+
+
 
     <script>
       function showTab(name, btn) {
