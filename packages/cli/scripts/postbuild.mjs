@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { chmod, readFile, writeFile } from "node:fs/promises";
 
 const entrypoint = new URL("../dist/main.js", import.meta.url);

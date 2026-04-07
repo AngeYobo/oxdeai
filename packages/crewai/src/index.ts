@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * @oxdeai/crewai — thin CrewAI binding for @oxdeai/guard.
  *

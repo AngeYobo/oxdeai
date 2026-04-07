@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { StateBoundModuleCodec } from "./_codec.js";
 import { MODULE_CODECS as BASE_MODULE_CODECS } from "./_codec.js";
 

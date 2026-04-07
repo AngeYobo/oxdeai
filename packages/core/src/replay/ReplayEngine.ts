@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { AuditEntry } from "../audit/AuditLog.js";
 import { PolicyEngine } from "../policy/PolicyEngine.js";
 import type { EngineEvalOptions, EvaluatePureOutput } from "../policy/PolicyEngine.js";

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * Thrown when the policy engine returns a DENY decision.
  * Execution is blocked; inspect `reasons` for policy violations.

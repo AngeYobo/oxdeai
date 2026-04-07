@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * @oxdeai/openclaw - thin OpenClaw binding for @oxdeai/guard.
  *

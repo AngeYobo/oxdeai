@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { stableSortedKeys } from "./stableSort.js";
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {

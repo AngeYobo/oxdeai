@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * OxDeAI SDK — integration layer on top of @oxdeai/core.
  *

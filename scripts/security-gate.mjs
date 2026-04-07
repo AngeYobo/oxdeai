@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
 /**
  * Security gate: fails when audit findings lack a valid, non-expired exception.
  *

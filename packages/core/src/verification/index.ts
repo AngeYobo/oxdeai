@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 export * from "./types.js";
 export { createVerifier } from "./createVerifier.js";
 export type { VerifierConfig, BoundVerifier } from "./createVerifier.js";

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { evaluatePolicy } from "./policy.js";
 import { AGENTGRAM_INTENTS } from "./intents.js";
 import type { AgentgramPolicyState } from "./state.js";

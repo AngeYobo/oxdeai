@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { PolicyModule, ReasonCode } from "../../types/policy.js";
 import type { DecisionInput, DecisionComputationResult } from "./types.js";
 import { deepMerge } from "../../utils/deepMerge.js";

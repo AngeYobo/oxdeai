@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { InMemoryStateAdapter, InMemoryAuditAdapter } from "@oxdeai/sdk";
 import {
   makeLiveEngine,

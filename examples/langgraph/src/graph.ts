@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * graph.ts — LangGraph workflow that proposes tool calls.
  *

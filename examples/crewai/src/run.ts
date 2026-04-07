@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { pathToFileURL } from "node:url";
 import {
   encodeCanonicalState,

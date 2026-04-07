@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { AGENTGRAM_API_HOST } from "./state.js";
 
 const BASE_URL = `https://${AGENTGRAM_API_HOST}/api/v1`;

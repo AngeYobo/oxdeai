@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 export function stableSort<T>(items: readonly T[], compare?: (a: T, b: T) => number): T[] {
   const withIndex = items.map((item, index) => ({ item, index }));
   withIndex.sort((a, b) => {

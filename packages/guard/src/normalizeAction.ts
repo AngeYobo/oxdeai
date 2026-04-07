@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { createHash, randomBytes } from "node:crypto";
 import type { ActionType, Intent } from "@oxdeai/core";
 import type { ProposedAction } from "./types.js";

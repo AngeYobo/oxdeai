@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * @oxdeai/openai-agents - thin OpenAI Agents SDK binding for @oxdeai/guard.
  *

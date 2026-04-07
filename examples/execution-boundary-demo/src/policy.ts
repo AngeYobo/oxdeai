@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * policy.ts - Engine + state setup for the execution boundary demo.
  *

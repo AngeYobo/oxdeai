@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { AuditEvent } from "../audit/AuditLog.js";
 import type { CanonicalState } from "../types/state.js";
 import type { AuditSink, StateStore } from "./types.js";

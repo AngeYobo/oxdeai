@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // packages/core/src/test/property.decision.test.ts
 //
 // Property-based invariants for the PolicyEngine decision path.

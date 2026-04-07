@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * policy.ts - Policy Decision Point (PDP)
  *

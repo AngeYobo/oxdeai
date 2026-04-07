@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // packages/guard/src/test/guard.toctou.test.ts
 //
 // Guard-level TOCTOU and enforcement-boundary tests.

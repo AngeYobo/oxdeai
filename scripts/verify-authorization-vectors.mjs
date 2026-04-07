@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { createHash, verify } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";

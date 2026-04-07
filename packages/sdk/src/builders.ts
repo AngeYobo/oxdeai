@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { Intent, State } from "@oxdeai/core";
 import type { IntentBuilderInput, StateBuilderInput } from "./types.js";
 

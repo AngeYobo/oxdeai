@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { VerificationViolation } from "../verification/types.js";
 
 export type SchemaValidationIssue = {

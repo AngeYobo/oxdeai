@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { AGENTGRAM_INTENTS } from "./intents.js";
 import type { AgentgramIntent } from "./intents.js";
 import type { AuthorizationDecision } from "./types.js";

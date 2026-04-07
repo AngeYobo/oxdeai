@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { Authorization, AuthorizationV1, DelegationV1, Intent, KeySet, PolicyEngine, State } from "@oxdeai/core";
 
 /**

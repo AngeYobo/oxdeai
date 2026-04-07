@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // packages/core/src/dev/smoke.ts
 import { createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";

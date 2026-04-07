@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { Authorization, Intent } from "@oxdeai/core";
 import { verifyDelegationChain } from "@oxdeai/core";
 import type { OxDeAIGuardConfig, ProposedAction, GuardDecisionRecord, GuardCallOptions } from "./types.js";

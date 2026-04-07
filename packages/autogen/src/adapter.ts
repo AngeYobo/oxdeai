@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { OxDeAIGuard } from "@oxdeai/guard";
 import type { ProposedAction } from "@oxdeai/guard";
 import type { AutoGenToolCall, AutoGenGuardConfig, AutoGenGuardFn } from "./types.js";

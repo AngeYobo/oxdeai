@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 export const AGENTGRAM_BASE_URL =
   "https://agentgram-production.up.railway.app/api/v1";
 

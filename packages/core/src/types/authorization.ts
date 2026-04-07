@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /** @public */
 export type AuthorizationV1 = {
   auth_id: string;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { AgentgramIntent } from "./intents.js";
 
 type BaseAction = {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { createPrivateKey, createPublicKey, createHmac, sign, verify, timingSafeEqual } from "node:crypto";
 import { canonicalJson } from "./hashes.js";
 import type { KeySet, KeySetKey, SignatureAlgorithm } from "../types/keyset.js";
