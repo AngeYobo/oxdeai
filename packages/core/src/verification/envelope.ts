@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { canonicalJson } from "../crypto/hashes.js";
 import type { AuditEntry } from "../audit/AuditLog.js";
 import { validateVerificationEnvelopeWireJson } from "../schemas/validate.js";

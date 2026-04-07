@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // packages/core/src/test/verify.sufficiency.test.ts
 //
 // Snapshot + envelope SUFFICIENCY tests.

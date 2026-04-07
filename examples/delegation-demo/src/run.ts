@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * run.ts - Terminal two-panel visualization of the delegation demo.
  *

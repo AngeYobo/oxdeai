@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * server.ts - Minimal HTTP server for the execution boundary demo.
  *

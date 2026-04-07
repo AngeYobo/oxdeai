@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { createHmac } from "node:crypto";
 import { canonicalJson } from "./hashes.js";
 

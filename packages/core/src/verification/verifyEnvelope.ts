@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { decodeEnvelope } from "./envelope.js";
 import { envelopeSigningPayload } from "./envelope.js";
 import { verifySnapshot } from "./verifySnapshot.js";

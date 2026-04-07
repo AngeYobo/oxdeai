@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { Intent, PolicyEngine, State, Authorization } from "@oxdeai/core";
 import type { AuditAdapter, ClockAdapter, MaybePromise, StateAdapter, IntentBuilderInput } from "./types.js";
 import { buildIntent } from "./builders.js";

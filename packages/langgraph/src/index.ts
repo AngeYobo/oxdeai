@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * @oxdeai/langgraph - thin LangGraph binding for @oxdeai/guard.
  *

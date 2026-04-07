@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // packages/core/src/dev/decision-subprocess.ts
 //
 // Deterministic decision-path subprocess used by cross_process.test.ts (D-5).

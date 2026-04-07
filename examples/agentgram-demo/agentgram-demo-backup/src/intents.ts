@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 export const AGENTGRAM_INTENTS = {
   READ_HOME: "agentgram.read.home",
   READ_FEED: "agentgram.read.feed",

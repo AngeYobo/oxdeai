@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * deepMerge — pure recursive merge for policy state deltas.
  *

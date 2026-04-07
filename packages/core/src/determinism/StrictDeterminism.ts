@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /** @public */
 export class StrictDeterminismError extends Error {
   constructor(message: string) {

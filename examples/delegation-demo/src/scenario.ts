@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * scenario.ts - Deterministic delegation demo scenario runner.
  *

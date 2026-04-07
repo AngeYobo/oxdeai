@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { Intent } from "./intent.js";
 import type { ModuleStateCodec, State } from "./state.js";
 

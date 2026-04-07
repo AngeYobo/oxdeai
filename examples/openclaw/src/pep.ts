@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * pep.ts - Policy Enforcement Point (PEP)
  *

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * @oxdeai/autogen — thin AutoGen binding for @oxdeai/guard.
  *

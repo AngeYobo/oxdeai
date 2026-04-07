@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // packages/core/src/test/toctou.test.ts
 //
 // TOCTOU, state-binding, and enforcement-boundary tests.

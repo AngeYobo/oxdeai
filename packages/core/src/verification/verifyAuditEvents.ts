@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { createHash } from "node:crypto";
 import { canonicalJson } from "../crypto/hashes.js";
 import type { AuditEvent } from "../audit/AuditLog.js";

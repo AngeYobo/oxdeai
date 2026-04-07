@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 export type * from "./types/intent.js";
 export type * from "./types/state.js";
 export type * from "./types/policy.js";

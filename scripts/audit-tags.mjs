@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 
 const GIT_DIR = process.env.GIT_DIR || ".git";

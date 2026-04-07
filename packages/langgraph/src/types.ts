@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { PolicyEngine, State } from "@oxdeai/core";
 import type { OxDeAIGuardConfig, ProposedAction } from "@oxdeai/guard";
 

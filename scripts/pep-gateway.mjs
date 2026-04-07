@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
 import http from "node:http";
 import crypto from "node:crypto";
 import { URL } from "node:url";
@@ -359,7 +360,6 @@ console.log(`Routes:
 GET /healthz
 POST /execute`);
 });
-
 
 
 

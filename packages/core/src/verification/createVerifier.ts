@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { AuthorizationV1 } from "../types/authorization.js";
 import type { KeySet } from "../types/keyset.js";
 import type { VerificationResult, VerifyEnvelopeOptions } from "./types.js";

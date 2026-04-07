@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { randomUUID } from "node:crypto";
 import type { AuthorizationV1 } from "../types/authorization.js";
 import type { DelegationV1, DelegationScope } from "../types/delegation.js";

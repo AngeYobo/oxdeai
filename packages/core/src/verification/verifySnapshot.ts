@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { sha256HexFromJson } from "../crypto/hashes.js";
 import { decodeCanonicalState } from "../snapshot/CanonicalCodec.js";
 import { mapIssuesToViolation, validateCanonicalStateJson } from "../schemas/validate.js";

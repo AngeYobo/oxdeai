@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type { Authorization, Intent, State, VerificationResult } from "@oxdeai/core";
 
 export type MaybePromise<T> = T | Promise<T>;
