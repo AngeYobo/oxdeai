@@ -1,5 +1,7 @@
 # Security Policy and Threat Model (v1.3.0)
 
+Non-normative. Normative protocol definitions are in `SPEC.md` and `docs/spec/`; artifact status (Draft/Stable) is defined there. Locked vectors: `docs/spec/test-vectors/canonicalization-v1.json`, `authorization-v1.json`, `pep-vectors-v1.json`, `delegation-vectors-v1.json`.
+
 This document defines OxDeAI protocol security scope, assumptions, and required failure behavior.
 
 ## 1. Security Scope
@@ -7,7 +9,7 @@ This document defines OxDeAI protocol security scope, assumptions, and required 
 In scope:
 
 - AuthorizationV1 issuance and verification
-- signature verification for signed artifacts
+- signature verification for signed artifacts (all hashes and signature preimages MUST use `canonicalization-v1`)
 - replay prevention at relying parties
 - issuer/audience/policy/intent/state binding checks
 - key selection by issuer+kid+alg
@@ -115,7 +117,7 @@ If the execution context changes materially, verification SHOULD be repeated.
 
 ## 7. Verification Failure Policy
 
-Verification failures MUST block execution.
+Verification failures MUST block execution. Protocol decisions are ALLOW/DENY with deterministic error codes defined in the specs; any `ok/invalid/inconclusive` labels are interface summaries only.
 
 Fail-closed conditions include:
 
