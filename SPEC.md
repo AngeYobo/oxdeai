@@ -1,6 +1,6 @@
 # OxDeAI Specification (v1.3.0)
 
-See: docs/spec/eta-core-v1.md for the minimal Execution-Time Authorization profile. AuthorizationV1, PEP Gateway, and Delegation are currently specified as Draft normative artifacts until locked vectors/CI harnesses are published; SPEC overall is v1.3.0.
+See: docs/spec/eta-core-v1.md for the minimal Execution-Time Authorization profile. Locked conformance vectors are published for canonicalization, authorization, PEP, and delegation, and pass across TypeScript, Go, and Python verification harnesses executed in CI. AuthorizationV1, PEP Gateway, and DelegationV1 are specified as Stable normative artifacts. SPEC overall remains v1.3.0.
 
 This is the canonical normative specification for the OxDeAI protocol.
 Other documents (e.g. under /protocol) are companion references and must not be treated as normative.
@@ -8,6 +8,40 @@ Other documents (e.g. under /protocol) are companion references and must not be 
 This document defines the OxDeAI execution authorization protocol.
 
 OxDeAI is a portable, language-agnostic protocol for deterministic pre-execution authorization and post-execution evidence verification in autonomous systems.
+
+Artifact stability is defined per artifact. The SPEC version (v1.3.0) does not imply instability of individual artifacts. AuthorizationV1, DelegationV1, and the PEP Gateway are Stable normative artifacts as defined in docs/spec/**.
+
+## Document Model
+
+* `docs/spec/**` → normative (protocol definitions)
+* `docs/**` → non-normative (guides, architecture, examples)
+
+If a conflict exists, `docs/spec/**` is authoritative.
+
+## Specification Index
+
+### Core
+
+* `docs/spec/core/canonicalization-v1.md`
+* `docs/spec/core/eta-core-v1.md`
+
+### Artifacts
+
+* `docs/spec/artifacts/authorization-v1.md`
+* `docs/spec/artifacts/delegation-v1.md`
+
+### Enforcement
+
+* `docs/spec/enforcement/pep-gateway-v1.md`
+
+### Verification
+
+* `docs/spec/verification/verification-v1.md`
+
+### Conformance
+
+* `docs/spec/conformance/conformance-v1.md`
+* `docs/spec/conformance/test-vectors-v1.md`
 
 The protocol defines:
 
@@ -22,6 +56,11 @@ A Policy Decision Point (PDP) evaluates whether an action is allowed.
 A Policy Enforcement Point (PEP) verifies authorization artifacts and executes the action only if verification succeeds.
 
 The TypeScript implementation in this repository is the reference implementation of this protocol, but conformant implementations MAY exist in any language if they reproduce the same artifacts and verification behavior.
+
+```
+No valid authorization
+→ no execution path
+```
 
 Normative protocol text uses RFC 2119 terms: MUST, MUST NOT, SHOULD, SHOULD NOT, MAY.
 

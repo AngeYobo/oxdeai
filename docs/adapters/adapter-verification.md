@@ -1,5 +1,14 @@
 # Adapter Verification
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 This document defines a lightweight adapter verification check for OxDeAI runtime integrations.
 
 ## Purpose

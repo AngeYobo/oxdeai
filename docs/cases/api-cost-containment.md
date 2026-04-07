@@ -1,5 +1,14 @@
 # API Cost Containment with OxDeAI
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 ## Scenario Summary
 
 An agent runtime is allowed to call external APIs through a tool or adapter boundary. Each request is individually reasonable, but repeated calls can accumulate cost quickly under retries, loops, or overly persistent planning behavior.

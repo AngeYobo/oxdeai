@@ -8,19 +8,21 @@ Non-normative (developer documentation)
 
 
 
+This document is a companion reference (non-normative). Normative definitions are in [../SPEC.md](../SPEC.md) and `docs/spec/`; artifact status (Draft/Stable) is defined there.
+
 > ⚠️ **Archival profile only.**
-> This document preserves the OxDeAI v1.0.2 protocol profile for historical and reference compatibility.
-> It does not describe the current OxDeAI protocol surface.
+> This document has been superseded. The canonical archival location is:
+> [`docs/archive/PROTOCOL-v1.0.2.md`](../docs/archive/PROTOCOL-v1.0.2.md)
 >
 > For the current protocol, see:
-> - [`PROTOCOL.md`](../../PROTOCOL.md) - current front-door overview
-> - [`SPEC.md`](../../SPEC.md) - current normative specification
-
----
+> - [`PROTOCOL.md`](../PROTOCOL.md) - current front-door overview
+> - [`SPEC.md`](../SPEC.md) - current normative specification
 
 # OxDeAI Protocol (Legacy v1.0.2 Profile)
 
 This document preserves the v1.0.2 protocol profile for archival/reference compatibility.
+The canonical archival copy is at [`docs/archive/PROTOCOL-v1.0.2.md`](../docs/archive/PROTOCOL-v1.0.2.md).
+Reference locked vectors (current line): `docs/spec/test-vectors/canonicalization-v1.json`, `authorization-v1.json`, `pep-vectors-v1.json`, `delegation-vectors-v1.json`.
 
 ## 1. Conformance Language
 
@@ -53,7 +55,7 @@ This protocol is implementation-independent. `@oxdeai/core` is a reference imple
 - **AuditEvent**: append-only event emitted during evaluation.
 - **Audit Head Hash**: chain tip hash over ordered audit events.
 - **VerificationEnvelopeV1**: portable artifact containing snapshot + events.
-- **VerificationResult**: unified verifier output (`ok|invalid|inconclusive`) with violations.
+- **VerificationResult**: unified verifier output (`ok|invalid|inconclusive`) with violations. Protocol decisions remain ALLOW/DENY with deterministic error codes defined in the specs; `ok/invalid/inconclusive` are interface-level summaries only.
 
 ---
 
@@ -74,7 +76,7 @@ OxDeAI does **not** replace domain authn/authz, settlement finality, or infrastr
 
 ## 5. Canonical JSON Rules (Normative)
 
-All protocol hashing/encoding paths MUST use canonical JSON.
+All protocol hashing/encoding paths MUST use canonical JSON per `canonicalization-v1`; all hashes and signature preimages MUST use `canonicalization-v1`.
 
 Canonicalization rules:
 
@@ -135,7 +137,7 @@ Optional:
 - `tool`
 - `tool_call`
 
-`signature` MUST NOT be included in `intent_hash`.
+`signature` MUST NOT be included in `intent_hash`.  
 Unknown/non-binding fields MUST NOT affect `intent_hash`.
 
 ### Example Intent JSON
@@ -297,7 +299,7 @@ Chain recurrence:
 - `head_0 = ""` (empty UTF-8 string)
 - `head_{n+1} = sha256_hex( head_n || "\n" || canonical_event_bytes_n )`
 
-Events MUST be processed in order.
+Events MUST be processed in order.  
 `timestamp` MUST be non-decreasing across the sequence.
 
 ### Example audit excerpt
@@ -464,7 +466,7 @@ Disallowed in deterministic evaluation/verification:
 - locale-dependent formatting
 - floating-point non-finite values in canonicalized data
 
-Strict mode MUST fail closed when required deterministic inputs (for example `now`) are missing.
+Strict mode MUST fail closed when required deterministic inputs (for example `now`) are missing.  
 Best-effort mode MAY continue but MUST preserve deterministic processing over provided inputs.
 
 ---
@@ -495,6 +497,12 @@ Conformance suites MUST check deterministic equivalence, including:
 - snapshot roundtrip idempotence
 - deterministic violation ordering
 - replay/verification consistency across processes/runtimes
+
+DelegationV1 conformance (v1.3+) additionally requires:
+- `delegation_parent_hash = SHA256(canonical_json(AuthorizationV1))` - key-order invariant
+- `verifyDelegation()` field/structural checks - no crypto required
+- `verifyDelegationChain()` - hash recomputation, chain structural checks
+- Ed25519 signature path - via test key material in `opts.trustedKeySets`
 
 Reference vectors are distributed in `@oxdeai/conformance`.
 

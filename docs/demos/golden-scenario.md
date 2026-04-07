@@ -1,5 +1,14 @@
 # Golden Scenario
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 This document defines the canonical cross-runtime OxDeAI demonstration scenario.
 
 ## Scenario Definition
