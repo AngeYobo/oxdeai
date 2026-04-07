@@ -339,7 +339,7 @@
         <div class="section-label">demo</div>
         <h2 class="section-title">Non-bypassable execution demo.</h2>
         <p class="section-sub">
-          Two paths: direct calls fail. Authorized path succeeds. Execution is only reachable through the boundary.
+          Direct calls fail. Authorized path succeeds. Execution is only reachable through the boundary.
         </p>
 
         <div class="demo-wrap">
@@ -349,34 +349,39 @@
             </div>
             <div class="demo-title-bar">non-bypassable-demo - oxdeai</div>
           </div>
+
           <img
             class="demo-gif"
             src="assets/non-bypassable-split.gif"
-            alt="OxDeAI non-bypassable terminal demo: direct call 403, gateway enforced ALLOW/DENY/REPLAY"
+            alt="OxDeAI non-bypassable terminal demo: direct call returns 403, gateway path enforces ALLOW, DENY, and REPLAY"
             loading="lazy"
           >
+
           <div class="demo-caption">
-            Direct upstream call → 403. <br>
-            Gateway path → authorization verified (intent + state) → execution.
+            <div><strong>Direct upstream call</strong> → 403</div>
+            <div><strong>Gateway path</strong> → authorization verified (intent + state) → execution</div>
           </div>
+
           <ul class="demo-outcomes">
             <li>ALLOW → executed</li>
             <li>DENY → blocked</li>
             <li>REPLAY → blocked</li>
             <li>BYPASS → rejected (403)</li>
           </ul>
+
           <div class="demo-conclusion">
-            Execution is unreachable without a valid authorization artifact.
+            <strong>No valid authorization → no execution path.</strong>
           </div>
         </div>
 
         <div class="install-strip" style="margin-top: 24px;">
           <div class="install-lines">
-            <div class="install-code"><span class="prefix">$ </span>git clone https://github.com/AngeYobo/oxdeai.git</div>
-            <div class="install-code"><span class="prefix">$ </span>cd oxdeai &amp;&amp; pnpm install &amp;&amp; pnpm build</div>
-            <div class="install-code"><span class="prefix">$ </span>pnpm -C examples/non-bypassable-demo run agent</div>
+            <div class="install-code"><span class="prefix">$ </span>export UPSTREAM_EXECUTOR_TOKEN=demo-internal-token</div>
+            <div class="install-code"><span class="prefix">$ </span>node examples/non-bypassable-demo/protected-upstream.mjs</div>
+            <div class="install-code"><span class="prefix">$ </span>node examples/non-bypassable-demo/pep-gateway.mjs</div>
+            <div class="install-code"><span class="prefix">$ </span>node examples/non-bypassable-demo/agent.mjs</div>
           </div>
-          <a class="btn btn-secondary" href="https://github.com/AngeYobo/oxdeai/tree/main/docs/media/non-bypassable-split.gif" target="_blank" rel="noopener">View demo artifact →</a>
+          <a class="btn btn-secondary" href="https://github.com/AngeYobo/oxdeai/tree/main/examples/non-bypassable-demo" target="_blank" rel="noopener">View demo source →</a>
         </div>
       </div>
     </section>
