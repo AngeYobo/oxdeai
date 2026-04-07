@@ -1,7 +1,7 @@
 # OxDeAI AuthorizationV1 Specification
 
 **Version:** v1
-**Status:** Draft (Normative Artifact Specification)
+**Status:** Stable (Normative Specification)
 
 ---
 

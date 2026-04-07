@@ -8,7 +8,7 @@ Non-normative (developer documentation)
 
 
 
-Non-normative positioning. Normative specs are in `SPEC.md` and `docs/spec/`; artifact status (Draft/Stable) is defined there.
+Non-normative positioning. Normative specs are in `SPEC.md` and `docs/spec/`; artifact status is defined there (AuthorizationV1/DelegationV1/PEP Stable; VerificationEnvelope pending; ExecutionReceipt planned).
 
 **Objective**
 Reframe OxDeAI as the mandatory enforcement layer for autonomous learning systems derived from System M architectures.
@@ -78,4 +78,4 @@ The paper describes how agents will learn and act continuously. What it misses i
 System M decides what to do. OxDeAI decides what is allowed to happen.  
 Without an execution boundary, learning systems are not deployable.
 
-Status signals: Canonicalization locked; AuthorizationV1 / PEP / DelegationV1 are Draft until full conformance/CI lock; VerificationEnvelopeV1 pending; ExecutionReceiptV1 planned. Locked vectors: `docs/spec/test-vectors/canonicalization-v1.json`, `authorization-v1.json`, `pep-vectors-v1.json`, `delegation-vectors-v1.json`.
+Status signals: Canonicalization locked; AuthorizationV1 / PEP / DelegationV1 are Stable; VerificationEnvelopeV1 pending; ExecutionReceiptV1 planned. Locked vectors: `docs/spec/test-vectors/canonicalization-v1.json`, `authorization-v1.json`, `pep-vectors-v1.json`, `delegation-vectors-v1.json`.

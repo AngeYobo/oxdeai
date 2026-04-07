@@ -1,6 +1,6 @@
 # DelegationV1 Specification
 
-**Status:** Draft (pending locked conformance vectors and CI harness coverage)
+**Status:** Stable (Normative Specification)
 **Version:** v1.3.0
 **Depends on:** `canonicalization-v1`, `AuthorizationV1`
 

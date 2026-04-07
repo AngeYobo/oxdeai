@@ -9,7 +9,7 @@ Non-normative (developer documentation)
 
 
 
-Non-normative design proposal. Normative specs are in `SPEC.md` and `docs/spec/`; artifact status (Draft/Stable) is defined there. All hashes and signature preimages MUST use `canonicalization-v1`. Locked vectors (current line): `docs/spec/test-vectors/canonicalization-v1.json`, `authorization-v1.json`, `pep-vectors-v1.json`, `delegation-vectors-v1.json`.
+Non-normative design proposal. Normative specs are in `SPEC.md` and `docs/spec/`; artifact status is defined there (AuthorizationV1/DelegationV1/PEP Stable; VerificationEnvelope pending; ExecutionReceipt planned). All hashes and signature preimages MUST use `canonicalization-v1`. Locked vectors (current line): `docs/spec/test-vectors/canonicalization-v1.json`, `authorization-v1.json`, `pep-vectors-v1.json`, `delegation-vectors-v1.json`.
 
 Status: **Design proposal only**.  
 This document is **not shipped behavior** in OxDeAI v1.0.2.

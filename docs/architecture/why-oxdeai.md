@@ -9,7 +9,7 @@ Non-normative (developer documentation)
 
 
 
-Non-normative positioning. Normative specs are in `SPEC.md` and `docs/spec/`; artifact status (Draft/Stable) is defined there.
+Non-normative positioning. Normative specs are in `SPEC.md` and `docs/spec/`; artifact status is defined there (AuthorizationV1/DelegationV1/PEP Stable; VerificationEnvelope pending; ExecutionReceipt planned).
 
 > Control execution, not just behavior.
 
@@ -169,7 +169,7 @@ child presents expired delegation         ->  DENY  (expiry)
 
 The demos differ by runtime surface, not by OxDeAI semantics. Each produces the same protocol outcomes under the same policy model.
 
-Status signals: Canonicalization vectors are locked; AuthorizationV1 / PEP / DelegationV1 remain Draft until full conformance/CI lock; VerificationEnvelopeV1 pending; ExecutionReceiptV1 planned. Proof points: locked vectors - `docs/spec/test-vectors/canonicalization-v1.json`, `authorization-v1.json`, `pep-vectors-v1.json`, `delegation-vectors-v1.json`.
+Status signals: Canonicalization vectors are locked; AuthorizationV1 / PEP / DelegationV1 are Stable; VerificationEnvelopeV1 pending; ExecutionReceiptV1 planned. Proof points: locked vectors - `docs/spec/test-vectors/canonicalization-v1.json`, `authorization-v1.json`, `pep-vectors-v1.json`, `delegation-vectors-v1.json`.
 
 ## Positioning
 

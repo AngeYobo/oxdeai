@@ -1,6 +1,6 @@
 # OxDeAI PEP Gateway Specification v1
 
-**Status:** Draft
+**Status:** Stable (Normative Specification)
 **Category:** Standards Track
 
 ---

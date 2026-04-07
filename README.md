@@ -26,6 +26,16 @@ No valid authorization
 
 ---
 
+## Mental Model
+
+Agents propose actions.
+
+OxDeAI decides if they are allowed to execute.
+
+No authorization → no execution path.
+
+---
+
 ## Core Model
 
 OxDeAI introduces an explicit decision phase:
@@ -44,6 +54,13 @@ proposal → authorization → execution
 
 If `ALLOW` → emits **AuthorizationV1**
 If `DENY` → execution is unreachable
+
+## Core Invariants
+
+- No authorization → no execution
+- (intent, state, policy) → deterministic ALLOW | DENY
+- Same input → same decision
+- Verification failure → fail closed
 
 ---
 
@@ -113,6 +130,16 @@ You are relying on **best-effort enforcement**.
 
 ---
 
+## Positioning
+
+Most agent systems control behavior.
+
+OxDeAI controls execution.
+
+Without an execution boundary, agents are not production-safe.
+
+---
+
 ## How It Works
 
 1. Agent proposes an action
@@ -177,9 +204,10 @@ OxDeAI is a protocol composed of:
 - [`packages/conformance/`](./packages/conformance)
 - [`docs/spec/`](./docs/spec)
 
-Document model:
-- `docs/spec/**` — normative protocol definitions
-- `docs/**` — non-normative guides and examples; if there is a conflict, `docs/spec/**` wins
+## Document Model
+
+- `docs/spec/**` - normative protocol definitions
+- `docs/**` - non-normative guides and examples; if there is a conflict, `docs/spec/**` wins
 
 ---
 
@@ -336,7 +364,7 @@ ALLOW / ALLOW / DENY / verifyEnvelope() => ok
 | ---------------------- | ------- |
 | AuthorizationV1        | Stable  |
 | DelegationV1           | Stable  |
-| VerificationEnvelopeV1 | Stable  |
+| VerificationEnvelopeV1 | Draft   |
 | ExecutionReceiptV1     | Planned |
 
 ---

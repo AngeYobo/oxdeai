@@ -1,6 +1,6 @@
 # Verification Specification v1
 
-**Status:** Draft (normative for verification semantics; artifact statuses defined in their respective specs)  
+**Status:** Stable (Normative Specification for verification semantics; artifact statuses defined in their respective specs)  
 **Version:** v1.0.0  
 **Non-normative sources of truth:** None - this file is normative for verification behavior. Canonical artifact definitions remain in `docs/spec/authorization-v1.md`, `delegation-v1.md`, `pep-gateway-v1.md`, and `canonicalization-v1.md`.
 
