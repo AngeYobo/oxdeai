@@ -19,6 +19,11 @@ Most systems rely on prompts or checks after the fact.
 
 **OxDeAI enforces execution before anything happens.**
 
+```
+No valid authorization
+→ no execution path
+```
+
 ---
 
 ## Core Model
@@ -171,6 +176,10 @@ OxDeAI is a protocol composed of:
 - [`packages/core/src/`](./packages/core/src)
 - [`packages/conformance/`](./packages/conformance)
 - [`docs/spec/`](./docs/spec)
+
+Document model:
+- `docs/spec/**` — normative protocol definitions
+- `docs/**` — non-normative guides and examples; if there is a conflict, `docs/spec/**` wins
 
 ---
 
@@ -373,4 +382,3 @@ Agents propose actions.
 OxDeAI decides if they can execute.
 
 > **No authorization → no execution.**
-

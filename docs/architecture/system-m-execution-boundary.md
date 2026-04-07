@@ -1,3 +1,13 @@
+# System M Execution Boundary
+
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
 Non-normative positioning. Normative specs are in `SPEC.md` and `docs/spec/`; artifact status (Draft/Stable) is defined there.
 
 **Objective**
@@ -16,7 +26,7 @@ Reframe OxDeAI as the mandatory enforcement layer for autonomous learning system
 **Architectures**
 - Paper: `System M → Agent → Action → World`  
 - Production: `System M → Agent → OxDeAI → Execution → World`  
-OxDeAI sits on the critical path—non-optional, not a sidecar.
+OxDeAI sits on the critical path non-optional, not a sidecar.
 
 **Enforcement Invariants (replacing “learning-aware policies”)**
 - Capability invariant: actions restricted to approved capability set.  

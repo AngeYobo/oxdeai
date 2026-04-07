@@ -1,5 +1,14 @@
 # Adoption Checklist
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 This checklist summarizes the current v1.4 adoption-readiness evidence for maintained integrations.
 
 ## Supported Adapters

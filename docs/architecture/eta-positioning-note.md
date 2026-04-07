@@ -1,3 +1,13 @@
+# Eta Positioning Note
+
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
 Non-normative positioning. Normative specs are in `SPEC.md` and `docs/spec/`; artifact status (Draft/Stable) is defined there.
 
 **Purpose**
@@ -15,7 +25,7 @@ Assert OxDeAI as the production enforcement layer for autonomous learning system
 **3) Architecture Upgrade**
 - Paper path: `System M → Agent → Action → World`  
 - Production path: `System M → Agent → OxDeAI → Execution → World`  
-OxDeAI is on the critical path—non-optional, not a sidecar.
+OxDeAI is on the critical path-non-optional, not a sidecar.
 
 **4) Mapping to OxDeAI**
 - Auth(A,P,S): present (intent+policy+state → decision)  
@@ -32,7 +42,7 @@ OxDeAI is on the critical path—non-optional, not a sidecar.
 - Conformance not explicitly tied to ETA requirements.  
 - ABSTAIN outcome absent; may be needed to force explicit caller handling.
 
-**6) Roadmap Hardening — Enforcement Invariants**
+**6) Roadmap Hardening - Enforcement Invariants**
 Define non-bypassable constraints independent of model behavior. Examples:  
 - Capability invariant: only approved capabilities are executable.  
 - Budget invariant: resource/time/financial ceilings enforced pre-dispatch.  

@@ -1,5 +1,14 @@
 # CrewAI Integration
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 ## Overview
 
 This integration kit targets CrewAI-shaped task and tool execution flows.

@@ -1,5 +1,14 @@
 # OxDeAI Protocol
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 Non-normative overview. Normative specs live in `SPEC.md` and `docs/spec/`; some artifacts remain Draft until conformance vectors and CI are fully locked.
 
 OxDeAI is a deterministic execution-time authorization protocol for autonomous systems.

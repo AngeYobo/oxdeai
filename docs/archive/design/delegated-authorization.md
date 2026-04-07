@@ -1,5 +1,14 @@
 # Delegated Authorization Design
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 > **Status: Superseded - implemented as DelegationV1 (v1.3+)**
 >
 > This document was a pre-implementation design note for delegated agent authorization.

@@ -1,3 +1,13 @@
+# OxDeAI Threat Model
+
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
 This document is a companion reference (non-normative). For the canonical normative specification, see [../SPEC.md](../SPEC.md) and `docs/spec/`; artifact status is defined there.
 
 # OxDeAI Threat Model

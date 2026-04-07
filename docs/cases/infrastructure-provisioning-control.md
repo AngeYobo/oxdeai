@@ -1,5 +1,14 @@
 # Infrastructure Provisioning Control with OxDeAI
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 ## Scenario Summary
 
 An agent runtime is allowed to trigger infrastructure operations such as provisioning a cloud instance or initiating a deployment step. These actions create real external effects and are often expensive, slow to reverse, or operationally sensitive.

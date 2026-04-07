@@ -1,5 +1,14 @@
 # OxDeAI v1.0.2 Release Checklist
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 Use this checklist for protocol-grade releases in the `1.0.x` line.
 
 ## 1) API Extractor Baseline Update

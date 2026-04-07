@@ -1,5 +1,14 @@
 # Adapter Reference Architecture
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 This document defines the reference integration shape for embedding OxDeAI under agent runtimes.
 
 Shared adapter contract:

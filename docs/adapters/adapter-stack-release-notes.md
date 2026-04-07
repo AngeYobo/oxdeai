@@ -1,6 +1,17 @@
 # Adapter Stack Release Notes
 
-## Status: Complete (v1.4)
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
+## Release Status
+
+Complete (v1.4)
 
 The OxDeAI adapter stack is complete. All maintained runtime adapters have been implemented, tested, and validated.
 

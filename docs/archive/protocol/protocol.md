@@ -1,3 +1,13 @@
+# OxDeAI Protocol (Legacy v1.0.2 Profile)
+
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
 This document is a companion reference (non-normative). Normative definitions are in [../SPEC.md](../SPEC.md) and `docs/spec/`; artifact status (Draft/Stable) is defined there.
 
 > ⚠️ **Archival profile only.**

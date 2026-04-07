@@ -1,5 +1,14 @@
 # OxDeAI Release Policy
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 Last updated: 2026-03-19
 
 This document is the single source of truth for OxDeAI release governance and release execution.

@@ -1,5 +1,20 @@
 # Delegation PBT - Design Notes
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
+> Non-normative document.  
+> This file describes property-based testing strategies and coverage for DelegationV1.  
+> It is intended for developer workflows and test validation only.  
+>  
+> See SPEC.md and docs/spec/* for authoritative protocol definitions and requirements.
+
 Property-based test coverage for `DelegationV1` across `@oxdeai/core`,
 `@oxdeai/guard`, and `@oxdeai/compat`.
 

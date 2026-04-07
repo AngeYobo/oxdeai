@@ -1,5 +1,14 @@
 # Security Authorization Gate
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 Repo-level pre-merge security gate (non-normative). Protocol definitions live in `SPEC.md` and `docs/spec/`; this gate enforces repository policy, not OxDeAI protocol artifacts.
 
 Deterministic pre-merge authorization: audit intent + state + policy -> ALLOW / DENY.

@@ -1,3 +1,13 @@
+# OxDeAI SPEC (Developer Companion, Non-Normative)
+
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
 This document is a companion reference (non-normative). For the canonical normative specification, see [../SPEC.md](../SPEC.md) and `docs/spec/`; artifact status (Draft/Stable) is defined there.
 
 # OxDeAI SPEC (Developer Companion, Non-Normative)

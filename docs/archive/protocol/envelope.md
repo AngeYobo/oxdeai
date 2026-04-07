@@ -1,3 +1,13 @@
+# Verification Envelope
+
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
 This document is a companion reference (non-normative). Normative definitions are in [../SPEC.md](../SPEC.md) and `docs/spec/`; artifact status (Draft/Stable) is defined there.
 
 # Verification Envelope

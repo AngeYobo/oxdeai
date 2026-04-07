@@ -1,5 +1,14 @@
 # OxDeAI Adapter Stack
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 This document describes the full adapter layer model and the complete set of runtime adapter packages.
 
 ## Layer Model

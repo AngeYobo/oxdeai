@@ -1,5 +1,14 @@
 # Shared Demo Scenario
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 This document defines the canonical cross-adapter demo scenario for maintained OxDeAI integrations.
 
 It is a reproducibility contract for adapter demos.

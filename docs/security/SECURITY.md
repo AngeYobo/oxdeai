@@ -1,5 +1,14 @@
 # Security Policy and Threat Model (v1.3.0)
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 Non-normative. Normative protocol definitions are in `SPEC.md` and `docs/spec/`; artifact status (Draft/Stable) is defined there. Locked vectors: `docs/spec/test-vectors/canonicalization-v1.json`, `authorization-v1.json`, `pep-vectors-v1.json`, `delegation-vectors-v1.json`.
 
 This document defines OxDeAI protocol security scope, assumptions, and required failure behavior.

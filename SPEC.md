@@ -9,6 +9,38 @@ This document defines the OxDeAI execution authorization protocol.
 
 OxDeAI is a portable, language-agnostic protocol for deterministic pre-execution authorization and post-execution evidence verification in autonomous systems.
 
+## Document Model
+
+* `docs/spec/**` → normative (protocol definitions)
+* `docs/**` → non-normative (guides, architecture, examples)
+
+If a conflict exists, `docs/spec/**` is authoritative.
+
+## Specification Index
+
+### Core
+
+* `docs/spec/core/canonicalization-v1.md`
+* `docs/spec/core/eta-core-v1.md`
+
+### Artifacts
+
+* `docs/spec/artifacts/authorization-v1.md`
+* `docs/spec/artifacts/delegation-v1.md`
+
+### Enforcement
+
+* `docs/spec/enforcement/pep-gateway-v1.md`
+
+### Verification
+
+* `docs/spec/verification/verification-v1.md`
+
+### Conformance
+
+* `docs/spec/conformance/conformance-v1.md`
+* `docs/spec/conformance/test-vectors-v1.md`
+
 The protocol defines:
 
 - portable authorization artifacts
@@ -22,6 +54,11 @@ A Policy Decision Point (PDP) evaluates whether an action is allowed.
 A Policy Enforcement Point (PEP) verifies authorization artifacts and executes the action only if verification succeeds.
 
 The TypeScript implementation in this repository is the reference implementation of this protocol, but conformant implementations MAY exist in any language if they reproduce the same artifacts and verification behavior.
+
+```
+No valid authorization
+→ no execution path
+```
 
 Normative protocol text uses RFC 2119 terms: MUST, MUST NOT, SHOULD, SHOULD NOT, MAY.
 

@@ -1,5 +1,14 @@
 # Invariants
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 Protocol-level invariants defined from v1.0.0. Extended with delegation invariants in v1.3.0.
 
 ## I1 - Canonical hashing ignores key insertion order

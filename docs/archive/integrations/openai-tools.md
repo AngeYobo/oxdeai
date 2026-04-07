@@ -1,5 +1,14 @@
 # OpenAI Tools Integration
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 ## Overview
 
 This integration kit targets OpenAI tools or function-call style runtimes.

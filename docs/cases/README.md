@@ -1,5 +1,14 @@
 # Case Writeups
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 These case writeups show how OxDeAI is integrated as an execution authorization boundary in concrete engineering scenarios.
 
 They are integration references.

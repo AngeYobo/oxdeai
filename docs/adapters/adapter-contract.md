@@ -1,5 +1,14 @@
 # Shared Adapter Contract
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 This document defines the shared v1.4 adapter contract for OxDeAI integrations.
 
 It is an integration contract for adapters and runtime wiring.

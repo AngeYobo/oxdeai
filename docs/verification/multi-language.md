@@ -1,5 +1,14 @@
 # Multi-Language Implementation Guide
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 OxDeAI protocol artifacts are language-agnostic. Rust, Go, and Python teams can implement interoperable verification today without rewriting the TypeScript engine first.
 
 ## What You Can Implement Today

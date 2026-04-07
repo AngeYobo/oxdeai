@@ -1,3 +1,13 @@
+# OxDeAI Protocol (Legacy v1.0.2 Profile)
+
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
 > ⚠️ **Archival profile only.**
 > This document preserves the OxDeAI v1.0.2 protocol profile for historical and reference compatibility.
 > It does not describe the current OxDeAI protocol surface.

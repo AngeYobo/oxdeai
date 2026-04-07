@@ -1,5 +1,14 @@
 # Media
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 This directory contains short visual demos for repository onboarding.
 
 The demos are lightweight animations of the canonical authorization flow:

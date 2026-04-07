@@ -1,5 +1,14 @@
 # Releasing OxDeAI Packages
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 This repo uses **package-scoped tags only**. Legacy global tags like `vX.Y.Z` are historical and must not be used for new releases.
 
 ## Tag format

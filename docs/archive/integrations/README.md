@@ -1,5 +1,14 @@
 # Integrations
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 This directory indexes the maintained OxDeAI integration guides.
 
 These guides are integration-facing documentation for adapters and example runtimes.

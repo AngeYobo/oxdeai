@@ -1,5 +1,14 @@
 # Adapter Validation
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 ## Purpose
 
 Adapter validation gates exist to prove two integration-level properties across maintained OxDeAI adapters:

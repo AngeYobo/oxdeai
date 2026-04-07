@@ -1,5 +1,14 @@
 # DelegationV1 Implementation Plan
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 **Target:** `@oxdeai/core` + `@oxdeai/guard`
 **Depends on:** DelegationV1 spec (`docs/spec/delegation-v1.md`), AuthorizationV1
 

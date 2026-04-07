@@ -1,5 +1,14 @@
 # AutoGen Integration
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 ## Overview
 
 This integration kit targets AutoGen-style multi-message and tool-execution flows.

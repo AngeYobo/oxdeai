@@ -1,5 +1,14 @@
 # OxDeAI Benchmark Announcement
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 OxDeAI now includes a reproducible benchmark suite for measuring the runtime cost of its authorization boundary.
 
 The most important result from the latest full-suite local run is straightforward:

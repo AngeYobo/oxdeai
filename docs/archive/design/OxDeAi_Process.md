@@ -1,272 +1,311 @@
-OxDeAI - Execution Authorization Process
+# OxDeAI - Execution Authorization Process
 
-Overview
+## Status
 
-OxDeAI enforces deterministic authorization at the execution boundary of autonomous systems.
+Non-normative (developer documentation)
 
-It separates two concerns that are often conflated:
- • Decision: whether an action is allowed
- • Execution: whether that action can actually occur
 
-OxDeAI ensures that:
 
-No side effect is reachable unless explicitly authorized and verified.
 
-⸻
 
-Core Model
+---
+
+# OxDeAI - Execution Authorization Process
+
+## Overview
+
+OxDeAI enforces **deterministic authorization at the execution boundary** of autonomous systems.
+
+It explicitly separates two concerns:
+
+* **Decision**: whether an action is allowed
+* **Execution**: whether that action can actually occur
+
+**Invariant:**
+
+> No side effect is reachable unless explicitly authorized and verified.
+
+---
+
+## Core Model
 
 At the center of the protocol is a deterministic evaluation:
 
+```
 (intent, state, policy) → ALLOW | DENY
+```
 
- • intent: the proposed action (tool call, API request, infra operation, etc.)
- • state: current policy state (budgets, concurrency, replay window, etc.)
- • policy: deterministic rules governing allowed behavior
+* **intent**: proposed action (tool call, API request, infra operation, etc.)
+* **state**: current system state (budgets, concurrency, replay window, etc.)
+* **policy**: deterministic rules governing behavior
 
-This evaluation is:
- • deterministic
- • side-effect free
- • reproducible across environments
+### Properties
 
-⸻
+* Deterministic
+* Side-effect free
+* Reproducible across environments
 
-High-Level Flow
+---
 
-Agent → Propose Action → Policy Evaluation → Authorization → Verification → Execution
+## High-Level Flow
 
-Each step is strictly separated and enforced.
+```
+Agent → Propose → Evaluate → Authorize → Verify → Execute
+```
 
-⸻
+Each step is **strictly separated and enforced**.
 
-Step-by-Step Process
+---
 
-1. Action Proposal
+## Step-by-Step Process
+
+### 1. Action Proposal
 
 An agent (LLM, workflow, automation system) proposes an action:
- • call an external API
- • provision infrastructure
- • execute a command
- • trigger a workflow
 
-At this stage:
+* Call an external API
+* Provision infrastructure
+* Execute a command
+* Trigger a workflow
 
-This is only a proposal, not execution.
+**Important:**
 
-⸻
+> This is a proposal, not execution.
 
-2. Deterministic Policy Evaluation (PDP)
+---
 
-The Policy Engine (PDP) evaluates:
+### 2. Deterministic Policy Evaluation (PDP)
 
+The Policy Decision Point evaluates:
+
+```
 (intent, state, policy)
+```
 
-Output:
- • ALLOW
- • DENY
+**Output:**
 
-Properties:
- • no randomness
- • no hidden state
- • no external dependency
- • fail-closed by default
+* `ALLOW`
+* `DENY`
 
-⸻
+**Properties:**
 
-3. Decision Outcomes
+* No randomness
+* No hidden state
+* No external dependencies
+* Fail-closed by default
 
-DENY
-If the decision is DENY:
- • execution is blocked
- • no side effect occurs
- • an audit event is recorded
+---
 
+### 3. Decision Outcomes
+
+#### DENY
+
+* Execution is blocked
+* No side effects occur
+* Audit event is recorded
+
+```
 DENY → no execution
+```
 
+---
 
-⸻
+#### ALLOW
 
-ALLOW
-If the decision is ALLOW:
- • the system emits a signed AuthorizationV1 artifact
+* System emits a signed **AuthorizationV1** artifact
 
-This artifact contains:
- • intent_hash
- • state_hash
- • policy_id
- • issuer / audience
- • expiry
- • cryptographic signature (Ed25519)
+**Contains:**
 
+* `intent_hash`
+* `state_hash`
+* `policy_id`
+* `issuer / audience`
+* `expiry`
+* `signature (Ed25519)`
+
+```
 ALLOW → AuthorizationV1 (signed, bounded, verifiable)
+```
 
+---
 
-⸻
+### 4. Optional Delegation
 
-4. Optional Delegation
+In multi-agent systems:
 
-If the system involves multiple agents:
- • the original authorization can be narrowed into a DelegationV1
+* Authorization can be narrowed into **DelegationV1**
 
-Properties:
- • derived from a parent AuthorizationV1
- • strictly narrower scope
- • single-hop only
- • cryptographically bound via parent hash
+**Properties:**
 
+* Derived from parent AuthorizationV1
+* Strictly narrower scope
+* Single-hop only
+* Cryptographically bound (parent hash)
+
+```
 AuthorizationV1 → DelegationV1 (optional)
+```
 
+---
 
-⸻
+### 5. Mandatory Execution Boundary (PEP)
 
-5. Mandatory Execution Boundary (PEP)
+Before execution, the **Policy Enforcement Point (PEP)** verifies:
 
-Before any action executes, a Policy Enforcement Point (PEP) must verify:
- • AuthorizationV1
-or
- • DelegationV1 chain
+* AuthorizationV1
+  **or**
+* DelegationV1 chain
 
-Verification includes:
- • signature validation
- • expiry check
- • intent binding
- • state binding
- • policy consistency
- • replay protection
+**Verification includes:**
 
-execution is unreachable without verification
+* Signature validation
+* Expiry check
+* Intent binding
+* State binding
+* Policy consistency
+* Replay protection
 
+**Invariant:**
 
-⸻
+> Execution is unreachable without verification.
 
-6. Execution
+---
 
-Only after successful verification:
+### 6. Execution
 
+```
 verify(...) == ok → execution allowed
-
-Otherwise:
-
 verify(...) != ok → fail closed (no execution)
+```
 
+---
 
-⸻
+### 7. Audit and Evidence
 
-7. Audit and Evidence
+Each decision produces audit data:
 
-Every decision produces audit data:
- • hash-chained audit events
- • canonical state snapshot
- • policy identity
+* Hash-chained audit events
+* Canonical state snapshot
+* Policy identity
 
-These are packaged into:
+Packaged into:
 
-VerificationEnvelopeV1
+### VerificationEnvelopeV1
 
-Contains:
- • snapshot
- • audit events
- • policy binding
+**Contains:**
 
-⸻
+* Snapshot
+* Audit events
+* Policy binding
 
-8. Stateless Verification
+---
+
+### 8. Stateless Verification
 
 Any third party can verify:
- • AuthorizationV1
- • DelegationV1
- • VerificationEnvelopeV1
 
-Using stateless APIs:
- • verifyAuthorization
- • verifyDelegation
- • verifyDelegationChain
- • verifyEnvelope
- • verifySnapshot
- • verifyAuditEvents
+* AuthorizationV1
+* DelegationV1
+* VerificationEnvelopeV1
 
-Verification result:
+**APIs:**
 
+* `verifyAuthorization`
+* `verifyDelegation`
+* `verifyDelegationChain`
+* `verifyEnvelope`
+* `verifySnapshot`
+* `verifyAuditEvents`
+
+**Result:**
+
+```
 ok | invalid | inconclusive
+```
 
-Properties:
- • no access to runtime required
- • reproducible
- • portable
- • offline-capable
+**Properties:**
 
-⸻
+* No runtime access required
+* Reproducible
+* Portable
+* Offline-capable
 
-Key Guarantees
+---
 
-1. Fail-Closed Execution
+## Key Guarantees
+
+### 1. Fail-Closed Execution
 
 If anything is invalid or ambiguous:
 
-execution MUST NOT occur
+> Execution MUST NOT occur
 
+---
 
-⸻
-
-2. Determinism
+### 2. Determinism
 
 Same inputs:
 
+```
 (intent, state, policy)
+```
 
 Always produce:
- • same decision
- • same artifacts
- • same hashes
 
-⸻
+* Same decision
+* Same artifacts
+* Same hashes
 
-3. Pre-Execution Enforcement
+---
+
+### 3. Pre-Execution Enforcement
 
 Authorization is enforced:
- • before execution
- • not after
- • not probabilistically
 
-⸻
+* Before execution
+* Not after
+* Not probabilistically
 
-4. Cryptographic Verifiability
+---
+
+### 4. Cryptographic Verifiability
 
 All allowed actions produce:
- • signed artifacts
- • independently verifiable proofs
 
-⸻
+* Signed artifacts
+* Independently verifiable proofs
 
-5. Separation of Concerns
+---
 
-Layer Responsibility
-Agent proposes actions
-PDP decides (ALLOW / DENY)
-[25/03/2026 15:22] Ange 🫆: PEP verifies before execution
-Execution performs side effects
-Verification proves correctness
+### 5. Separation of Concerns
 
+| Layer        | Responsibility            |
+| ------------ | ------------------------- |
+| Agent        | Proposes actions          |
+| PDP          | Decides (ALLOW / DENY)    |
+| PEP          | Verifies before execution |
+| Execution    | Performs side effects     |
+| Verification | Proves correctness        |
 
-⸻
+---
 
-Mental Model
+## Mental Model
 
-Agent reasoning is probabilistic
+* Agent reasoning is **probabilistic**
+* Execution must be **deterministic**
 
-Execution must be deterministic
+> OxDeAI enforces that boundary.
 
-OxDeAI enforces that boundary.
+---
 
-⸻
+## Summary
 
-Summary
+OxDeAI implements a strict execution pipeline:
 
-OxDeAI implements a strict execution model:
-
+```
 propose → decide → authorize → verify → execute
+```
 
-With one critical invariant:
+**Critical invariant:**
 
-Execution is unreachable without verification.
-
+> Execution is unreachable without verification.

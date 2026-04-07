@@ -1,5 +1,14 @@
 # Diagrams
 
+## Status
+
+Non-normative (developer documentation)
+
+
+
+
+
+
 OxDeAI diagrams are maintained with Excalidraw to keep architecture visuals editable, reviewable, and version-controlled.
 
 ## Policy
