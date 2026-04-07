@@ -115,7 +115,7 @@ parent agent receives AuthorizationV1
   -> child executes within delegated scope
 ```
 
-See [`docs/spec/delegation-v1.md`](../spec/delegation-v1.md) for the full artifact specification and chain verification rules.
+See [`docs/spec/delegation-v1.md`](../spec/artifacts/delegation-v1.md) for the full artifact specification and chain verification rules.
 
 ## Verification Evidence
 
@@ -186,11 +186,10 @@ OxDeAI does not replace runtimes, orchestration engines, or prompt layers. It en
 ## References
 
 - [`README.md`](../../README.md)
-- [`PROTOCOL.md`](../../PROTOCOL.md)
 - [`SPEC.md`](../../SPEC.md)
-- [`docs/spec/delegation-v1.md`](../spec/delegation-v1.md)
-- [`docs/adapter-contract.md`](../adapter-contract.md)
-- [`docs/pep-production-guide.md`](../pep-production-guide.md)
-- [`docs/integrations/README.md`](../integrations/README.md)
-- [`docs/integrations/shared-demo-scenario.md`](../integrations/shared-demo-scenario.md)
+- [`docs/spec/delegation-v1.md`](../spec/artifacts/delegation-v1.md)
+- [`docs/adapter-contract.md`](../adapters/adapter-contract.md)
+- [`docs/pep-production-guide.md`](../architecture/pep-production-guide.md)
+- [`docs/integrations/README.md`](../archive/integrations/README.md)
+- [`docs/integrations/shared-demo-scenario.md`](../archive/integrations/shared-demo-scenario.md)
 - [`docs/cases/README.md`](../cases/README.md)

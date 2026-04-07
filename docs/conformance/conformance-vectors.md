@@ -49,4 +49,4 @@ This index helps non-TypeScript implementers choose where to start in `packages/
 
 Passing all relevant vectors indicates behavioral alignment with the protocol profile for the selected version line.
 
-See [`packages/conformance/go-harness/README.md`](../packages/conformance/go-harness/README.md) for the adapter op protocol used by the Go harness.
+See [`packages/conformance/go-harness/README.md`](../../packages/conformance/go-harness/README.md) for the adapter op protocol used by the Go harness.

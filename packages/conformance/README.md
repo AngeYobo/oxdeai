@@ -113,6 +113,6 @@ Passing conformance means the implementation is behaviorally aligned with the Ox
 
 Related implementer docs:
 
-- [`docs/multi-language.md`](../../docs/multi-language.md)
-- [`docs/conformance-vectors.md`](../../docs/conformance-vectors.md)
+- [`docs/verification/multi-language.md`](../../docs/verification/multi-language.md)
+- [`docs/conformance/conformance-vectors.md`](../../docs/conformance/conformance-vectors.md)
 - [`packages/conformance/go-harness`](./go-harness)

@@ -14,9 +14,9 @@ Non-normative guide. Normative specs are in `SPEC.md` and `docs/spec/`; artifact
 This guide describes a minimal production wiring pattern for a Policy Enforcement Point (PEP) using OxDeAI.
 
 Reference architecture:
-- [`docs/adapter-reference-architecture.md`](./adapter-reference-architecture.md)
-- [`docs/adapter-contract.md`](./adapter-contract.md)
-- diagram workflow: [`docs/diagrams/README.md`](./diagrams/README.md)
+- [`docs/adapter-reference-architecture.md`](../adapters/adapter-reference-architecture.md)
+- [`docs/adapter-contract.md`](../adapters/adapter-contract.md)
+- diagram workflow: [`docs/diagrams/README.md`](../diagrams/README.md)
 
 ## Scope
 
@@ -28,7 +28,7 @@ OxDeAI remains the authorization layer at the execution boundary; it does not de
 
 ## Shared Adapter Contract Relation
 
-The shared adapter contract is documented in [`docs/adapter-contract.md`](./adapter-contract.md).
+The shared adapter contract is documented in [`docs/adapter-contract.md`](../adapters/adapter-contract.md).
 
 For production PEP wiring, that contract implies:
 

@@ -132,7 +132,7 @@ Important caveats:
 - absolute overhead in microseconds is the primary metric
 - p50 and mean are the clearest indicators of steady-state inline cost
 
-For a full run-specific write-up, see [`bench/BENCHMARK_SUMMARY.md`](../bench/BENCHMARK_SUMMARY.md).
+For a full run-specific write-up, see [`bench/BENCHMARK_SUMMARY.md`](../../bench/BENCHMARK_SUMMARY.md).
 
 ## Short developer-facing copies
 

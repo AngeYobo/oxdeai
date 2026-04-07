@@ -116,11 +116,10 @@ That means the envelope is internally consistent under the chosen verification m
 ## Related Repo References
 
 - [`examples/openai-tools`](../../examples/openai-tools)
-- [`docs/integrations/openai-tools.md`](../integrations/openai-tools.md)
-- [`docs/integrations/shared-demo-scenario.md`](../integrations/shared-demo-scenario.md)
-- [`docs/integrations/adapter-validation.md`](../integrations/adapter-validation.md)
-- [`docs/adapter-contract.md`](../adapter-contract.md)
-- [`docs/pep-production-guide.md`](../pep-production-guide.md)
-- [`PROTOCOL.md`](../../PROTOCOL.md)
+- [`docs/integrations/openai-tools.md`](../archive/integrations/openai-tools.md)
+- [`docs/integrations/shared-demo-scenario.md`](../archive/integrations/shared-demo-scenario.md)
+- [`docs/integrations/adapter-validation.md`](../archive/integrations/adapter-validation.md)
+- [`docs/adapter-contract.md`](../adapters/adapter-contract.md)
+- [`docs/pep-production-guide.md`](../architecture/pep-production-guide.md)
 - [`SPEC.md`](../../SPEC.md)
 - [`ROADMAP.md`](../../ROADMAP.md)
