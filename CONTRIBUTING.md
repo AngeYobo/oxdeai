@@ -1,97 +1,46 @@
-# Contributing to OxDeAI
+# Contributing
 
-## Project Philosophy
+## Setup
 
-OxDeAI is a deterministic authorization protocol for autonomous systems. The project is intentionally small, verifiable, and framework-agnostic.
+pnpm install  
+pnpm build  
+pnpm test  
 
-Contributions should preserve:
+## Core Principles
 
-- deterministic behavior
-- fail-closed enforcement
-- clear protocol boundaries
-- independent verifiability
+- deterministic evaluation only
+- no side effects in policy
+- fail-closed by default
 
-## Repository Structure
+## Validation
 
-- `@oxdeai/core` (`packages/core`): protocol reference implementation
-- `@oxdeai/sdk` (`packages/sdk`): integration surface for embedding OxDeAI in runtimes
-- `@oxdeai/conformance` (`packages/conformance`): protocol vectors and validation runner
-- `@oxdeai/cli` (`packages/cli`): protocol tooling for local build/verify/replay workflows
-- `examples/*`: reference and framework integration demonstrations
+Before opening a PR:
 
-## Contribution Areas
+pnpm -r build  
+pnpm -r test  
+pnpm -C packages/conformance validate  
+pnpm validate:adapters  
 
-Common contribution categories:
+## Guidelines
 
-- runtime adapters
-- SDK improvements
-- conformance vectors and validation coverage
-- protocol and integration documentation
-- examples and demo hardening
-- CLI/tooling improvements
+- keep changes minimal and focused
+- separate protocol vs documentation changes
+- preserve determinism guarantees
+- update tests when behavior changes
 
-## Pull Request Workflow
+## PRs
 
-Environment:
+- include rationale
+- reference affected artifacts (AuthorizationV1, DelegationV1, etc.)
+- ensure reproducibility
 
-- Node.js 20+ (CI uses Node 22)
-- pnpm 9+
+## Scope
 
-Linting: We currently rely on strict TypeScript typechecking (`pnpm lint`) instead of a separate ESLint/Prettier stack to keep the surface small; proposals to add full linting are welcome but should stay deterministic and lightweight.
+OxDeAI is:
 
-1. Fork the repository.
-2. Create a feature branch from `main`.
-3. Implement the change with focused commits.
-4. Run validation before opening a PR:
-   - `pnpm lint` (alias for repo-wide `pnpm typecheck`)
-   - `pnpm build`
-   - `pnpm test`
-   - `pnpm -C packages/conformance validate`
-   - `pnpm -C examples/openai-tools start`
-   - `pnpm -C examples/langgraph start`
-   - `pnpm -C examples/openclaw start`
-5. Open a PR with:
-   - problem statement
-   - scope of change
-   - validation results
-   - any compatibility notes
+- an execution authorization boundary
 
-## Protocol Change Rules
+OxDeAI is not:
 
-Any change that affects protocol semantics must include:
-
-- corresponding updates in `SPEC.md` (and protocol docs when applicable)
-- conformance vector updates in `packages/conformance/vectors`
-- backward compatibility review and explicit migration notes when needed
-
-Protocol-semantic changes without spec and conformance alignment should not be merged.
-
-## Adapter Contributions
-
-Adapter work must preserve the PDP/PEP boundary and fail-closed execution.
-
-- PDP: policy decision (`evaluate` / `evaluatePure`)
-- PEP: execution gate (`verifyAuthorization` before side effects)
-
-Use the adapter architecture and verification docs:
-
-- `docs/adapter-reference-architecture.md`
-- `docs/adapters/adapter-verification.md`
-
-## Security Reporting
-
-For vulnerability disclosure and security handling, see `SECURITY.md`.
-
-## Updating Architecture Diagrams
-
-Use Excalidraw for architecture diagrams in `docs/diagrams/`.
-
-When modifying a diagram:
-
-1. Open https://excalidraw.com
-2. Load the corresponding `.excalidraw` file
-3. Make changes
-4. Export `.svg` with scene data embedded
-5. Commit both files (`.excalidraw` and `.svg`) in the same change
-
-Do not add large PNG assets for architecture diagrams. SVG is the repository standard.
+- a framework
+- a runtime
