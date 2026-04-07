@@ -2,39 +2,18 @@
 
 [![CI](https://github.com/AngeYobo/oxdeai/actions/workflows/ci.yml/badge.svg)](https://github.com/AngeYobo/oxdeai/actions/workflows/ci.yml)
 
-> **Control execution, not just behavior.**
+Non-bypassable execution authorization for AI agents.
 
-A deterministic authorization layer that decides whether AI agent actions are allowed to execute **before any side effect occurs**.
+Deterministic boundary:
+(intent, state, policy) → ALLOW | DENY
 
-```text
-(intent + state + policy) → ALLOW | DENY
-```
+No authorization → no execution.
 
-* Same input → same decision
-* Fail-closed by default
-* No authorization → no execution
+Agents propose actions.  
+OxDeAI decides if they are allowed to execute.  
+No valid authorization → execution is unreachable.
 
-Agents can call APIs, provision infrastructure, and move money.
-Most systems rely on prompts or checks after the fact.
-
-**OxDeAI enforces execution before anything happens.**
-
-```
-No valid authorization
-→ no execution path
-```
-
----
-
-## Mental Model
-
-Agents propose actions.
-
-OxDeAI decides if they are allowed to execute.
-
-No authorization → no execution path.
-
----
+Authorization is evaluated before any side effect is reachable.
 
 ## Core Model
 

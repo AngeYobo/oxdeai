@@ -49,11 +49,10 @@
     <section id="hero">
       <div class="container">
         <div class="hero-eyebrow">execution authorization protocol</div>
-        <h1 class="hero-title">Control what your AI agents do before they do it.</h1>
-        <p class="hero-sub">Deterministic execution authorization for AI agents.</p>
+        <h1 class="hero-title">Non-bypassable execution boundary for AI agents</h1>
+        <p class="hero-sub">Deterministic evaluation: (intent, state, policy) → ALLOW | DENY. OxDeAI controls execution, not behavior.</p>
         <p class="hero-rule"><strong>No authorization → no execution.</strong></p>
-        <p class="hero-sub">Agents propose actions. OxDeAI decides if they are allowed to execute.</p>
-        <p class="hero-sub">Without an execution boundary, agent systems are not enforceable in production.</p>
+        <p class="hero-sub">Agents propose actions. OxDeAI decides if they are allowed to execute. Without this boundary, agent systems are not production-safe.</p>
         <div class="hero-pill-row">
           <span class="pill">Deterministic decisions</span>
           <span class="pill">Fail-closed boundary</span>
@@ -338,42 +337,46 @@
     <section id="demo">
       <div class="container">
         <div class="section-label">demo</div>
-        <h2 class="section-title">Execution boundary in action.</h2>
+        <h2 class="section-title">Non-bypassable execution demo.</h2>
         <p class="section-sub">
-          An agent proposes the same action twice. Executed exactly once.
-          Replay is blocked at the boundary before any side effect.
+          Two paths: direct calls fail. Authorized path succeeds. Execution is only reachable through the boundary.
         </p>
-    
+
         <div class="demo-wrap">
           <div class="demo-header">
             <div class="demo-dots">
               <span></span><span></span><span></span>
             </div>
-            <div class="demo-title-bar">execution-boundary-demo - oxdeai</div>
+            <div class="demo-title-bar">non-bypassable-demo - oxdeai</div>
           </div>
           <img
             class="demo-gif"
-            src="assets/demo.gif"
-            alt="OxDeAI terminal demo: agent proposes action twice, executed once, replay blocked"
+            src="assets/non-bypassable-split.gif"
+            alt="OxDeAI non-bypassable terminal demo: direct call 403, gateway enforced ALLOW/DENY/REPLAY"
             loading="lazy"
           >
           <div class="demo-caption">
-            <span>ALLOW</span> → authorization artifact issued → execution proceeds. &nbsp;|&nbsp;
-            <span>ALLOW</span> → second call succeeds on first evaluation. &nbsp;|&nbsp;
-            <span class="red">DENY</span> → replay attempt blocked before execution.
-            <br>
-            <code class="mono" style="color: var(--text-subtle);">verifyEnvelope() → ok</code>
-            - audit trail verified offline after the run (VerificationEnvelopeV1 is draft).
+            Direct upstream call → 403. <br>
+            Gateway path → authorization verified (intent + state) → execution.
+          </div>
+          <ul class="demo-outcomes">
+            <li>ALLOW → executed</li>
+            <li>DENY → blocked</li>
+            <li>REPLAY → blocked</li>
+            <li>BYPASS → rejected (403)</li>
+          </ul>
+          <div class="demo-conclusion">
+            Execution is unreachable without a valid authorization artifact.
           </div>
         </div>
-    
+
         <div class="install-strip" style="margin-top: 24px;">
           <div class="install-lines">
             <div class="install-code"><span class="prefix">$ </span>git clone https://github.com/AngeYobo/oxdeai.git</div>
             <div class="install-code"><span class="prefix">$ </span>cd oxdeai &amp;&amp; pnpm install &amp;&amp; pnpm build</div>
-            <div class="install-code"><span class="prefix">$ </span>pnpm -C examples/execution-boundary-demo start</div>
+            <div class="install-code"><span class="prefix">$ </span>pnpm -C examples/non-bypassable-demo run agent</div>
           </div>
-          <a class="btn btn-secondary" href="https://github.com/AngeYobo/oxdeai/tree/main/examples/execution-boundary-demo" target="_blank" rel="noopener">View example →</a>
+          <a class="btn btn-secondary" href="https://github.com/AngeYobo/oxdeai/tree/main/docs/media/non-bypassable-split.gif" target="_blank" rel="noopener">View demo artifact →</a>
         </div>
       </div>
     </section>
