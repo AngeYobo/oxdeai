@@ -1,3 +1,5 @@
+Non-normative positioning. Normative specs are in `SPEC.md` and `docs/spec/`; artifact status (Draft/Stable) is defined there.
+
 **Purpose**
 Assert OxDeAI as the production enforcement layer for autonomous learning systems derived from System M architectures.
 
@@ -43,6 +45,7 @@ Learning cannot escape constraints.
 - Unknown action class → DENY  
 - Verification failure → DENY  
 Fully compatible with fail-closed doctrine.
+All hashes and signature preimages MUST use `canonicalization-v1`. Deterministic ordering per `docs/spec/conformance-v1.md`; delegation constraints per `docs/spec/delegation-v1.md`.
 
 **8) Positioning**
 - Deterministic execution authorization for autonomous learning systems.  
@@ -63,3 +66,5 @@ Fully compatible with fail-closed doctrine.
 The paper describes how agents will learn and act continuously. What it misses is enforcement.  
 System M decides what to do. OxDeAI decides what is allowed to happen.  
 Without an execution boundary, learning systems are not deployable.
+
+Status signals: Canonicalization locked; AuthorizationV1 / PEP / DelegationV1 Draft until conformance/CI lock; VerificationEnvelopeV1 pending; ExecutionReceiptV1 planned. Locked vectors: `docs/spec/test-vectors/canonicalization-v1.json`, `authorization-v1.json`, `pep-vectors-v1.json`, `delegation-vectors-v1.json`. ABSTAIN outcome remains a future consideration, not present in current specs.

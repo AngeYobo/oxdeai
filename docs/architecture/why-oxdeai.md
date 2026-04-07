@@ -1,5 +1,7 @@
 # Why OxDeAI
 
+Non-normative positioning. Normative specs are in `SPEC.md` and `docs/spec/`; artifact status (Draft/Stable) is defined there.
+
 > Control execution, not just behavior.
 
 OxDeAI enforces deterministic authorization at the execution boundary of autonomous systems. It is not a runtime, orchestration engine, or prompt guardrail layer. It is the protocol and reference stack that decides whether a proposed external action is allowed to execute under the current policy state.
@@ -67,6 +69,7 @@ Key roles:
 The same evaluated situation always produces the same semantic result. The protocol depends on deterministic serialization (canonical JSON), stable verification semantics, and explicit state transitions.
 
 OxDeAI does not require a single universal raw action schema. It requires deterministic normalization within each integration: the adapter's job is to map framework-specific surfaces into a stable intent before evaluation.
+All hashes and signature preimages MUST use `canonicalization-v1`.
 
 ## Authorization Artifacts
 
@@ -156,6 +159,8 @@ child presents expired delegation         ->  DENY  (expiry)
 ```
 
 The demos differ by runtime surface, not by OxDeAI semantics. Each produces the same protocol outcomes under the same policy model.
+
+Status signals: Canonicalization vectors are locked; AuthorizationV1 / PEP / DelegationV1 remain Draft until full conformance/CI lock; VerificationEnvelopeV1 pending; ExecutionReceiptV1 planned. Proof points: locked vectors — `docs/spec/test-vectors/canonicalization-v1.json`, `authorization-v1.json`, `pep-vectors-v1.json`, `delegation-vectors-v1.json`.
 
 ## Positioning
 

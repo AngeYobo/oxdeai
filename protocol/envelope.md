@@ -1,7 +1,8 @@
-This document is a companion reference.
-For the canonical normative specification, see [../SPEC.md](../SPEC.md).
+This document is a companion reference (non-normative). Normative definitions are in [../SPEC.md](../SPEC.md) and `docs/spec/`; artifact status (Draft/Stable) is defined there.
 
 # Verification Envelope
+
+`VerificationEnvelopeV1` is pending specification in `docs/spec/`. It is post-execution evidence only and does **not** grant execution authority. All hashes and signature preimages MUST use `canonicalization-v1`.
 
 ## Artifact
 `VerificationEnvelopeV1`
@@ -30,4 +31,4 @@ Verification is performed via:
 - verifyAuditEvents()
 - verifyEnvelope()
 
-See [`SPEC.md`](../SPEC.md) for normative validation rules and result semantics (`ok | invalid | inconclusive`).
+Protocol decisions are ALLOW/DENY with deterministic error codes defined in the specs; `ok | invalid | inconclusive` are interface-level summaries only. See [`SPEC.md`](../SPEC.md) for normative validation rules and result semantics.

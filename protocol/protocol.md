@@ -1,5 +1,4 @@
-This document is a companion reference.
-For the canonical normative specification, see [../SPEC.md](../SPEC.md).
+This document is a companion reference (non-normative). Normative definitions are in [../SPEC.md](../SPEC.md) and `docs/spec/`; artifact status (Draft/Stable) is defined there.
 
 > ⚠️ **Archival profile only.**
 > This document has been superseded. The canonical archival location is:
@@ -13,6 +12,7 @@ For the canonical normative specification, see [../SPEC.md](../SPEC.md).
 
 This document preserves the v1.0.2 protocol profile for archival/reference compatibility.
 The canonical archival copy is at [`docs/archive/PROTOCOL-v1.0.2.md`](../docs/archive/PROTOCOL-v1.0.2.md).
+Reference locked vectors (current line): `docs/spec/test-vectors/canonicalization-v1.json`, `authorization-v1.json`, `pep-vectors-v1.json`, `delegation-vectors-v1.json`.
 
 ## 1. Conformance Language
 
@@ -45,7 +45,7 @@ This protocol is implementation-independent. `@oxdeai/core` is a reference imple
 - **AuditEvent**: append-only event emitted during evaluation.
 - **Audit Head Hash**: chain tip hash over ordered audit events.
 - **VerificationEnvelopeV1**: portable artifact containing snapshot + events.
-- **VerificationResult**: unified verifier output (`ok|invalid|inconclusive`) with violations.
+- **VerificationResult**: unified verifier output (`ok|invalid|inconclusive`) with violations. Protocol decisions remain ALLOW/DENY with deterministic error codes defined in the specs; `ok/invalid/inconclusive` are interface-level summaries only.
 
 ---
 
@@ -66,7 +66,7 @@ OxDeAI does **not** replace domain authn/authz, settlement finality, or infrastr
 
 ## 5. Canonical JSON Rules (Normative)
 
-All protocol hashing/encoding paths MUST use canonical JSON.
+All protocol hashing/encoding paths MUST use canonical JSON per `canonicalization-v1`; all hashes and signature preimages MUST use `canonicalization-v1`.
 
 Canonicalization rules:
 

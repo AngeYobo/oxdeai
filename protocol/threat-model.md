@@ -1,14 +1,16 @@
-This document is a companion reference.
-For the canonical normative specification, see [../SPEC.md](../SPEC.md).
+This document is a companion reference (non-normative). For the canonical normative specification, see [../SPEC.md](../SPEC.md) and `docs/spec/`; artifact status is defined there.
 
 # OxDeAI Threat Model
 
 This document captures the protocol threat model for OxDeAI.
+All hashes and signature preimages MUST use `canonicalization-v1`; protocol decisions are ALLOW/DENY with deterministic error codes defined in the specs.
 
 Reference:
 - Primary protocol spec: [SPEC.md](../SPEC.md)
 - Protocol overview: [PROTOCOL.md](../PROTOCOL.md)
 - Developer companion: [protocol/spec.md](./spec.md)
+- Conformance guidance (fail-closed, deterministic ordering): [docs/spec/conformance-v1.md](../docs/spec/conformance-v1.md)
+- Delegation invariants and replay/multi-hop constraints: [docs/spec/delegation-v1.md](../docs/spec/delegation-v1.md)
 
 ## Covered Risks
 - Replay abuse

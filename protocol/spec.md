@@ -1,5 +1,4 @@
-This document is a companion reference.
-For the canonical normative specification, see [../SPEC.md](../SPEC.md).
+This document is a companion reference (non-normative). For the canonical normative specification, see [../SPEC.md](../SPEC.md) and `docs/spec/`; artifact status (Draft/Stable) is defined there.
 
 # OxDeAI SPEC (Developer Companion, Non-Normative)
 
@@ -9,6 +8,8 @@ This document is an implementation and integration companion to the OxDeAI proto
 - The legacy v1.0.2 profile is archived at `docs/archive/PROTOCOL-v1.0.2.md`.
 - This file is **non-normative** and explains rationale, patterns, and practical guidance.
 - If any statement here conflicts with the protocol spec, **the protocol spec wins**.
+- All hashes and signature preimages MUST use `canonicalization-v1`; protocol decisions are ALLOW/DENY with deterministic error codes defined in the specs. Any `ok/invalid/inconclusive` labels are interface summaries only.
+- Artifact status: Canonicalization is locked; AuthorizationV1 / PEP Gateway / DelegationV1 are Draft until conformance vectors/CI are fully locked; VerificationEnvelopeV1 is pending specification; ExecutionReceiptV1 is planned.
 
 ---
 
