@@ -1,0 +1,14 @@
+{
+  "auth_id": "auth-demo-1",
+  "issuer": "demo-issuer",
+  "audience": "pep-gateway.local",
+  "intent_hash": "111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000",
+  "state_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "policy_id": "policy-demo-123",
+  "decision": "ALLOW",
+  "issued_at": 1775656352,
+  "expiry": 1775656952,
+  "alg": "Ed25519",
+  "kid": "demo-kid-1",
+  "signature": "0vl1K/f0LKn1iW1xHFqm+Z/Pn2xbsYj7PCB/soL4ckhfNHE08/Wpx8qPQsvcCFwoQjHE6iHvIwBGNibzpXqBAw=="
+}
