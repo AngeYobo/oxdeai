@@ -79,7 +79,7 @@ Agent → Gateway → Protected Upstream
 
 > **No valid authorization → no execution path**
 
-![Terminal Demo](./docs/media/non-bypassable-split.gif)
+![Terminal Demo](./docs/media/non-bypassable-split-v2.gif)
 ---
 
 ### Run it
