@@ -3,7 +3,7 @@
 **Thin OpenClaw binding for [@oxdeai/guard](https://github.com/AngeYobo/oxdeai/blob/main/packages/guard/README.md).**
 
 This package connects OpenClaw action/skill calls to the OxDeAI universal
-execution guard. It contains no authorization logic - all policy evaluation
+execution guard. It contains no authorization logic. All policy evaluation
 and PEP enforcement is delegated to `@oxdeai/guard`.
 
 ---
@@ -135,7 +135,28 @@ All of that lives in `@oxdeai/guard`.
 
 ## See also
 
-- [OpenClaw integration guide](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/openclaw.md)
-- [Adapter stack architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/adapter-stack.md)
-- [Adapter reference architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapter-reference-architecture.md)
+- [OpenClaw demo README](https://github.com/AngeYobo/oxdeai/blob/main/examples/openclaw/README.md)
+- [Adapter reference architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapters/adapter-reference-architecture.md)
+- [Adapter stack release notes](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapters/adapter-stack-release-notes.md)
 - [Root README](https://github.com/AngeYobo/oxdeai/blob/main/README.md)
+
+---
+
+## Run the in-process guard demo
+
+This repository ships a runnable OpenClaw demo that uses `@oxdeai/openclaw` in-process (no external gateway). It shows two ALLOWs followed by a DENY (budget exceeded); DENY blocks execution.
+
+```bash
+export OXDEAI_ENGINE_SECRET=test-secret-must-be-at-least-32-chars!!
+pnpm -C examples/openclaw build
+node examples/openclaw/dist/run.js
+```
+
+Expected:
+- Call 1: ALLOW → executes
+- Call 2: ALLOW → executes
+- Call 3: DENY  → execute callback not called (BUDGET_EXCEEDED)
+
+Demo: 
+
+![OpenClaw guard demo](../../docs/media/openclaw-guard-demo.gif)

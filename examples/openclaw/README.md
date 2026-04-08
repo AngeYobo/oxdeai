@@ -12,4 +12,8 @@ pnpm -C examples/openclaw start
 
 Expected sequence: `ALLOW`, `ALLOW`, `DENY` with strict `verifyEnvelope()` result `ok`.
 
-See the canonical shared scenario: [`docs/integrations/shared-demo-scenario.md`](../../docs/integrations/shared-demo-scenario.md).
+Demo capture:
+
+![OpenClaw guard demo](../../docs/media/openclaw-guard-demo.gif)
+
+See the canonical shared scenario: [`docs/archive/integrations/shared-demo-scenario.md`](../../docs/archive/integrations/shared-demo-scenario.md).
