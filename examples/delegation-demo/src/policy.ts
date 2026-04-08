@@ -47,8 +47,13 @@ export const { privateKey: AGENT_A_PRIVATE_KEY_PEM } = generateKeyPairSync("ed25
   publicKeyEncoding:  { type: "spki",  format: "pem" },
 });
 
-const _engineSecret = process.env.OXDEAI_ENGINE_SECRET ?? "";
-if (!_engineSecret) throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
+const DEFAULT_DEMO_SECRET = "test-secret-must-be-at-least-32-chars!!";
+const _engineSecret = process.env.OXDEAI_ENGINE_SECRET || DEFAULT_DEMO_SECRET;
+if (!process.env.OXDEAI_ENGINE_SECRET) {
+  console.warn(
+    "[delegation demo] OXDEAI_ENGINE_SECRET not set; using demo secret. Set your own for non-demo use."
+  );
+}
 
 export const engine = new PolicyEngine({
   policy_version: "v1.0.0",

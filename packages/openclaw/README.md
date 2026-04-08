@@ -157,6 +157,8 @@ Expected:
 - Call 2: ALLOW → executes
 - Call 3: DENY  → execute callback not called (BUDGET_EXCEEDED)
 
-Demo: 
+Demo:
 
 ![OpenClaw guard demo](../../docs/media/openclaw-guard-demo.gif)
+
+> Tip: if `OXDEAI_ENGINE_SECRET` is unset, the demo falls back to a bundled demo secret. Set your own secret for non-demo use.
