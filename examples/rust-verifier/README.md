@@ -20,14 +20,19 @@ To help Rust implementers start with protocol-compatible verification before bui
 
 ## Run
 
+The repo ships a minimal working pair for quick testing:
+
+- `auth_case.json` - single AuthorizationV1
+- `keyset.json` - matching Ed25519 public key
+
 ```bash
 cd examples/rust-verifier
-cargo run -- <auth.json> <keyset.json> <expected_audience>
+cargo run -- ./auth_case.json ./keyset.json pep-gateway.local
 ```
 
 Expected outcomes:
 
-- `ALLOW` when verification passes
+- `ALLOW` when verification passes (the bundled case should ALLOW)
 - `DENY` with explicit violation codes otherwise
 
 ## Notes

@@ -1,0 +1,11 @@
+{
+  "issuer": "demo-issuer",
+  "version": "1",
+  "keys": [
+    {
+      "kid": "demo-kid-1",
+      "alg": "Ed25519",
+      "public_key": "9WMDFjalQUystOAEqLxR2U+8o9u9nvhZi6y7U91JieY="
+    }
+  ]
+}
