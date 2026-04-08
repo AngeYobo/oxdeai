@@ -139,6 +139,20 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
+  examples/non-bypassable-demo: {}
+
+  examples/non-bypassable-openclaw:
+    dependencies:
+      '@oxdeai/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@oxdeai/guard':
+        specifier: workspace:*
+        version: link:../../packages/guard
+      '@oxdeai/openclaw':
+        specifier: workspace:*
+        version: link:../../packages/openclaw
+
   examples/openai-agents-sdk:
     dependencies:
       '@oxdeai/core':

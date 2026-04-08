@@ -1,0 +1,16 @@
+{
+  "name": "non-bypassable-openclaw",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "upstream": "node ../non-bypassable-demo/protected-upstream.mjs",
+    "gateway": "node ../non-bypassable-demo/pep-gateway.mjs",
+    "agent": "node agent.mjs",
+    "start": "pnpm run upstream & pnpm run gateway & sleep 2 && pnpm run agent"
+  },
+  "dependencies": {
+    "@oxdeai/openclaw": "workspace:*",
+    "@oxdeai/guard": "workspace:*",
+    "@oxdeai/core": "workspace:*"
+  }
+}

@@ -8,8 +8,13 @@ export const DEMO_POST_ID = "post-001";
 export const POLICY_ID =
   "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
 export function makeEngine(): PolicyEngine {
-  const secret = process.env.OXDEAI_ENGINE_SECRET ?? "";
-  if (!secret) throw new Error("Missing required env var: OXDEAI_ENGINE_SECRET");
+  const DEFAULT_DEMO_SECRET = "test-secret-must-be-at-least-32-chars!!";
+  const secret = process.env.OXDEAI_ENGINE_SECRET || DEFAULT_DEMO_SECRET;
+  if (!process.env.OXDEAI_ENGINE_SECRET) {
+    console.warn(
+      "[agentgram demo] OXDEAI_ENGINE_SECRET not set; using demo secret. Set your own for non-demo use."
+    );
+  }
   return new PolicyEngine({
     policy_version: "v1.0.0",
     engine_secret: secret,

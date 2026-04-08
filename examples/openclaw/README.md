@@ -12,4 +12,10 @@ pnpm -C examples/openclaw start
 
 Expected sequence: `ALLOW`, `ALLOW`, `DENY` with strict `verifyEnvelope()` result `ok`.
 
-See the canonical shared scenario: [`docs/integrations/shared-demo-scenario.md`](../../docs/integrations/shared-demo-scenario.md).
+Demo capture:
+
+![OpenClaw guard demo](../../docs/media/openclaw-guard-demo.gif)
+
+See the canonical shared scenario: [`docs/archive/integrations/shared-demo-scenario.md`](../../docs/archive/integrations/shared-demo-scenario.md).
+
+> Note: If `OXDEAI_ENGINE_SECRET` is not set, the demo falls back to a bundled demo secret. Set your own secret for non-demo use.
