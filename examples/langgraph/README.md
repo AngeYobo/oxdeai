@@ -1,6 +1,6 @@
 # OxDeAI Demo - LangGraph Integration Boundary
 
-This example mirrors [`examples/openai-tools`](./examples/openai-tools) as closely as possible.
+This example mirrors [`examples/openai-tools`](../openai-tools) as closely as possible.
 
 The key difference is proposal source:
 
@@ -66,7 +66,7 @@ node dist/run.js
 
 ## Shared Demo Scenario
 
-This example implements the canonical cross-adapter scenario in [`docs/integrations/shared-demo-scenario.md`](../../docs/integrations/shared-demo-scenario.md).
+This example implements the canonical cross-adapter scenario in [`docs/archive/integrations/shared-demo-scenario.md`](../../docs/archive/integrations/shared-demo-scenario.md).
 
 Expected visible outcome:
 
