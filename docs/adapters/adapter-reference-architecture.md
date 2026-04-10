@@ -21,10 +21,10 @@ Shared adapter contract:
 
 ## Adapter Sidecar Architecture
 
-![Adapter sidecar architecture](./diagrams/adapter-sidecar-architecture.svg)
+![Adapter sidecar architecture](../diagrams/adapter-sidecar-architecture.svg)
 
 Related boundary view:
-- [`Agent authorization boundary`](./diagrams/agent-authorization-boundary.svg)
+- [`Agent authorization boundary`](../diagrams/agent-authorization-boundary.svg)
 
 Diagram source/editing policy:
 - [`docs/diagrams/README.md`](../diagrams/README.md)

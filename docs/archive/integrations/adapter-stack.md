@@ -13,7 +13,7 @@ This document describes the full adapter layer model and the complete set of run
 
 ## Layer Model
 
-![Adapter stack layer model](../diagrams/adapter-layer-model.svg)
+![Adapter stack layer model](../../diagrams/adapter-layer-model.svg)
 
 ## Package Roles
 
