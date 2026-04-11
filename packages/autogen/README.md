@@ -1,6 +1,6 @@
 # @oxdeai/autogen
 
-**Thin AutoGen binding for [@oxdeai/guard](https://github.com/AngeYobo/oxdeai/blob/main/packages/guard/README.md).**
+**Thin AutoGen binding for [@oxdeai/guard](../guard/README.md).**
 
 This package connects AutoGen function/tool calls to the OxDeAI universal
 execution guard. It contains no authorization logic - all policy evaluation
@@ -128,7 +128,7 @@ All of that lives in `@oxdeai/guard`.
 
 ## See also
 
-- [AutoGen integration guide](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/autogen.md)
-- [Adapter stack architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/adapter-stack.md)
-- [Adapter reference architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapter-reference-architecture.md)
-- [Root README](https://github.com/AngeYobo/oxdeai/blob/main/README.md)
+- [AutoGen integration guide](../../docs/archive/integrations/autogen.md)
+- [Adapter stack architecture](../../docs/archive/integrations/adapter-stack.md)
+- [Adapter reference architecture](../../docs/adapters/adapter-reference-architecture.md)
+- [Root README](../../README.md)
