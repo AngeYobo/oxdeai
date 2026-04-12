@@ -1,10 +1,6 @@
 # @oxdeai/langgraph
-
-**Thin LangGraph binding for [@oxdeai/guard](https://github.com/AngeYobo/oxdeai/blob/main/packages/guard/README.md).**
-
-This package connects LangGraph tool calls to the OxDeAI universal execution
-guard. It contains no authorization logic - all policy evaluation and PEP
-enforcement is delegated to `@oxdeai/guard`.
+LangGraph adapter for the OxDeAI execution-time authorization protocol (non-bypassable boundary).
+Maps LangGraph tool calls to @oxdeai/guard; verification stays local and fail-closed.
 
 ---
 

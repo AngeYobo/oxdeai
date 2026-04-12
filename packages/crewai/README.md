@@ -1,10 +1,6 @@
 # @oxdeai/crewai
-
-**Thin CrewAI binding for [@oxdeai/guard](https://github.com/AngeYobo/oxdeai/blob/main/packages/guard/README.md).**
-
-This package connects CrewAI tool calls to the OxDeAI universal execution
-guard. It contains no authorization logic — all policy evaluation and PEP
-enforcement is delegated to `@oxdeai/guard`.
+CrewAI adapter to the OxDeAI execution-time authorization protocol (non-bypassable boundary).
+Routes CrewAI tool calls through @oxdeai/guard; no valid authorization → no execution.
 
 ---
 

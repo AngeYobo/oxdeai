@@ -1,6 +1,6 @@
 # @oxdeai/cli
-
-Protocol-oriented command-line tooling for OxDeAI.
+CLI for the OxDeAI execution-time authorization protocol (non-bypassable execution boundary).
+Runs local verification and artifact inspection; no valid authorization → execution should not proceed.
 
 `@oxdeai/cli` is a thin Node.js wrapper around `@oxdeai/core` verification and local state workflows. It is framework-agnostic and intended for local policy operations, artifact inspection, and deterministic verification.
 

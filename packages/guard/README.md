@@ -1,11 +1,7 @@
 # @oxdeai/guard
-
-**Universal Execution Guard for OxDeAI.**
-
-`@oxdeai/guard` is the canonical Policy Enforcement Point (PEP) for the OxDeAI
-ecosystem. It sits between agent runtimes and external tool execution, enforcing
-authorization decisions made by the OxDeAI policy engine before any side effect
-is permitted.
+Policy Enforcement Point for the OxDeAI execution-time authorization protocol.
+Enforces the non-bypassable execution boundary: verifies AuthorizationV1 locally, fail-closed.
+No valid authorization → no execution callback is invoked.
 
 ---
 

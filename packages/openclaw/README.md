@@ -1,10 +1,6 @@
 # @oxdeai/openclaw
-
-**Thin OpenClaw binding for [@oxdeai/guard](https://github.com/AngeYobo/oxdeai/blob/main/packages/guard/README.md).**
-
-This package connects OpenClaw action/skill calls to the OxDeAI universal
-execution guard. It contains no authorization logic. All policy evaluation
-and PEP enforcement is delegated to `@oxdeai/guard`.
+OpenClaw adapter for the OxDeAI execution-time authorization protocol.
+Enforces the non-bypassable execution boundary via @oxdeai/guard; no authorization → no execution.
 
 ---
 

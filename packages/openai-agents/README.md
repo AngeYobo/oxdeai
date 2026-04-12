@@ -1,10 +1,6 @@
 # @oxdeai/openai-agents
-
-**Thin OpenAI Agents SDK binding for [@oxdeai/guard](https://github.com/AngeYobo/oxdeai/blob/main/packages/guard/README.md).**
-
-This package connects OpenAI Agents SDK tool calls to the OxDeAI universal
-execution guard. It contains no authorization logic - all policy evaluation
-and PEP enforcement is delegated to `@oxdeai/guard`.
+OpenAI Agents SDK adapter for the OxDeAI execution-time authorization protocol.
+All tool calls pass through @oxdeai/guard (non-bypassable boundary, fail-closed verification).
 
 ---
 
