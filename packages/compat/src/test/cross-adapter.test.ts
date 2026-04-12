@@ -56,9 +56,10 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
+import { generateKeyPairSync } from "node:crypto";
 
 import { PolicyEngine } from "@oxdeai/core";
-import type { Intent, State } from "@oxdeai/core";
+import type { Intent, KeySet, State } from "@oxdeai/core";
 import {
   defaultNormalizeAction,
   OxDeAIDenyError,
@@ -106,13 +107,27 @@ function seeds(): number[] {
   return out;
 }
 
+// ── Ed25519 test fixture ──────────────────────────────────────────────────────
+
+const TEST_KEYPAIR = generateKeyPairSync("ed25519", {
+  privateKeyEncoding: { format: "pem", type: "pkcs8" },
+  publicKeyEncoding:  { format: "pem", type: "spki" },
+});
+
+const TEST_KEYSET: KeySet = {
+  issuer: "test-issuer",
+  version: "v1",
+  keys: [{ kid: "k1", alg: "Ed25519", public_key: TEST_KEYPAIR.publicKey.toString() }],
+};
+
 // ── Shared policy infrastructure ──────────────────────────────────────────────
 
 const AGENT_ID = "cross-adapter-agent";
 
-// Fixed unix timestamp injected into every tool call so the timestamp field
-// in the normalized intent is deterministic and comparable.
-const T_FIXED = 1_700_000_000;
+// Current unix timestamp injected into every tool call so the timestamp field
+// in the normalized intent is deterministic and comparable, and auth tokens
+// are not expired.
+const T_FIXED = Math.floor(Date.now() / 1000);
 
 // One engine instance shared across all adapters in every test. Using the same
 // engine ensures policy_version, engine_secret, and all policy module configs
@@ -120,6 +135,12 @@ const T_FIXED = 1_700_000_000;
 const ENGINE = new PolicyEngine({
   policy_version: "v1-cross-adapter",
   engine_secret: "cross-adapter-test-secret-32-chars!",
+  authorization_signing_alg: "Ed25519",
+  authorization_signing_kid: "k1",
+  authorization_issuer: TEST_KEYSET.issuer,
+  authorization_audience: AGENT_ID,
+  authorization_ttl_seconds: 600,
+  authorization_private_key_pem: TEST_KEYPAIR.privateKey.toString(),
 });
 
 // Policy state: only PROVISION-type actions are allowed, budget is generous so
@@ -145,6 +166,12 @@ const POLICY_STATE = buildState({
 const CAP_ENGINE = new PolicyEngine({
   policy_version: "v1-cross-adapter-cap",
   engine_secret: "cross-adapter-cap-secret-32-chars!!",
+  authorization_signing_alg: "Ed25519",
+  authorization_signing_kid: "k1",
+  authorization_issuer: TEST_KEYSET.issuer,
+  authorization_audience: AGENT_ID,
+  authorization_ttl_seconds: 600,
+  authorization_private_key_pem: TEST_KEYPAIR.privateKey.toString(),
 });
 
 // 500 units in fixed-point micro-units (1 unit = 1_000_000 micro-units).
@@ -208,6 +235,12 @@ const REPLAY_STATE: State = {
 const CONCURRENCY_ENGINE = new PolicyEngine({
   policy_version: "v1-cross-adapter-concurrency",
   engine_secret: "cross-adapter-concurrency-32chars!",
+  authorization_signing_alg: "Ed25519",
+  authorization_signing_kid: "k1",
+  authorization_issuer: TEST_KEYSET.issuer,
+  authorization_audience: AGENT_ID,
+  authorization_ttl_seconds: 600,
+  authorization_private_key_pem: TEST_KEYPAIR.privateKey.toString(),
 });
 
 const ISOLATED_BUDGET = 100_000_000n; // 100 units
@@ -335,6 +368,7 @@ async function runLangGraph(ca: ConceptualAction, opts: RunnerOptions = {}): Pro
     agentId: AGENT_ID,
     mapActionToIntent: norm.mapActionToIntent,
     onDecision: r => { record = r; },
+    trustedKeySets: [TEST_KEYSET],
   });
 
   // LangGraph field mapping: toolCall.args → ProposedAction.args
@@ -374,6 +408,7 @@ async function runOpenAIAgents(ca: ConceptualAction, opts: RunnerOptions = {}): 
     agentId: AGENT_ID,
     mapActionToIntent: norm.mapActionToIntent,
     onDecision: r => { record = r; },
+    trustedKeySets: [TEST_KEYSET],
   });
 
   // OpenAI Agents SDK field mapping: toolCall.input    → ProposedAction.args
@@ -414,6 +449,7 @@ async function runCrewAI(ca: ConceptualAction, opts: RunnerOptions = {}): Promis
     agentId: AGENT_ID,
     mapActionToIntent: norm.mapActionToIntent,
     onDecision: r => { record = r; },
+    trustedKeySets: [TEST_KEYSET],
   });
 
   // CrewAI field mapping: toolCall.args → ProposedAction.args

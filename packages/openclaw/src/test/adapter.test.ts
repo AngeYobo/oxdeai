@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import test from "node:test";
 import assert from "node:assert/strict";
+import { generateKeyPairSync } from "node:crypto";
 import { PolicyEngine } from "@oxdeai/core";
-import type { Authorization, State } from "@oxdeai/core";
+import type { Authorization, KeySet, State } from "@oxdeai/core";
 import { buildState } from "@oxdeai/sdk";
 import { OxDeAIDenyError, OxDeAIAuthorizationError, OxDeAINormalizationError } from "@oxdeai/guard";
 
@@ -14,8 +15,28 @@ import type { OpenClawAction, OpenClawGuardConfig } from "../types.js";
 const AGENT_ID = "openclaw-agent-001";
 const ENGINE_SECRET = "test-secret-must-be-at-least-32-chars!!";
 
+const TEST_KEYPAIR = generateKeyPairSync("ed25519", {
+  privateKeyEncoding: { format: "pem", type: "pkcs8" },
+  publicKeyEncoding:  { format: "pem", type: "spki" },
+});
+
+const TEST_KEYSET: KeySet = {
+  issuer: "test-issuer",
+  version: "v1",
+  keys: [{ kid: "k1", alg: "Ed25519", public_key: TEST_KEYPAIR.publicKey.toString() }],
+};
+
 function makeEngine(): PolicyEngine {
-  return new PolicyEngine({ policy_version: "v1", engine_secret: ENGINE_SECRET });
+  return new PolicyEngine({
+    policy_version: "v1",
+    engine_secret: ENGINE_SECRET,
+    authorization_signing_alg: "Ed25519",
+    authorization_signing_kid: "k1",
+    authorization_issuer: TEST_KEYSET.issuer,
+    authorization_audience: AGENT_ID,
+    authorization_ttl_seconds: 600,
+    authorization_private_key_pem: TEST_KEYPAIR.privateKey.toString(),
+  });
 }
 
 function makeState(agentId = AGENT_ID): State {
@@ -36,7 +57,7 @@ const baseAction: OpenClawAction = {
   workflow_id: "openclaw-gpu-demo",
   estimatedCost: 0.5,
   resourceType: "gpu",
-  timestampSeconds: 1_700_000_000,
+  timestampSeconds: Math.floor(Date.now() / 1000),
 };
 
 function makeGuardConfig(overrides: Partial<OpenClawGuardConfig> = {}): OpenClawGuardConfig {
@@ -46,6 +67,7 @@ function makeGuardConfig(overrides: Partial<OpenClawGuardConfig> = {}): OpenClaw
     agentId: AGENT_ID,
     getState: () => currentState,
     setState: (s) => { currentState = s; },
+    trustedKeySets: [TEST_KEYSET],
     ...overrides,
   };
 }
@@ -90,6 +112,7 @@ test("adapter: DENY throws OxDeAIDenyError and does not call execute", async () 
     agentId: AGENT_ID,
     getState: () => currentState,
     setState: (s) => { currentState = s; },
+    trustedKeySets: [TEST_KEYSET],
   });
 
   await assert.rejects(
@@ -272,6 +295,7 @@ test("adapter: ALLOW without authorization artifact throws OxDeAIAuthorizationEr
     agentId: AGENT_ID,
     getState: () => state,
     setState: () => {},
+    trustedKeySets: [TEST_KEYSET],
   });
 
   await assert.rejects(
@@ -295,6 +319,7 @@ test("adapter: setState is called after successful execution", async () => {
     agentId: AGENT_ID,
     getState: () => makeState(),
     setState: (s) => { storedState = s; },
+    trustedKeySets: [TEST_KEYSET],
   });
 
   await guard(baseAction, async () => "ok");
@@ -312,6 +337,7 @@ test("adapter: setState is NOT called on DENY", async () => {
     agentId: AGENT_ID,
     getState: () => makeState(),
     setState: () => { setStateCalled = true; },
+    trustedKeySets: [TEST_KEYSET],
   });
 
   await assert.rejects(() => guard(baseAction, async () => {}), OxDeAIDenyError);
@@ -341,6 +367,7 @@ test("adapter: onDecision receives DENY when blocked", async () => {
     getState: () => currentState,
     setState: (s) => { currentState = s; },
     onDecision({ decision: d }) { decision = d; },
+    trustedKeySets: [TEST_KEYSET],
   });
 
   await assert.rejects(() => guard(baseAction, async () => {}));
@@ -356,6 +383,7 @@ test("adapter: guard is reusable — multiple sequential calls work", async () =
     agentId: AGENT_ID,
     getState: () => currentState,
     setState: (s) => { currentState = s; },
+    trustedKeySets: [TEST_KEYSET],
   });
 
   const r1 = await guard(baseAction, async () => "first");
