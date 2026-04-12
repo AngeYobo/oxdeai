@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OxDeAI - Deterministic Execution Authorization for AI Agents</title>
+    <title>OxDeAI — Control What AI Agents Can Execute</title>
     <meta
       name="description"
       content="OxDeAI is a deterministic execution authorization protocol for AI agents. No authorization → no execution."
@@ -13,7 +13,7 @@
     <link rel="canonical" href="https://github.com/AngeYobo/oxdeai" />
     <meta
       property="og:title"
-      content="OxDeAI - Deterministic Execution Authorization for AI Agents"
+      content="OxDeAI — Control What AI Agents Can Execute"
     />
     <meta
       property="og:description"
@@ -26,10 +26,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://github.com/AngeYobo/oxdeai" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta
-      name="twitter:title"
-      content="OxDeAI - Deterministic Execution Authorization for AI Agents"
-    />
+    <meta name="twitter:title" content="OxDeAI — Control What AI Agents Can Execute" />
     <meta
       name="twitter:description"
       content="Agent proposes. Policy evaluates. ALLOW or DENY. No authorization → no execution."
@@ -80,9 +77,9 @@
           </button>
         </div>
         <ul class="nav-links" id="navLinks">
+          <li><a href="#why" onclick="closeNav()">Why</a></li>
           <li><a href="#how" onclick="closeNav()">How it works</a></li>
-          <li><a href="#architecture" onclick="closeNav()">Architecture</a></li>
-          <li><a href="#code" onclick="closeNav()">Code</a></li>
+          <li><a href="#code" onclick="closeNav()">Integration</a></li>
           <li><a href="#ecosystem" onclick="closeNav()">Adapters</a></li>
           <li>
             <a
@@ -101,7 +98,7 @@
       <div class="container">
         <div class="hero-eyebrow">execution authorization protocol</div>
         <h1 class="hero-title">
-          Non-bypassable execution boundary for AI agents
+          Control what AI agents can execute.
         </h1>
         <p class="hero-sub">
           Deterministic evaluation: (intent, state, policy) → ALLOW | DENY.
@@ -120,7 +117,7 @@
           <span class="pill">Signed authorization artifacts</span>
         </div>
         <div class="cta-group">
-          <a class="btn btn-primary" href="#demo">▶ Run the demo</a>
+          <a class="btn btn-primary" href="#demo">▶ See the demo</a>
           <a
             class="btn btn-secondary"
             href="https://github.com/AngeYobo/oxdeai"
@@ -132,198 +129,9 @@
                 d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
               />
             </svg>
-            View GitHub
+            View on GitHub
           </a>
-          <a
-            class="btn btn-ghost"
-            href="https://github.com/AngeYobo/oxdeai/blob/main/SPEC.md"
-            target="_blank"
-            rel="noopener"
-            >Read the spec →</a
-          >
-          <a
-            class="btn btn-ghost"
-            href="https://github.com/AngeYobo/oxdeai/tree/main/docs/spec"
-            target="_blank"
-            rel="noopener"
-            >Specification</a
-          >
         </div>
-      </div>
-    </section>
-
-    <!-- ─── 30-Second Explanation ──────────────────────────────────────────────── -->
-    <section id="how">
-      <div class="container">
-        <div class="section-label">30-second explanation</div>
-        <h2 class="section-title">
-          Agent proposes. Policy decides. Execution follows or doesn't.
-        </h2>
-        <p class="section-sub">
-          The decision and the execution are separate. That separation is the
-          guarantee.
-        </p>
-
-        <div class="flow-grid">
-          <div class="flow-step">
-            <div class="flow-num">01</div>
-            <div class="flow-step-title">Agent proposes action</div>
-            <div class="flow-step-body">
-              Agent produces an intent:<br />
-              action type, target, amount,<br />
-              agent ID, nonce, metadata hash.
-            </div>
-          </div>
-          <div class="flow-step">
-            <div class="flow-num">02</div>
-            <div class="flow-step-title">
-              Policy Decision Point (PDP) evaluates
-            </div>
-            <div class="flow-step-body">
-              (intent, state, policy)<br />
-              → deterministic evaluation.<br />
-              Same inputs → same output, always.
-            </div>
-          </div>
-          <div class="flow-step allow">
-            <div class="flow-num">03a</div>
-            <div class="flow-step-title">ALLOW</div>
-            <div class="flow-step-body">
-              Signed authorization artifact<br />
-              issued and bound to intent + state.<br />
-              Verifier checks trustedKeySets.
-            </div>
-          </div>
-          <div class="flow-step deny">
-            <div class="flow-num">03b</div>
-            <div class="flow-step-title">DENY</div>
-            <div class="flow-step-body">
-              Blocked before execution.<br />
-              No side effect occurs.<br />
-              No artifact issued.
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ─── Architecture ────────────────────────────────────────────────────────── -->
-    <section id="architecture">
-      <div class="container">
-        <div class="section-label">architecture</div>
-        <h2 class="section-title">Decision and execution are separated.</h2>
-        <p class="section-sub">
-          The Policy Decision Point (PDP) decides. The Policy Enforcement Point
-          (PEP) enforces. The Verifier checks trust. Execution is impossible
-          without authorization.
-        </p>
-
-        <div class="arch-wrap">
-          <div class="arch-diagram">
-            <!-- Agent Runtime -->
-            <div class="arch-node">
-              <div class="arch-node-name">Agent Runtime</div>
-              <div class="arch-node-detail">
-                proposes action (name, args, context)
-              </div>
-            </div>
-
-            <div class="arch-arrow">
-              <div class="line">│</div>
-              <div class="label">proposed action</div>
-              <div class="line">↓</div>
-            </div>
-
-            <!-- PEP -->
-            <div class="arch-node">
-              <div class="arch-node-name">Policy Enforcement Point (PEP)</div>
-              <div class="arch-node-detail">
-                intercepts, normalizes to Intent, calls PDP
-              </div>
-            </div>
-
-            <div class="arch-arrow">
-              <div class="line">│</div>
-              <div class="label">(intent, state, policy)</div>
-              <div class="line">↓</div>
-            </div>
-
-            <!-- PDP -->
-            <div class="arch-node">
-              <div class="arch-node-name">Policy Decision Point (PDP)</div>
-              <div class="arch-node-detail">
-                evaluates deterministically → ALLOW | DENY
-              </div>
-            </div>
-
-            <div class="arch-arrow">
-              <div class="line">│</div>
-            </div>
-
-            <!-- Split -->
-            <div class="arch-split">
-              <!-- ALLOW branch -->
-              <div class="arch-branch">
-                <div class="arch-verdict allow">ALLOW</div>
-                <div class="arch-arrow">
-                  <div class="line">│</div>
-                  <div class="line">↓</div>
-                </div>
-                <div class="arch-node artifact">
-                  <div class="arch-node-name">AuthorizationV1 artifact</div>
-                  <div class="arch-node-detail">
-                    signed · bound to intent + state · short TTL
-                  </div>
-                </div>
-                <div class="arch-arrow">
-                  <div class="line">│</div>
-                  <div class="line">↓</div>
-                </div>
-                <div class="arch-node verifier">
-                  <div class="arch-node-name">Verifier</div>
-                  <div class="arch-node-detail">
-                    trustedKeySets · strict mode
-                  </div>
-                </div>
-                <div class="arch-arrow">
-                  <div class="line">│</div>
-                  <div class="label">verified</div>
-                  <div class="line">↓</div>
-                </div>
-                <div class="arch-node executor">
-                  <div class="arch-node-name">Executor / Tool</div>
-                  <div class="arch-node-detail">
-                    executes - side effect occurs here
-                  </div>
-                </div>
-              </div>
-
-              <!-- DENY branch -->
-              <div class="arch-branch">
-                <div class="arch-verdict deny">DENY</div>
-                <div class="arch-arrow">
-                  <div class="line">│</div>
-                  <div class="line">↓</div>
-                </div>
-                <div class="arch-node blocked">
-                  <div class="arch-node-name">BLOCKED</div>
-                  <div class="arch-node-detail">no artifact · no execution</div>
-                </div>
-              </div>
-            </div>
-            <!-- end arch-split -->
-
-            <div class="arch-note">
-              A valid signature is not trust. Trust is explicitly configured by
-              the verifier via
-              <span class="mono" style="color: var(--yellow)"
-                >trustedKeySets</span
-              >. In strict mode, missing trust configuration fails closed.
-            </div>
-          </div>
-          <!-- end arch-diagram -->
-        </div>
-        <!-- end arch-wrap -->
       </div>
     </section>
 
@@ -375,16 +183,152 @@
       </div>
     </section>
 
-    <!-- ─── Proof / Technical Credibility ──────────────────────────────────────── -->
+    <!-- ─── Demo ─────────────────────────────────────────────────────────────────── -->
+    <section id="demo">
+      <div class="container">
+        <div class="section-label">demo</div>
+        <h2 class="section-title">The boundary holds in every case.</h2>
+        <p class="section-sub">
+          Four outcomes. No path to execution without a valid authorization artifact.
+        </p>
+
+        <div class="demo-legend">
+          <div class="demo-legend-row allow">
+            <span class="demo-legend-badge">ALLOW</span>
+            <span class="demo-legend-desc">Policy passes. Signed artifact issued. Execution proceeds.</span>
+          </div>
+          <div class="demo-legend-row deny">
+            <span class="demo-legend-badge">DENY</span>
+            <span class="demo-legend-desc">Policy blocks. No artifact issued. No execution. No side effect.</span>
+          </div>
+          <div class="demo-legend-row replay">
+            <span class="demo-legend-badge">REPLAY</span>
+            <span class="demo-legend-desc">auth_id already consumed. Execution blocked. Fail-closed.</span>
+          </div>
+          <div class="demo-legend-row bypass">
+            <span class="demo-legend-badge">BYPASS</span>
+            <span class="demo-legend-desc">Direct upstream call without authorization → 403 rejected.</span>
+          </div>
+        </div>
+
+        <div class="demo-wrap">
+          <div class="demo-header">
+            <div class="demo-dots"><span></span><span></span><span></span></div>
+            <div class="demo-title-bar">non-bypassable-demo · oxdeai</div>
+          </div>
+
+          <img
+            class="demo-gif"
+            src="assets/non-bypassable-split-v2.gif"
+            alt="OxDeAI non-bypassable terminal demo: direct call returns 403, gateway path enforces ALLOW, DENY, and REPLAY"
+            loading="lazy"
+          />
+
+          <p class="demo-conclusion" style="text-align:center">
+            <strong>No valid authorization → no execution path.</strong>
+          </p>
+        </div>
+
+        <div class="install-strip" style="margin-top: 24px">
+          <div class="install-lines">
+            <div class="install-code">
+              <span class="prefix">$ </span>export UPSTREAM_EXECUTOR_TOKEN=demo-internal-token
+            </div>
+            <div class="install-code">
+              <span class="prefix">$ </span>node examples/non-bypassable-demo/protected-upstream.mjs
+            </div>
+            <div class="install-code">
+              <span class="prefix">$ </span>node examples/non-bypassable-demo/pep-gateway.mjs
+            </div>
+            <div class="install-code">
+              <span class="prefix">$ </span>node examples/non-bypassable-demo/agent.mjs
+            </div>
+          </div>
+          <a
+            class="btn btn-secondary"
+            href="https://github.com/AngeYobo/oxdeai/tree/main/examples/non-bypassable-demo"
+            target="_blank"
+            rel="noopener"
+            >View demo source →</a
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── How it works ────────────────────────────────────────────────────────── -->
+    <section id="how">
+      <div class="container">
+        <div class="section-label">how it works</div>
+        <h2 class="section-title">
+          Decision and execution are separated.
+        </h2>
+        <p class="section-sub">
+          The Policy Decision Point (PDP) decides. The Policy Enforcement Point
+          (PEP) enforces. The Verifier checks trust. Execution is impossible
+          without authorization.
+        </p>
+
+        <div class="flow-grid">
+          <div class="flow-step">
+            <div class="flow-num">01</div>
+            <div class="flow-step-title">Agent proposes action</div>
+            <div class="flow-step-body">
+              Agent produces a proposed action:<br />
+              name, args, estimated cost,<br />
+              agent ID, target, metadata.
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">02</div>
+            <div class="flow-step-title">
+              PEP normalizes → PDP evaluates
+            </div>
+            <div class="flow-step-body">
+              Guard normalizes to Intent.<br />
+              (intent, state, policy) →<br />
+              deterministic evaluation.
+            </div>
+          </div>
+          <div class="flow-step allow">
+            <div class="flow-num">03a</div>
+            <div class="flow-step-title">ALLOW</div>
+            <div class="flow-step-body">
+              Signed <code class="mono">AuthorizationV1</code> artifact issued.<br />
+              Verifier checks <code class="mono">trustedKeySets</code>.<br />
+              auth_id consumed (replay-safe).
+            </div>
+          </div>
+          <div class="flow-step deny">
+            <div class="flow-num">03b</div>
+            <div class="flow-step-title">DENY</div>
+            <div class="flow-step-body">
+              Blocked before execution.<br />
+              No side effect occurs.<br />
+              No artifact issued.
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-note" style="margin-top: 32px">
+          A valid signature is not trust.
+          <code class="mono" style="color: var(--yellow)">trustedKeySets</code>
+          must be configured explicitly by the verifier. In strict mode, missing
+          key sets →
+          <code class="mono" style="color: var(--yellow)">TRUSTED_KEYSETS_REQUIRED</code>.
+          A valid signature from an unknown issuer still fails closed.
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Technical Guarantees ──────────────────────────────────────────────── -->
     <section id="proof">
       <div class="container">
-        <div class="section-label">technical properties</div>
+        <div class="section-label">technical guarantees</div>
         <h2 class="section-title">
           What the implementation actually guarantees.
         </h2>
         <p class="section-sub">
-          Properties derived directly from the protocol spec and conformance
-          tests.
+          Properties derived directly from the protocol spec and conformance tests.
         </p>
 
         <div class="proof-grid">
@@ -394,17 +338,17 @@
             <div class="proof-body">
               Same <code class="mono">(intent, state, policy)</code> inputs
               produce identical outputs across runtimes, restarts, and replicas.
-              Policy-critical logic has no ambient randomness or shared mutable
-              state.
+              Policy-critical logic has no ambient randomness or shared mutable state.
             </div>
           </div>
           <div class="proof-block">
             <div class="proof-icon">✓</div>
             <div class="proof-title">Replay protection</div>
             <div class="proof-body">
-              Nonce window tracking per agent. Authorization IDs are single-use.
-              The same intent evaluated twice with changed state → DENY on the
-              second call. TOCTOU tests are part of the conformance suite.
+              Authorization IDs are single-use via a pluggable
+              <code class="mono">ReplayStore</code>. Nonce window tracking per agent.
+              Durable backends (Redis, Postgres) drop in without changing the guard API.
+              TOCTOU tests are part of the conformance suite.
             </div>
           </div>
           <div class="proof-block">
@@ -428,14 +372,12 @@
           </div>
           <div class="proof-block">
             <div class="proof-icon">✓</div>
-            <div class="proof-title">
-              Signed audit trail (VerificationEnvelopeV1 - draft)
-            </div>
+            <div class="proof-title">Signed audit trail</div>
             <div class="proof-body">
               Hash-chained audit log built into the engine. Decisions are
-              serialized to a verification envelope (draft) (<code class="mono"
-                >verifyEnvelope</code
-              >) with state snapshots and event sequences.
+              serialized to a verification envelope
+              (<code class="mono">VerificationEnvelopeV1</code> draft) with
+              state snapshots and event sequences.
             </div>
           </div>
           <div class="proof-block">
@@ -451,83 +393,7 @@
       </div>
     </section>
 
-    <!-- ─── Demo ─────────────────────────────────────────────────────────────────── -->
-    <section id="demo">
-      <div class="container">
-        <div class="section-label">demo</div>
-        <h2 class="section-title">Non-bypassable execution demo.</h2>
-        <p class="section-sub">
-          Two paths: direct calls fail. Authorized path succeeds. Execution is
-          only reachable through the boundary.
-        </p>
-
-        <div class="demo-wrap">
-          <div class="demo-header">
-            <div class="demo-dots"><span></span><span></span><span></span></div>
-            <div class="demo-title-bar">non-bypassable-demo - oxdeai</div>
-          </div>
-
-          <img
-            class="demo-gif"
-            src="assets/non-bypassable-split-v2.gif"
-            alt="OxDeAI non-bypassable terminal demo: direct call returns 403, gateway path enforces ALLOW, DENY, and REPLAY"
-            loading="lazy"
-          />
-
-          <div class="demo-caption" style="text-align:center">
-            <div><strong>Direct upstream call</strong> → 403</div>
-            <div>
-              <strong>Gateway path</strong> → authorization verified (intent +
-              state) → execution
-            </div>
-          </div>
-
-          <div
-            class="demo-outcomes pills-inline"
-            style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center"
-          >
-            <span class="pill">ALLOW → executed</span>
-            <span class="pill">DENY → blocked</span>
-            <span class="pill">REPLAY → blocked</span>
-            <span class="pill">BYPASS → rejected (403)</span>
-          </div>
-
-          <p class="demo-conclusion" style="text-align:center">
-            <strong>No valid authorization → no execution path.</strong>
-          </p>
-        </div>
-
-        <div class="install-strip" style="margin-top: 24px">
-          <div class="install-lines">
-            <div class="install-code">
-              <span class="prefix">$ </span>export
-              UPSTREAM_EXECUTOR_TOKEN=demo-internal-token
-            </div>
-            <div class="install-code">
-              <span class="prefix">$ </span>node
-              examples/non-bypassable-demo/protected-upstream.mjs
-            </div>
-            <div class="install-code">
-              <span class="prefix">$ </span>node
-              examples/non-bypassable-demo/pep-gateway.mjs
-            </div>
-            <div class="install-code">
-              <span class="prefix">$ </span>node
-              examples/non-bypassable-demo/agent.mjs
-            </div>
-          </div>
-          <a
-            class="btn btn-secondary"
-            href="https://github.com/AngeYobo/oxdeai/tree/main/examples/non-bypassable-demo"
-            target="_blank"
-            rel="noopener"
-            >View demo source →</a
-          >
-        </div>
-      </div>
-    </section>
-
-    <!-- ─── Code ─────────────────────────────────────────────────────────────────── -->
+    <!-- ─── Integration ─────────────────────────────────────────────────────────── -->
     <section id="code">
       <div class="container">
         <div class="section-label">integration</div>
@@ -556,100 +422,102 @@
           <!-- Guard setup -->
           <div id="tab-guard" class="code-panel active">
             <pre><code><span class="kw">import</span> { <span class="ty">PolicyEngine</span> } <span class="kw">from</span> <span class="str">"@oxdeai/core"</span>;
-    <span class="kw">import</span> { <span class="fn">OxDeAIGuard</span>, <span class="ty">OxDeAIDenyError</span> } <span class="kw">from</span> <span class="str">"@oxdeai/guard"</span>;
-    
-    <span class="cm">// 1. Initialize the Policy Decision Point (PDP)</span>
-    <span class="kw">const</span> engine = <span class="kw">new</span> <span class="ty">PolicyEngine</span>({
-      policy_version: <span class="str">"v1.0.0"</span>,
-      engine_secret:  process.env.OXDEAI_ENGINE_SECRET,
-      authorization_ttl_seconds: <span class="num">60</span>,
-      policyId:       <span class="str">"policy-production-v1"</span>,
-    });
+<span class="kw">import</span> { <span class="fn">OxDeAIGuard</span>, <span class="ty">OxDeAIDenyError</span> } <span class="kw">from</span> <span class="str">"@oxdeai/guard"</span>;
 
-    <span class="cm">// 2. Create the Policy Enforcement Point (PEP)</span>
-    <span class="kw">const</span> guard = <span class="fn">OxDeAIGuard</span>({
-      engine,
-      <span class="prop">getState</span>: () =&gt; <span class="fn">getAgentState</span>(),
-      <span class="prop">setState</span>: (s) =&gt; <span class="fn">setAgentState</span>(s),
-      <span class="prop">trustedKeySets</span>: [myKeySet],   <span class="cm">// trust is explicit, not implicit</span>
-      <span class="prop">onDecision</span>: (record) =&gt; <span class="fn">auditLog</span>(record),
-    });
-    
-    <span class="cm">// 3. Every action goes through the guard</span>
-    <span class="kw">try</span> {
-      <span class="kw">await</span> <span class="fn">guard</span>(
-        {
-          <span class="prop">name</span>:    <span class="str">"charge_wallet"</span>,
-          <span class="prop">args</span>:    { amount: <span class="num">100</span>, currency: <span class="str">"usd"</span> },
-          <span class="prop">context</span>: { agent_id: <span class="str">"agent-001"</span> },
-        },
-        <span class="kw">async</span> () =&gt; <span class="fn">chargeWallet</span>(<span class="num">100</span>)   <span class="cm">// only runs if ALLOW</span>
-      );
-    } <span class="kw">catch</span> (err) {
-      <span class="kw">if</span> (err <span class="kw">instanceof</span> <span class="ty">OxDeAIDenyError</span>) {
-        <span class="cm">// DENY - execution did not occur</span>
-      }
-    }</code></pre>
+<span class="cm">// 1. Initialize the Policy Decision Point (PDP)</span>
+<span class="kw">const</span> engine = <span class="kw">new</span> <span class="ty">PolicyEngine</span>({
+  policy_version:             <span class="str">"v1.0.0"</span>,
+  engine_secret:              process.env.OXDEAI_ENGINE_SECRET,
+  authorization_ttl_seconds:  <span class="num">60</span>,
+  authorization_signing_alg:  <span class="str">"Ed25519"</span>,
+  authorization_signing_kid:  <span class="str">"k1"</span>,
+});
+
+<span class="cm">// 2. Create the Policy Enforcement Point (PEP)</span>
+<span class="kw">const</span> guard = <span class="fn">OxDeAIGuard</span>({
+  engine,
+  <span class="prop">getState</span>:      () =&gt; <span class="fn">getAgentState</span>(),
+  <span class="prop">setState</span>:      (s) =&gt; <span class="fn">setAgentState</span>(s),
+  <span class="prop">trustedKeySets</span>: [myKeySet],   <span class="cm">// trust is explicit, never implicit</span>
+  <span class="prop">onDecision</span>:    (record) =&gt; <span class="fn">auditLog</span>(record),
+});
+
+<span class="cm">// 3. Every action goes through the guard</span>
+<span class="kw">try</span> {
+  <span class="kw">await</span> <span class="fn">guard</span>(
+    {
+      <span class="prop">name</span>:    <span class="str">"charge_wallet"</span>,
+      <span class="prop">args</span>:    { amount: <span class="num">100</span>, currency: <span class="str">"usd"</span> },
+      <span class="prop">context</span>: { agent_id: <span class="str">"agent-001"</span> },
+    },
+    <span class="kw">async</span> () =&gt; <span class="fn">chargeWallet</span>(<span class="num">100</span>)   <span class="cm">// only runs if ALLOW</span>
+  );
+} <span class="kw">catch</span> (err) {
+  <span class="kw">if</span> (err <span class="kw">instanceof</span> <span class="ty">OxDeAIDenyError</span>) {
+    <span class="cm">// DENY — execution did not occur</span>
+  }
+}</code></pre>
           </div>
 
           <!-- Strict verification -->
           <div id="tab-verify" class="code-panel">
             <pre><code><span class="kw">import</span> { <span class="fn">verifyAuthorization</span>, <span class="fn">createVerifier</span> } <span class="kw">from</span> <span class="str">"@oxdeai/core"</span>;
-    
-    <span class="cm">// Inline: strict mode requires trustedKeySets</span>
-    <span class="kw">const</span> result = <span class="fn">verifyAuthorization</span>(artifact, {
-      <span class="prop">mode</span>:           <span class="str">"strict"</span>,
-      <span class="prop">trustedKeySets</span>: [myKeySet],
-      <span class="prop">expectedPolicyId</span>: <span class="str">"policy-production-v1"</span>,
-    });
-    <span class="cm">// A valid signature from an unknown issuer → still fails closed</span>
-    <span class="cm">// Missing trustedKeySets in strict mode → TRUSTED_KEYSETS_REQUIRED</span>
-    
-    <span class="cm">// Bound verifier: pre-configure trust once, reuse everywhere</span>
-    <span class="kw">const</span> verifier = <span class="fn">createVerifier</span>({
-      <span class="prop">trustedKeySets</span>: [myKeySet],     <span class="cm">// required, non-empty</span>
-      <span class="prop">expectedIssuer</span>: <span class="str">"oxdeai-pdp"</span>,
-    });
-    
-    <span class="cm">// Verify envelope produced by the engine after a run</span>
-    <span class="kw">const</span> envelopeResult = <span class="fn">verifyEnvelope</span>(envelopeBytes, {
-      <span class="prop">mode</span>:             <span class="str">"strict"</span>,
-      <span class="prop">trustedKeySets</span>:   [myKeySet],
-      <span class="prop">expectedPolicyId</span>: <span class="str">"policy-production-v1"</span>,
-    });
-    
-    <span class="kw">if</span> (envelopeResult.status === <span class="str">"ok"</span>) {
-      <span class="cm">// audit trail is intact and cryptographically verified</span>
-    }</code></pre>
+
+<span class="cm">// Inline: strict mode requires trustedKeySets</span>
+<span class="kw">const</span> result = <span class="fn">verifyAuthorization</span>(artifact, {
+  <span class="prop">mode</span>:             <span class="str">"strict"</span>,
+  <span class="prop">trustedKeySets</span>:   [myKeySet],
+  <span class="prop">expectedPolicyId</span>: <span class="str">"policy-production-v1"</span>,
+});
+<span class="cm">// A valid signature from an unknown issuer → still fails closed</span>
+<span class="cm">// Missing trustedKeySets in strict mode → TRUSTED_KEYSETS_REQUIRED</span>
+
+<span class="cm">// Bound verifier: pre-configure trust once, reuse everywhere</span>
+<span class="kw">const</span> verifier = <span class="fn">createVerifier</span>({
+  <span class="prop">trustedKeySets</span>: [myKeySet],     <span class="cm">// required, non-empty</span>
+  <span class="prop">expectedIssuer</span>: <span class="str">"oxdeai-pdp"</span>,
+});
+
+<span class="cm">// Verify envelope produced by the engine after a run</span>
+<span class="kw">const</span> envelopeResult = <span class="fn">verifyEnvelope</span>(envelopeBytes, {
+  <span class="prop">mode</span>:             <span class="str">"strict"</span>,
+  <span class="prop">trustedKeySets</span>:   [myKeySet],
+  <span class="prop">expectedPolicyId</span>: <span class="str">"policy-production-v1"</span>,
+});
+
+<span class="kw">if</span> (envelopeResult.status === <span class="str">"ok"</span>) {
+  <span class="cm">// audit trail is intact and cryptographically verified</span>
+}</code></pre>
           </div>
 
           <!-- Delegation -->
           <div id="tab-delegation" class="code-panel">
-            <pre><code><span class="kw">import</span> { <span class="fn">createDelegation</span>, <span class="fn">verifyDelegationChain</span> } <span class="kw">from</span> <span class="str">"@oxdeai/core"</span>;
-    
-    <span class="cm">// Parent agent delegates narrowed authority to a child agent</span>
-    <span class="kw">const</span> delegation = <span class="fn">createDelegation</span>(parentAuth, {
-      <span class="prop">delegatee</span>: <span class="str">"child-agent-002"</span>,
-      <span class="prop">scope</span>: {
-        <span class="prop">tools</span>:      [<span class="str">"provision_gpu"</span>],
-        <span class="prop">max_amount</span>: <span class="num">300n</span>,     <span class="cm">// strictly narrowed from parent</span>
-      },
-      <span class="prop">expiry</span>:     parentAuth.expiry,   <span class="cm">// cannot exceed parent</span>
-      <span class="prop">kid</span>:        <span class="str">"key-001"</span>,
-      <span class="prop">privateKey</span>: signingKey,
-    });
-    
-    <span class="cm">// Child verifies full chain before execution</span>
-    <span class="kw">const</span> chainResult = <span class="fn">verifyDelegationChain</span>(delegation, parentAuth, {
-      <span class="prop">now</span>:                          Math.<span class="fn">floor</span>(Date.<span class="fn">now</span>() / <span class="num">1000</span>),
-      <span class="prop">trustedKeySets</span>:              [myKeySet],
-      <span class="prop">requireSignatureVerification</span>: <span class="kw">true</span>,
-      <span class="prop">consumedDelegationIds</span>:        usedIds,  <span class="cm">// replay prevention</span>
-    });
-    
-    <span class="kw">if</span> (chainResult.ok) {
-      <span class="cm">// execute within delegated scope</span>
-    }</code></pre>
+            <pre><code><span class="kw">import</span> { <span class="fn">createDelegation</span> } <span class="kw">from</span> <span class="str">"@oxdeai/core"</span>;
+<span class="kw">import</span> { <span class="fn">OxDeAIGuard</span> } <span class="kw">from</span> <span class="str">"@oxdeai/guard"</span>;
+
+<span class="cm">// Parent agent narrows authority to a child agent</span>
+<span class="kw">const</span> delegation = <span class="fn">createDelegation</span>(parentAuth, {
+  <span class="prop">delegatee</span>: <span class="str">"child-agent-002"</span>,
+  <span class="prop">scope</span>: {
+    <span class="prop">tools</span>:      [<span class="str">"provision_gpu"</span>],
+    <span class="prop">max_amount</span>: <span class="num">300n</span>,     <span class="cm">// strictly narrowed from parent</span>
+  },
+  <span class="prop">expiry</span>:     parentAuth.expiry,   <span class="cm">// cannot exceed parent</span>
+  <span class="prop">kid</span>:        <span class="str">"key-001"</span>,
+  <span class="prop">privateKey</span>: signingKey,
+});
+
+<span class="cm">// Child guard verifies chain + scope before execution</span>
+<span class="kw">await</span> <span class="fn">guard</span>(
+  action,
+  <span class="kw">async</span> () =&gt; <span class="fn">provisionGpu</span>(),
+  {
+    <span class="prop">delegation</span>: { delegation, parentAuth },
+    <span class="cm">// Replay prevention via pluggable ReplayStore</span>
+    <span class="cm">// (default: in-memory; swap for Redis/Postgres)</span>
+  }
+);
+<span class="cm">// delegation_id consumed atomically — replay → OxDeAIAuthorizationError</span></code></pre>
           </div>
         </div>
         <!-- end code-block -->
@@ -669,96 +537,6 @@
       </div>
     </section>
 
-    <!-- ─── Trust Model ──────────────────────────────────────────────────────────── -->
-    <section id="trust">
-      <div class="container">
-        <div class="section-label">trust model</div>
-        <h2 class="section-title">A valid signature is not trust.</h2>
-        <p class="section-sub">
-          OxDeAI enforces the execution boundary. Who is trusted is defined
-          outside the protocol, by the verifier.
-        </p>
-
-        <div class="table-scroll">
-          <table class="trust-table">
-            <thead>
-              <tr>
-                <th>Concept</th>
-                <th>Controlled by</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Issuer</td>
-                <td>Any system</td>
-                <td>
-                  Policy engine, delegation service, or any custom authority can
-                  sign artifacts.
-                </td>
-              </tr>
-              <tr>
-                <td>Trusted keys</td>
-                <td>The verifier - <code class="mono">trustedKeySets</code></td>
-                <td>
-                  Explicitly configured by the relying party. Not inferred from
-                  the artifact itself.
-                </td>
-              </tr>
-              <tr>
-                <td>Signature validity</td>
-                <td>Cryptographic</td>
-                <td>
-                  Proves the artifact was not tampered with. Does not confer
-                  trust to the issuer.
-                </td>
-              </tr>
-              <tr>
-                <td>Execution gate</td>
-                <td>OxDeAI</td>
-                <td>
-                  Enforced after trust is established. Fail-closed by design in
-                  strict mode.
-                </td>
-              </tr>
-              <tr>
-                <td>Strict mode without keys</td>
-                <td>Fails closed</td>
-                <td>
-                  <code class="mono">TRUSTED_KEYSETS_REQUIRED</code> - no
-                  implicit trust, ever.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <!-- end table-scroll -->
-
-        <div class="trust-callouts">
-          <div class="callout correct">
-            <div class="callout-label">Correct - explicit trust</div>
-            <div class="callout-code">
-              <span class="fn">verifyAuthorization</span>(auth, {
-              <span class="prop">mode</span>: <span class="str">"strict"</span>,
-              <span class="prop">trustedKeySets</span>: [myKeySet], });
-              <span class="cm">// ok only if signature is valid</span>
-              <span class="cm">// AND issuer is in trustedKeySets</span>
-            </div>
-          </div>
-          <div class="callout wrong">
-            <div class="callout-label">Wrong - no trust configured</div>
-            <div class="callout-code">
-              <span class="fn">verifyAuthorization</span>(auth, {
-              <span class="prop">mode</span>: <span class="str">"strict"</span>,
-              <span class="cm">// missing trustedKeySets</span>
-              });
-              <span class="cm">// → invalid (TRUSTED_KEYSETS_REQUIRED)</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ─── Ecosystem ────────────────────────────────────────────────────────────── -->
     <section id="ecosystem">
       <div class="container">
@@ -768,8 +546,7 @@
         </h2>
         <p class="section-sub">
           All adapters delegate to <code class="mono">@oxdeai/guard</code>.
-          Identical inputs produce identical authorization decisions across all
-          of them.
+          Identical inputs produce identical authorization decisions across all of them.
         </p>
 
         <div class="adapter-grid">
@@ -815,12 +592,53 @@
           </div>
         </div>
 
-        <p
-          style="margin-top: 20px; font-size: 0.8rem; color: var(--text-subtle)"
-        >
+        <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-subtle)">
           Cross-adapter conformance validated in CI: same intent + state +
           policy → same decision across all adapters.
         </p>
+      </div>
+    </section>
+
+    <!-- ─── Final CTA ─────────────────────────────────────────────────────────── -->
+    <section id="cta">
+      <div class="container" style="text-align: center">
+        <div class="section-label">get started</div>
+        <h2 class="section-title">
+          Production-safe agents start here.
+        </h2>
+        <p class="section-sub" style="max-width: 540px; margin: 0 auto 32px">
+          OxDeAI is open source, Apache-2.0 licensed, and ready to drop into
+          any TypeScript agent stack today.
+        </p>
+        <div class="cta-group" style="justify-content: center">
+          <a
+            class="btn btn-primary"
+            href="https://github.com/AngeYobo/oxdeai"
+            target="_blank"
+            rel="noopener"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+              <path
+                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+              />
+            </svg>
+            Star on GitHub
+          </a>
+          <a
+            class="btn btn-secondary"
+            href="https://github.com/AngeYobo/oxdeai/blob/main/README.md"
+            target="_blank"
+            rel="noopener"
+            >Read the docs →</a
+          >
+          <a
+            class="btn btn-ghost"
+            href="https://github.com/AngeYobo/oxdeai/blob/main/SPEC.md"
+            target="_blank"
+            rel="noopener"
+            >Protocol spec →</a
+          >
+        </div>
       </div>
     </section>
 
@@ -876,12 +694,10 @@
         <div
           class="container"
           style="text-align:center; padding:20px 0; color: var(--text-subtle); font-size: 0.7rem;">
-          © 2026 OxDeAI - Deterministic execution authorization. No authorization → no execution.
+          © 2026 OxDeAI — Deterministic execution authorization. No authorization → no execution.
         </div>
       </div>
     </footer>
-
-
 
     <script>
       function showTab(name, btn) {

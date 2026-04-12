@@ -618,6 +618,76 @@ nav {
   color: var(--red);
 }
 
+.demo-conclusion {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* Demo legend rows */
+.demo-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.demo-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+.demo-legend-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 3px 9px;
+  border-radius: 4px;
+  min-width: 60px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.demo-legend-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.demo-legend-row.allow .demo-legend-badge {
+  background: rgba(52, 211, 153, 0.12);
+  color: var(--green);
+}
+
+.demo-legend-row.deny .demo-legend-badge {
+  background: rgba(248, 113, 113, 0.12);
+  color: var(--red);
+}
+
+.demo-legend-row.replay .demo-legend-badge {
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--yellow);
+}
+
+.demo-legend-row.bypass .demo-legend-badge {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-muted);
+}
+
+/* ─── Final CTA Section ─────────────────────────────────────────────────────── */
+#cta {
+  text-align: center;
+  padding: 80px 0;
+  border-top: 1px solid var(--border);
+}
+
 /* ─── Code Snippets ─────────────────────────────────────────────────────────── */
 .code-tabs {
   display: flex;
