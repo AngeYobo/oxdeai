@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { PolicyEngine } from "@oxdeai/core";
 import type { Authorization, State } from "@oxdeai/core";
 import { buildState } from "@oxdeai/sdk";
+import { TEST_KEYSET, TEST_KEYPAIR, signAuth } from "./helpers/fixtures.js";
 
 import { OxDeAIGuard } from "../guard.js";
 import { defaultNormalizeAction } from "../normalizeAction.js";
@@ -24,6 +25,12 @@ function makeEngine(): PolicyEngine {
   return new PolicyEngine({
     policy_version: "v1",
     engine_secret: ENGINE_SECRET,
+    authorization_signing_alg: "Ed25519",
+    authorization_signing_kid: "k1",
+    authorization_issuer: TEST_KEYSET.issuer,
+    authorization_audience: "aud-test",
+    authorization_ttl_seconds: 600,
+    authorization_private_key_pem: TEST_KEYPAIR.privateKey.toString(),
   });
 }
 
@@ -78,6 +85,7 @@ function makeGuardConfig(overrides: Partial<OxDeAIGuardConfig> = {}): OxDeAIGuar
     engine: makeEngine(),
     getState: () => currentState,
     setState: (s) => { currentState = s; },
+    trustedKeySets: [TEST_KEYSET],
     ...overrides,
   };
 }
@@ -202,6 +210,7 @@ test("guard: uses custom mapActionToIntent when provided", async () => {
     engine: makeEngine(),
     getState: () => currentState,
     setState: (s) => { currentState = s; },
+    trustedKeySets: [TEST_KEYSET],
     mapActionToIntent(action) {
       mapperCalled = true;
       // Return a well-formed intent via the default normalizer so the
@@ -235,6 +244,7 @@ test("guard: DENY throws OxDeAIDenyError and does not call execute", async () =>
     engine: makeEngine(),
     getState: () => currentState,
     setState: (s) => { currentState = s; },
+    trustedKeySets: [TEST_KEYSET],
   };
 
   const guard = OxDeAIGuard(config);
@@ -266,6 +276,7 @@ test("guard: DENY fires onDecision hook with DENY decision", async () => {
     engine: makeEngine(),
     getState: () => currentState,
     setState: (s) => { currentState = s; },
+    trustedKeySets: [TEST_KEYSET],
     onDecision({ decision }) {
       decisionFired = true;
       capturedDecision = decision;
@@ -340,6 +351,7 @@ test("guard: ALLOW without authorization artifact throws OxDeAIAuthorizationErro
     engine: mockEngine,
     getState: () => currentState,
     setState: (s) => { currentState = s; },
+    trustedKeySets: [TEST_KEYSET],
   };
 
   const guard = OxDeAIGuard(config);
@@ -374,6 +386,7 @@ test("guard: ALLOW without nextState throws OxDeAIAuthorizationError", async () 
     engine: mockEngine,
     getState: () => currentState,
     setState: (s) => { currentState = s; },
+    trustedKeySets: [TEST_KEYSET],
   };
 
   const guard = OxDeAIGuard(config);
@@ -395,21 +408,23 @@ test("guard: ALLOW without nextState throws OxDeAIAuthorizationError", async () 
 
 test("guard: failed verifyAuthorization throws OxDeAIAuthorizationError", async () => {
   let currentState = makeState();
+  // A properly-signed but expired artifact — the strict verifier will reject it with AUTH_EXPIRED.
+  const expiredAuth = signAuth({ auth_id: "stub-expired", issued_at: 1_000, expiry: 2_000 });
 
   const mockEngine = {
     evaluatePure: () => ({
       decision: "ALLOW" as const,
       reasons: [] as [],
-      authorization: stubAuth,
+      authorization: expiredAuth,
       nextState: currentState,
     }),
-    verifyAuthorization: () => ({ valid: false, reason: "EXPIRED" }),
   } as unknown as PolicyEngine;
 
   const config: OxDeAIGuardConfig = {
     engine: mockEngine,
     getState: () => currentState,
     setState: (s) => { currentState = s; },
+    trustedKeySets: [TEST_KEYSET],
   };
 
   const guard = OxDeAIGuard(config);
@@ -419,7 +434,7 @@ test("guard: failed verifyAuthorization throws OxDeAIAuthorizationError", async 
     () => guard(baseAction, async () => { executed = true; }),
     (err: unknown) => {
       assert.ok(err instanceof OxDeAIAuthorizationError, `expected OxDeAIAuthorizationError, got ${err}`);
-      assert.ok(err.message.includes("EXPIRED"));
+      assert.ok(err.message.includes("AUTH_EXPIRED"));
       return true;
     }
   );
@@ -437,6 +452,7 @@ test("guard: setState is called with nextState after successful execution", asyn
     engine: makeEngine(),
     getState: () => initialState,
     setState: (s) => { storedState = s; },
+    trustedKeySets: [TEST_KEYSET],
   };
 
   const guard = OxDeAIGuard(config);
@@ -461,6 +477,7 @@ test("guard: setState is NOT called when execution is denied", async () => {
     engine: makeEngine(),
     getState: () => currentState,
     setState: (s) => { setStateCalled = true; currentState = s; },
+    trustedKeySets: [TEST_KEYSET],
   };
 
   const guard = OxDeAIGuard(config);

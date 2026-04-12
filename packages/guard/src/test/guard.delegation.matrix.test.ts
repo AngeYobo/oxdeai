@@ -37,22 +37,21 @@ const KEYS = generateKeyPairSync("ed25519", {
 });
 
 const KEYSET: KeySet = {
-  issuer: "agent-A",
+  issuer: "pdp-issuer",
   version: "1",
-  keys: [{ kid: "k1", alg: "Ed25519", public_key: KEYS.publicKey }],
+  keys: [{ kid: "k1", alg: "Ed25519", public_key: KEYS.publicKey.toString() }],
 };
 
-// ── Fixed timestamps ──────────────────────────────────────────────────────────
-
-const T_ISSUED  = 1_000_000;
-const T_NOW     = 1_001_000; // action.timestampSeconds — used as `now` by guard
-const T_DEL_EXP = 1_002_000;
-const T_PAR_EXP = 1_003_000;
+// ── Trusted timestamps (relative to wall clock) ──────────────────────────────
+const T_NOW     = Math.floor(Date.now() / 1000);
+const T_ISSUED  = T_NOW - 60;
+const T_DEL_EXP = T_NOW + 600;
+const T_PAR_EXP = T_NOW + 900;
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
 function makeParent(overrides?: { expiry?: number; audience?: string }): AuthorizationV1 {
-  return signAuthorizationEd25519(
+  const auth = signAuthorizationEd25519(
     {
       auth_id:     "f".repeat(64),
       issuer:      "pdp-issuer",
@@ -67,6 +66,8 @@ function makeParent(overrides?: { expiry?: number; audience?: string }): Authori
     },
     KEYS.privateKey
   );
+  (auth as any).scope = { tools: ["provision_gpu"], max_amount: 1_000_000n };
+  return auth;
 }
 
 function makeGuard(overrides?: Partial<OxDeAIGuardConfig>) {
@@ -82,6 +83,8 @@ function makeGuard(overrides?: Partial<OxDeAIGuardConfig>) {
     engine: new PolicyEngine({ policy_version: "v1", engine_secret: "test-secret-must-be-at-least-32-chars!!" }),
     getState: () => state,
     setState: () => {},
+    trustedKeySets: [KEYSET],
+    requireDelegationSignatureVerification: true,
     ...overrides,
   });
 }
@@ -102,11 +105,11 @@ test("CASE-7a: valid chain with signature verification → execute runs", async 
   const parent = makeParent();
   const delegation = createDelegation(
     parent,
-    { delegatee: "agent-B", scope: { tools: ["provision_gpu"] }, expiry: T_DEL_EXP, kid: "k1" },
+    { delegatee: "agent-B", issuer: KEYSET.issuer, scope: { tools: ["provision_gpu"] }, expiry: T_DEL_EXP, kid: "k1" },
     KEYS.privateKey
   );
 
-  const guard = makeGuard({ trustedKeySets: KEYSET, requireDelegationSignatureVerification: true });
+  const guard = makeGuard();
   let executed = false;
 
   const result = await guard(
@@ -119,32 +122,27 @@ test("CASE-7a: valid chain with signature verification → execute runs", async 
   assert.equal(result, "executed");
 });
 
-test("CASE-7b: valid chain without signature verification → execute runs", async () => {
+test("CASE-7b: unsigned delegation is rejected (fail-closed)", async () => {
   const parent = makeParent();
   const delegation = createDelegation(
     parent,
-    { delegatee: "agent-B", scope: {}, expiry: T_DEL_EXP, kid: "k1" },
+    { delegatee: "agent-B", issuer: KEYSET.issuer, scope: { tools: ["provision_gpu"] }, expiry: T_DEL_EXP, kid: "k1" },
     KEYS.privateKey
   );
+  (delegation as any).signature = "";
 
-  // No trustedKeySets — signature not verified; chain integrity still checked
   const guard = makeGuard();
-  let executed = false;
-
-  await guard(
-    action,
-    async () => { executed = true; },
-    { delegation: { delegation, parentAuth: parent } }
+  await assert.rejects(
+    () => guard(action, async () => {}, { delegation: { delegation, parentAuth: parent } }),
+    /signature is required|DELEGATION_SIGNATURE_INVALID|Authorization verification failed/i
   );
-
-  assert.ok(executed);
 });
 
 test("CASE-7c: delegation path does not call setState", async () => {
   const parent = makeParent();
   const delegation = createDelegation(
     parent,
-    { delegatee: "agent-B", scope: {}, expiry: T_DEL_EXP, kid: "k1" },
+    { delegatee: "agent-B", issuer: KEYSET.issuer, scope: { tools: ["provision_gpu"] }, expiry: T_DEL_EXP, kid: "k1" },
     KEYS.privateKey
   );
 
@@ -160,7 +158,7 @@ test("CASE-7d: onDecision fires ALLOW with delegation artifact present", async (
   const parent = makeParent();
   const delegation = createDelegation(
     parent,
-    { delegatee: "agent-B", scope: {}, expiry: T_DEL_EXP, kid: "k1", delegationId: "d-audit-test" },
+    { delegatee: "agent-B", issuer: KEYSET.issuer, scope: { tools: ["provision_gpu"] }, expiry: T_DEL_EXP, kid: "k1", delegationId: "d-audit-test" },
     KEYS.privateKey
   );
 
@@ -184,7 +182,7 @@ test("CASE-7e: beforeExecute is called before execute on delegation path", async
   const parent = makeParent();
   const delegation = createDelegation(
     parent,
-    { delegatee: "agent-B", scope: {}, expiry: T_DEL_EXP, kid: "k1" },
+    { delegatee: "agent-B", issuer: KEYSET.issuer, scope: { tools: ["provision_gpu"] }, expiry: T_DEL_EXP, kid: "k1" },
     KEYS.privateKey
   );
 
@@ -204,7 +202,7 @@ test("CASE-8a: expired delegation → OxDeAIDelegationError, execute blocked", a
   const parent = makeParent();
   const delegation = createDelegation(
     parent,
-    { delegatee: "agent-B", scope: {}, expiry: T_NOW - 1, kid: "k1" }, // expired
+    { delegatee: "agent-B", issuer: KEYSET.issuer, scope: { tools: ["provision_gpu"] }, expiry: T_NOW - 1, kid: "k1" }, // expired
     KEYS.privateKey
   );
 
@@ -226,15 +224,12 @@ test("CASE-8b: tampered delegation signature → OxDeAIDelegationError, execute 
   const parent = makeParent();
   const delegation = createDelegation(
     parent,
-    { delegatee: "agent-B", scope: { tools: ["provision_gpu"] }, expiry: T_DEL_EXP, kid: "k1" },
+    { delegatee: "agent-B", issuer: KEYSET.issuer, scope: { tools: ["provision_gpu"] }, expiry: T_DEL_EXP, kid: "k1" },
     KEYS.privateKey
   );
   const tampered: DelegationV1 = { ...delegation, delegatee: "agent-EVIL" };
 
-  const guard = makeGuard({
-    trustedKeySets: KEYSET,
-    requireDelegationSignatureVerification: true,
-  });
+  const guard = makeGuard();
   let executed = false;
 
   await assert.rejects(
@@ -251,7 +246,7 @@ test("CASE-8c: action not in scope.tools → OxDeAIDelegationError, execute bloc
   const parent = makeParent();
   const delegation = createDelegation(
     parent,
-    { delegatee: "agent-B", scope: { tools: ["query_db"] }, expiry: T_DEL_EXP, kid: "k1" },
+    { delegatee: "agent-B", issuer: KEYSET.issuer, scope: { tools: ["query_db"] }, expiry: T_DEL_EXP, kid: "k1" },
     KEYS.privateKey
   );
 
@@ -274,7 +269,7 @@ test("CASE-8d: parent hash mismatch → OxDeAIDelegationError, execute blocked",
   const otherParent = makeParent({ audience: "agent-OTHER" });
   const delegation = createDelegation(
     parent,
-    { delegatee: "agent-B", scope: {}, expiry: T_DEL_EXP, kid: "k1" },
+    { delegatee: "agent-B", issuer: KEYSET.issuer, scope: { tools: ["provision_gpu"] }, expiry: T_DEL_EXP, kid: "k1" },
     KEYS.privateKey
   );
 
@@ -296,7 +291,7 @@ test("CASE-8e: OxDeAIDelegationError is catchable as OxDeAIAuthorizationError", 
   const parent = makeParent();
   const delegation = createDelegation(
     parent,
-    { delegatee: "agent-B", scope: {}, expiry: T_NOW - 1, kid: "k1" },
+    { delegatee: "agent-B", issuer: KEYSET.issuer, scope: { tools: ["provision_gpu"] }, expiry: T_NOW - 1, kid: "k1" },
     KEYS.privateKey
   );
 
@@ -317,7 +312,7 @@ test("CASE-8f: setState is NOT called when delegation verification fails", async
   const parent = makeParent();
   const delegation = createDelegation(
     parent,
-    { delegatee: "agent-B", scope: {}, expiry: T_NOW - 1, kid: "k1" },
+    { delegatee: "agent-B", issuer: KEYSET.issuer, scope: { tools: ["provision_gpu"] }, expiry: T_NOW - 1, kid: "k1" },
     KEYS.privateKey
   );
 

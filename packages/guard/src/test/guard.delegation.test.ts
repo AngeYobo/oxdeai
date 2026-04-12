@@ -8,13 +8,12 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { generateKeyPairSync } from "node:crypto";
 import {
   PolicyEngine,
   signAuthorizationEd25519,
   createDelegation,
 } from "@oxdeai/core";
-import type { AuthorizationV1, DelegationV1, KeySet } from "@oxdeai/core";
+import type { AuthorizationV1, DelegationV1 } from "@oxdeai/core";
 import { buildState } from "@oxdeai/sdk";
 
 import { OxDeAIGuard } from "../guard.js";
@@ -22,42 +21,31 @@ import {
   OxDeAIAuthorizationError,
   OxDeAIDelegationError,
 } from "../errors.js";
-import type { ProposedAction, OxDeAIGuardConfig, GuardDelegationInput } from "../types.js";
-
-// ── Test key material ─────────────────────────────────────────────────────────
-
-const KEYS = generateKeyPairSync("ed25519", {
-  privateKeyEncoding: { format: "pem", type: "pkcs8" },
-  publicKeyEncoding: { format: "pem", type: "spki" },
-});
-
-// Delegation is signed by the delegating principal (parentAuth.audience = "agent-A")
-const KEYSET: KeySet = {
-  issuer: "agent-A",
-  version: "1",
-  keys: [{ kid: "k1", alg: "Ed25519", public_key: KEYS.publicKey }],
-};
+import type { ProposedAction, OxDeAIGuardConfig } from "../types.js";
+import { TEST_KEYSET, TEST_KEYPAIR } from "./helpers/fixtures.js";
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
-const NOW_S = 1_700_000_000;
+const T_NOW = Math.floor(Date.now() / 1000);
 
 function makeParentAuth(overrides?: { expiry?: number; audience?: string }): AuthorizationV1 {
-  return signAuthorizationEd25519(
+  const auth = signAuthorizationEd25519(
     {
       auth_id: "f".repeat(64),
-      issuer: "pdp-A",
+      issuer: TEST_KEYSET.issuer,
       audience: overrides?.audience ?? "agent-A",
       intent_hash: "a".repeat(64),
       state_hash: "b".repeat(64),
       policy_id: "policy-1",
       decision: "ALLOW",
-      issued_at: NOW_S - 60,
-      expiry: overrides?.expiry ?? NOW_S + 3600,
+      issued_at: T_NOW - 60,
+      expiry: overrides?.expiry ?? T_NOW + 900,
       kid: "k1",
     },
-    KEYS.privateKey
+    TEST_KEYPAIR.privateKey.toString()
   );
+  (auth as any).scope = { tools: ["provision_gpu"], max_amount: 1_000_000n };
+  return auth;
 }
 
 function makeDelegation(
@@ -68,14 +56,15 @@ function makeDelegation(
     parentAuth,
     {
       delegatee: overrides?.delegatee ?? "agent-B",
+      issuer: TEST_KEYSET.issuer,
       scope: {
         tools: overrides?.tools,
         max_amount: overrides?.max_amount,
       },
-      expiry: overrides?.expiry ?? NOW_S + 1800,
+      expiry: overrides?.expiry ?? T_NOW + 300,
       kid: "k1",
     },
-    KEYS.privateKey
+    TEST_KEYPAIR.privateKey.toString()
   );
 }
 
@@ -89,9 +78,19 @@ function makeGuardConfig(overrides?: Partial<OxDeAIGuardConfig>): OxDeAIGuardCon
     max_concurrent: 16,
   });
   return {
-    engine: new PolicyEngine({ policy_version: "v1", engine_secret: "test-secret-must-be-at-least-32-chars!!" }),
+    engine: new PolicyEngine({
+      policy_version: "v1",
+      engine_secret: "test-secret-must-be-at-least-32-chars!!",
+      authorization_signing_alg: "Ed25519",
+      authorization_signing_kid: "k1",
+      authorization_issuer: TEST_KEYSET.issuer,
+      authorization_audience: "aud-test",
+      authorization_ttl_seconds: 600,
+      authorization_private_key_pem: TEST_KEYPAIR.privateKey.toString(),
+    }),
     getState: () => state,
     setState: () => {},
+    trustedKeySets: [TEST_KEYSET],
     ...overrides,
   };
 }
@@ -104,7 +103,7 @@ const baseAction: ProposedAction = {
     agent_id: "agent-B",
     target: "gpu-pool",
   },
-  timestampSeconds: NOW_S,
+  timestampSeconds: T_NOW,
 };
 
 // ── Happy path ────────────────────────────────────────────────────────────────
@@ -112,7 +111,7 @@ const baseAction: ProposedAction = {
 test("delegation: valid delegation allows execution", async () => {
   const parentAuth = makeParentAuth();
   const delegation = makeDelegation(parentAuth);
-  const config = makeGuardConfig({ trustedKeySets: KEYSET, requireDelegationSignatureVerification: true });
+  const config = makeGuardConfig({ trustedKeySets: TEST_KEYSET, requireDelegationSignatureVerification: true });
   const guard = OxDeAIGuard(config);
 
   let executed = false;
@@ -203,7 +202,7 @@ test("delegation: blocks action not in scope.tools", async () => {
 
 test("delegation: allows action in scope.tools", async () => {
   const parentAuth = makeParentAuth();
-  const delegation = makeDelegation(parentAuth, { tools: ["provision_gpu", "query_db"] });
+  const delegation = makeDelegation(parentAuth, { tools: ["provision_gpu"] });
 
   const config = makeGuardConfig();
   const guard = OxDeAIGuard(config);
@@ -239,7 +238,7 @@ test("delegation: blocks intent amount exceeding scope.max_amount", async () => 
 
 test("delegation: blocks expired delegation", async () => {
   const parentAuth = makeParentAuth();
-  const delegation = makeDelegation(parentAuth, { expiry: NOW_S - 1 }); // already expired
+  const delegation = makeDelegation(parentAuth, { expiry: T_NOW - 1 }); // already expired
 
   const config = makeGuardConfig();
   const guard = OxDeAIGuard(config);
@@ -282,7 +281,7 @@ test("delegation: blocks invalid signature when requireDelegationSignatureVerifi
   const tampered = { ...delegation, delegatee: "agent-EVIL" }; // breaks signature
 
   const config = makeGuardConfig({
-    trustedKeySets: KEYSET,
+    trustedKeySets: TEST_KEYSET,
     requireDelegationSignatureVerification: true,
   });
   const guard = OxDeAIGuard(config);
@@ -317,7 +316,7 @@ test("delegation: blocks when delegation and parentAuth are missing from input",
 
 test("OxDeAIDelegationError is instanceof OxDeAIAuthorizationError", async () => {
   const parentAuth = makeParentAuth();
-  const delegation = makeDelegation(parentAuth, { expiry: NOW_S - 1 });
+  const delegation = makeDelegation(parentAuth, { expiry: T_NOW - 1 });
 
   const config = makeGuardConfig();
   const guard = OxDeAIGuard(config);

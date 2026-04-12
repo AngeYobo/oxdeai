@@ -65,10 +65,10 @@ function seeds(): number[] {
 
 // ── Fixed timestamps ───────────────────────────────────────────────────────────
 
-const T_ISSUED  = 1_000_000;  // parent issued_at
-const T_NOW     = 1_001_000;  // action.timestampSeconds (= now used by guard)
-const T_DEL_EXP = 1_002_000;  // valid delegation expiry
-const T_PAR_EXP = 1_003_000;  // parent expiry
+const T_NOW     = Math.floor(Date.now() / 1000);
+const T_ISSUED  = T_NOW - 60;    // parent issued_at
+const T_DEL_EXP = T_NOW + 600;   // valid delegation expiry
+const T_PAR_EXP = T_NOW + 900;   // parent expiry
 
 // ── Fixed key material ────────────────────────────────────────────────────────
 
@@ -80,7 +80,7 @@ const KEYS = generateKeyPairSync("ed25519", {
 const KEYSET: KeySet = {
   issuer: "parent-agent",
   version: "1",
-  keys: [{ kid: "k1", alg: "Ed25519", public_key: KEYS.publicKey }],
+  keys: [{ kid: "k1", alg: "Ed25519", public_key: KEYS.publicKey.toString() }],
 };
 
 const TOOL_POOL = [
@@ -96,10 +96,10 @@ const TOOL_POOL = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeParentAuth(expiry = T_PAR_EXP): AuthorizationV1 {
-  return signAuthorizationEd25519(
+  const auth = signAuthorizationEd25519(
     {
       auth_id: "f".repeat(64),
-      issuer: "pdp-issuer",
+      issuer: KEYSET.issuer,
       audience: "parent-agent",
       intent_hash: "a".repeat(64),
       state_hash: "b".repeat(64),
@@ -111,6 +111,8 @@ function makeParentAuth(expiry = T_PAR_EXP): AuthorizationV1 {
     },
     KEYS.privateKey
   );
+  (auth as any).scope = { tools: [...TOOL_POOL], max_amount: 1_000_000n };
+  return auth;
 }
 
 function makeDelegation(
@@ -126,6 +128,8 @@ function makeDelegation(
       expiry,
       kid: "k1",
       issuedAt: T_ISSUED,
+      audience: "child-agent",
+      issuer: KEYSET.issuer,
     },
     KEYS.privateKey
   );
@@ -326,10 +330,11 @@ test("G-D3: delegation presented with wrong parent authorization is rejected (DE
     // Parent B: structurally valid, non-expired, same audience/policy_id/expiry
     // as A — only auth_id differs. This isolates the parent_auth_hash check and
     // prevents other chain violations (delegator, policy, expiry) from firing first.
-    const parentB = signAuthorizationEd25519(
+    // Must carry .scope so the guard does not short-circuit before verifyDelegationChain.
+    const parentBAuth = signAuthorizationEd25519(
       {
         auth_id: wrongChar.repeat(64),
-        issuer: "pdp-issuer",
+        issuer: KEYSET.issuer,
         audience: "parent-agent",
         intent_hash: "a".repeat(64),
         state_hash: "b".repeat(64),
@@ -341,6 +346,8 @@ test("G-D3: delegation presented with wrong parent authorization is rejected (DE
       },
       KEYS.privateKey
     );
+    const parentB = parentBAuth;
+    (parentB as any).scope = { tools: [scopeTool], max_amount: 1_000_000n };
 
     // Delegation is cryptographically bound to parentA via parent_auth_hash.
     const delegation = makeDelegation(parentA, [scopeTool], T_DEL_EXP);
