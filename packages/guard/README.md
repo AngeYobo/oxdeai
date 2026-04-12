@@ -136,6 +136,97 @@ OxDeAIGuard({
 
 ---
 
+## Replay store — production requirements
+
+The guard prevents replay via a pluggable `ReplayStore`. Every `auth_id` and
+`delegation_id` is atomically check-and-consumed before execution.
+
+### Default: in-memory (development only)
+
+```typescript
+import { OxDeAIGuard } from "@oxdeai/guard";
+// No replayStore config → createInMemoryReplayStore() used automatically.
+```
+
+**NOT suitable for production.** Replay state is:
+- lost on process restart
+- not shared across instances (horizontal scaling allows cross-instance replay)
+
+### Production: Redis backend
+
+```typescript
+import { OxDeAIGuard, createRedisReplayStore } from "@oxdeai/guard";
+import Redis from "ioredis"; // or node-redis v4
+
+const redis = new Redis({ host: "redis.internal", port: 6379 });
+
+const guard = OxDeAIGuard({
+  engine,
+  getState,
+  setState,
+  trustedKeySets: [myKeySet],
+  replayStore: createRedisReplayStore({ client: redis }),
+});
+```
+
+Atomicity is guaranteed by `SET key value NX EX ttl`. Exactly one caller
+wins across any number of instances; all others see `null` and receive
+`OxDeAIAuthorizationError: replay detected`.
+
+**Key schema:**
+
+| Artifact | Redis key |
+|---|---|
+| `AuthorizationV1` | `replay:auth:<auth_id>` |
+| `DelegationV1` | `replay:delegation:<delegation_id>` |
+
+**TTL:** derived from artifact `expiry` — `max(1, expiry - now)`. Keys
+auto-evict after the artifact expires. No manual cleanup required.
+
+**Fail-closed:** if Redis is unavailable (network failure, timeout, restart),
+`consumeAuthId` throws. The guard catches this and raises
+`OxDeAIAuthorizationError: Replay store unavailable`, blocking execution.
+There is no fallback to memory and no best-effort path.
+
+### node-redis v4 adapter
+
+```typescript
+import { createClient } from "redis";
+import type { RedisClient } from "@oxdeai/guard";
+
+const nodeRedis = createClient({ url: "redis://redis.internal:6379" });
+await nodeRedis.connect();
+
+// Adapt the node-redis v4 API to the RedisClient interface.
+const client: RedisClient = {
+  set: (key, value, _nx, _ex, ttl) =>
+    nodeRedis.set(key, value, { NX: true, EX: ttl }),
+};
+
+const guard = OxDeAIGuard({
+  // ...
+  replayStore: createRedisReplayStore({ client }),
+});
+```
+
+### Custom backends
+
+Implement `ReplayStore` directly for DynamoDB, Postgres, or any store that
+provides compare-and-set semantics:
+
+```typescript
+import type { ReplayStore } from "@oxdeai/guard";
+
+const myStore: ReplayStore = {
+  async consumeAuthId(authId, { expiry }) {
+    // Must be atomic. Return true = first use, false = replay, throw = fail-closed.
+    return await db.setIfAbsent(`auth:${authId}`, expiry);
+  },
+};
+```
+
+---
+
 ## Error classes
 
 | Class | When thrown |
