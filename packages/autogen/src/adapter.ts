@@ -53,6 +53,7 @@ export function createAutoGenGuard(config: AutoGenGuardConfig): AutoGenGuardFn {
     beforeExecute: config.beforeExecute,
     onDecision: config.onDecision,
     strict: config.strict,
+    trustedKeySets: config.trustedKeySets,
   });
 
   return async function autoGenGuard<T>(

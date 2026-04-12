@@ -10,6 +10,7 @@ import type { Authorization, State } from "@oxdeai/core";
 import { createOpenClawGuard, OxDeAIDenyError } from "@oxdeai/openclaw";
 import type { OpenClawAction } from "@oxdeai/openclaw";
 import { buildProvisionIntent, engine, gpuCost, AGENT_ID } from "./policy.js";
+import { DEMO_KEYSET } from "./crypto.js";
 
 // ── ANSI color helpers ────────────────────────────────────────────────────────
 const C = {
@@ -72,6 +73,7 @@ export async function guardedProvision(
     agentId: AGENT_ID,
     getState: () => state,
     setState: (s: State) => { nextState = s; },
+    trustedKeySets: [DEMO_KEYSET],
     // Return the pre-built intent so nonce/intent_id are stable.
     mapActionToIntent: () => intent,
     beforeExecute(_action: unknown, authorization: Authorization) {

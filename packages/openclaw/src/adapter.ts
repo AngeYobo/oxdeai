@@ -55,6 +55,7 @@ export function createOpenClawGuard(config: OpenClawGuardConfig): OpenClawGuardF
     beforeExecute: config.beforeExecute,
     onDecision: config.onDecision,
     strict: config.strict,
+    trustedKeySets: config.trustedKeySets,
   });
 
   return async function openClawGuard<T>(

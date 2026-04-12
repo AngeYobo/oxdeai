@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { PolicyEngine } from "@oxdeai/core";
 import type { Intent, State } from "@oxdeai/core";
+import { DEMO_KEYSET, DEMO_PRIVATE_KEY_PEM } from "./crypto.js";
 
 export const GPU_COST: Record<string, Record<string, bigint>> = {
   a100: { "us-east-1": 500n },
@@ -29,7 +30,11 @@ if (!process.env.OXDEAI_ENGINE_SECRET) {
 export const engine = new PolicyEngine({
   policy_version: "v1.0.0",
   engine_secret: _engineSecret,
-  authorization_ttl_seconds: 60,
+  authorization_signing_alg: "Ed25519",
+  authorization_signing_kid: "k1",
+  authorization_issuer: DEMO_KEYSET.issuer,
+  authorization_private_key_pem: DEMO_PRIVATE_KEY_PEM,
+  authorization_ttl_seconds: 600,
   policyId: POLICY_ID,
 });
 

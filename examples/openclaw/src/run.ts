@@ -21,9 +21,10 @@ import {
   verifySnapshot,
   verifyEnvelope,
 } from "@oxdeai/core";
-import type { KeySet, State } from "@oxdeai/core";
+import type { State } from "@oxdeai/core";
 import { engine, POLICY_ID, AGENT_ID, makeState } from "./policy.js";
 import { guardedProvision } from "./pep.js";
+import { DEMO_KEYSET } from "./crypto.js";
 
 // ── ANSI color helpers ────────────────────────────────────────────────────────
 const C = {
@@ -48,20 +49,6 @@ const C = {
 };
 
 const c = (color: string, text: string) => `${color}${text}${C.reset}`;
-
-const DEMO_TRUSTED_KEYSET: KeySet = {
-  issuer: "oxdeai.policy-engine",
-  version: "1",
-  keys: [
-    {
-      kid: "2026-01",
-      alg: "Ed25519",
-      public_key: `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAWiMMGTYK7zzHwZXLzDpCshxAH6Lgx8gVsJaixePuY7g=
------END PUBLIC KEY-----`,
-    },
-  ],
-};
 
 // ── Planned calls (simulates OpenAI tool-call proposals) ──────────────────────
 
@@ -188,7 +175,7 @@ export async function runDemo(log: (msg: string) => void = (msg) => console.log(
   const vr = verifyEnvelope(envelopeBytes, {
     expectedPolicyId: POLICY_ID,
     mode: "strict",
-    trustedKeySets: DEMO_TRUSTED_KEYSET,
+    trustedKeySets: DEMO_KEYSET,
   });
 
   const statusColor = vr.status === "ok" ? c(C.bGreen, vr.status) : c(C.bRed, vr.status);
