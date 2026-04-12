@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Authorization, AuthorizationV1, DelegationV1, Intent, KeySet, PolicyEngine, State } from "@oxdeai/core";
+import type { ReplayStore } from "./replayStore.js";
 
 /**
  * A runtime-agnostic description of an action an agent wants to perform.
@@ -106,9 +107,15 @@ export type OxDeAIGuardConfig = {
   requireDelegationSignatureVerification?: boolean;
 
   /**
-   * Set of delegation_ids already consumed in this session.
-   * Used for replay protection on the delegation path.
-   * Tracking across calls is the caller's responsibility.
+   * Pluggable replay store for durable auth_id and delegation_id tracking.
+   *
+   * When omitted, an in-memory store is created per guard instance (equivalent
+   * to the previous single-process behavior). Provide a backend-backed
+   * implementation (e.g. Redis, DynamoDB) for multi-process or
+   * restart-durable replay prevention.
+   *
+   * The store MUST be fail-closed: throw rather than return a permissive
+   * result when unavailable. The guard treats any thrown error as DENY.
    */
-  consumedDelegationIds?: readonly string[];
+  replayStore?: ReplayStore;
 };

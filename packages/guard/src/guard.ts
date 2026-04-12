@@ -3,6 +3,8 @@ import type { Authorization, AuthorizationV1, Intent, KeySet } from "@oxdeai/cor
 import { verifyDelegationChain, verifyAuthorization as strictVerifyAuthorization } from "@oxdeai/core";
 import type { OxDeAIGuardConfig, ProposedAction, GuardDecisionRecord, GuardCallOptions } from "./types.js";
 import { defaultNormalizeAction } from "./normalizeAction.js";
+import { createInMemoryReplayStore } from "./replayStore.js";
+import type { ReplayStore } from "./replayStore.js";
 import {
   OxDeAIDenyError,
   OxDeAIAuthorizationError,
@@ -95,10 +97,9 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
     );
   }
 
-  // Tracks consumed auth_ids to enforce replay resistance at the PEP.
-  const consumedAuthIds = new Set<string>();
-  // Tracks consumed delegation_ids to enforce replay resistance for delegations.
-  const consumedDelegationIds = new Set<string>();
+  // Pluggable replay store. Defaults to in-memory (single-process semantics).
+  // Replace with a durable backend for multi-process / restart-durable deployments.
+  const replayStore: ReplayStore = config.replayStore ?? createInMemoryReplayStore();
 
   return async function guard(
     action: ProposedAction,
@@ -133,7 +134,18 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
       const now = Math.floor(Date.now() / 1000);
       const violationMessages: string[] = [];
 
-      if (consumedDelegationIds.has(delegation.delegation_id)) {
+      // Atomically check-and-consume the delegation_id. Fail closed on store errors.
+      let delegConsumed: boolean;
+      try {
+        delegConsumed = replayStore.consumeDelegationId
+          ? await replayStore.consumeDelegationId(delegation.delegation_id, { expiry: delegation.expiry })
+          : true;
+      } catch (err) {
+        throw new OxDeAIAuthorizationError(
+          `Replay store unavailable for delegation_id: ${err instanceof Error ? err.message : String(err)}. Execution blocked.`
+        );
+      }
+      if (!delegConsumed) {
         throw new OxDeAIAuthorizationError("Delegation replay detected. Execution blocked.");
       }
 
@@ -159,7 +171,6 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
         now,
         trustedKeySets: config.trustedKeySets,
         requireSignatureVerification: true,
-        consumedDelegationIds: [...consumedDelegationIds],
         parentScope,
       });
 
@@ -193,7 +204,18 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
       }
 
       // Enforce strict verification on the parent Authorization as well.
-      if (consumedAuthIds.has(parentAuth.auth_id)) {
+      // Atomically check-and-consume the parentAuth auth_id. Fail closed on store errors.
+      let parentAuthConsumed: boolean;
+      try {
+        parentAuthConsumed = await replayStore.consumeAuthId(
+          parentAuth.auth_id, { expiry: parentAuth.expiry }
+        );
+      } catch (err) {
+        throw new OxDeAIAuthorizationError(
+          `Replay store unavailable for parentAuth auth_id: ${err instanceof Error ? err.message : String(err)}. Execution blocked.`
+        );
+      }
+      if (!parentAuthConsumed) {
         throw new OxDeAIAuthorizationError(
           "Authorization replay detected on parentAuth: auth_id already consumed. Execution blocked."
         );
@@ -207,7 +229,6 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
         expectedPolicyId: parentAuth.policy_id,
         expectedAudience: parentAuth.audience,
         expectedIssuer: parentAuth.issuer,
-        consumedAuthIds: [...consumedAuthIds],
       });
 
       if (parentAuthResult.status !== "ok") {
@@ -217,9 +238,6 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
           "unknown reason";
         throw new OxDeAIAuthorizationError(`Parent authorization verification failed: ${reasons}. Execution blocked.`);
       }
-
-      consumedAuthIds.add(parentAuth.auth_id);
-      consumedDelegationIds.add(delegation.delegation_id);
 
       // parentAuth is AuthorizationV1; cast to Authorization for hook/audit
       // compatibility. Legacy fields will be absent — callers on the delegation
@@ -283,7 +301,19 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
 
     // ── 6b. Verify the authorization artifact (strict verifier, fail-closed) ─
     const now = Math.floor(Date.now() / 1000);
-    if (consumedAuthIds.has(authorization.auth_id)) {
+
+    // Atomically check-and-consume the auth_id before execution. Fail closed on store errors.
+    let authConsumed: boolean;
+    try {
+      authConsumed = await replayStore.consumeAuthId(
+        authorization.auth_id, { expiry: (authorization as AuthorizationV1).expiry ?? 0 }
+      );
+    } catch (err) {
+      throw new OxDeAIAuthorizationError(
+        `Replay store unavailable: ${err instanceof Error ? err.message : String(err)}. Execution blocked.`
+      );
+    }
+    if (!authConsumed) {
       throw new OxDeAIAuthorizationError("Authorization replay detected: auth_id already consumed. Execution blocked.");
     }
 
@@ -295,7 +325,6 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
       expectedPolicyId: authorization.policy_id,
       expectedAudience: authorization.audience,
       expectedIssuer: authorization.issuer,
-      consumedAuthIds: [...consumedAuthIds],
     });
 
     if (authResult.status !== "ok") {
@@ -303,9 +332,6 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
         authResult.violations?.map((v) => v.code).join(", ") || authResult.status || "unknown reason";
       throw new OxDeAIAuthorizationError(`Authorization verification failed: ${reasons}. Execution blocked.`);
     }
-
-    // Mark auth_id as consumed to prevent replay before execution.
-    consumedAuthIds.add(authorization.auth_id);
 
     // ── 7. beforeExecute hook ──────────────────────────────────────────────
     if (config.beforeExecute) {

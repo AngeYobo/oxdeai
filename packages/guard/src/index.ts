@@ -10,6 +10,8 @@
 
 export { OxDeAIGuard } from "./guard.js";
 export { defaultNormalizeAction } from "./normalizeAction.js";
+export { createInMemoryReplayStore } from "./replayStore.js";
+export type { ReplayStore } from "./replayStore.js";
 export {
   OxDeAIDenyError,
   OxDeAIAuthorizationError,
