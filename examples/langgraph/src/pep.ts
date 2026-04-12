@@ -10,6 +10,7 @@ import type { Authorization, State } from "@oxdeai/core";
 import { createLangGraphGuard, OxDeAIDenyError } from "@oxdeai/langgraph";
 import type { LangGraphToolCall } from "@oxdeai/langgraph";
 import { buildProvisionIntent, engine, gpuCost, AGENT_ID } from "./policy.js";
+import { DEMO_KEYSET } from "./crypto.js";
 
 const C = {
   reset:      "\x1b[0m",
@@ -74,6 +75,7 @@ export async function guardedProvision(
     agentId: AGENT_ID,
     getState: () => state,
     setState: (s: State) => { nextState = s; },
+    trustedKeySets: [DEMO_KEYSET],
     // Return the pre-built intent so nonce/intent_id are stable.
     mapActionToIntent: () => intent,
     beforeExecute(_action: unknown, authorization: Authorization) {

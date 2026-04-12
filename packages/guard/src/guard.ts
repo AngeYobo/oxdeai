@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Authorization, Intent } from "@oxdeai/core";
-import { verifyDelegationChain } from "@oxdeai/core";
+import type { Authorization, AuthorizationV1, Intent, KeySet } from "@oxdeai/core";
+import { verifyDelegationChain, verifyAuthorization as strictVerifyAuthorization } from "@oxdeai/core";
 import type { OxDeAIGuardConfig, ProposedAction, GuardDecisionRecord, GuardCallOptions } from "./types.js";
 import { defaultNormalizeAction } from "./normalizeAction.js";
 import {
@@ -83,6 +83,22 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
 
   const normalize: (action: ProposedAction) => Intent =
     config.mapActionToIntent ?? defaultNormalizeAction;
+  const trustedKeySets: readonly KeySet[] | undefined = config.trustedKeySets
+    ? Array.isArray(config.trustedKeySets)
+      ? config.trustedKeySets
+      : [config.trustedKeySets]
+    : undefined;
+
+  if (!trustedKeySets || trustedKeySets.length === 0) {
+    throw new OxDeAIGuardConfigurationError(
+      "trustedKeySets are required for authorization verification and must not be empty."
+    );
+  }
+
+  // Tracks consumed auth_ids to enforce replay resistance at the PEP.
+  const consumedAuthIds = new Set<string>();
+  // Tracks consumed delegation_ids to enforce replay resistance for delegations.
+  const consumedDelegationIds = new Set<string>();
 
   return async function guard(
     action: ProposedAction,
@@ -114,8 +130,12 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
         );
       }
 
-      const now = intent.timestamp;
+      const now = Math.floor(Date.now() / 1000);
       const violationMessages: string[] = [];
+
+      if (consumedDelegationIds.has(delegation.delegation_id)) {
+        throw new OxDeAIAuthorizationError("Delegation replay detected. Execution blocked.");
+      }
 
       // Verify delegation chain:
       //   - parent hash binding
@@ -125,13 +145,22 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
       //   - delegation expiry <= parent expiry
       //   - delegation expiry
       //   - delegation signature (if trustedKeySets provided)
-      //   - scope narrowing against parent is NOT checked here (parentScope
-      //     is the deployer's responsibility when constructing the delegation)
+      //   - scope narrowing against parent (enforced via parentScope)
+      //
+      // Derive parentScope from parentAuth; if not present, fail closed.
+      const parentScope = (parentAuth as any).scope;
+      if (!parentScope) {
+        throw new OxDeAIAuthorizationError(
+          "Parent authorization scope is required for delegation narrowing but was not provided. Execution blocked."
+        );
+      }
+
       const chainResult = verifyDelegationChain(delegation, parentAuth, {
         now,
         trustedKeySets: config.trustedKeySets,
-        requireSignatureVerification: config.requireDelegationSignatureVerification ?? false,
-        consumedDelegationIds: config.consumedDelegationIds,
+        requireSignatureVerification: true,
+        consumedDelegationIds: [...consumedDelegationIds],
+        parentScope,
       });
 
       if (!chainResult.ok) {
@@ -154,9 +183,43 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
         );
       }
 
+      // Require scope presence for narrowing; fail closed if absent.
+      if (!delegation.scope) {
+        violationMessages.push("delegation.scope is required for narrowing; execution blocked.");
+      }
+
       if (violationMessages.length > 0) {
         throw new OxDeAIDelegationError(violationMessages);
       }
+
+      // Enforce strict verification on the parent Authorization as well.
+      if (consumedAuthIds.has(parentAuth.auth_id)) {
+        throw new OxDeAIAuthorizationError(
+          "Authorization replay detected on parentAuth: auth_id already consumed. Execution blocked."
+        );
+      }
+
+      const parentAuthResult = strictVerifyAuthorization(parentAuth as AuthorizationV1, {
+        now,
+        mode: "strict",
+        trustedKeySets,
+        requireSignatureVerification: true,
+        expectedPolicyId: parentAuth.policy_id,
+        expectedAudience: parentAuth.audience,
+        expectedIssuer: parentAuth.issuer,
+        consumedAuthIds: [...consumedAuthIds],
+      });
+
+      if (parentAuthResult.status !== "ok") {
+        const reasons =
+          parentAuthResult.violations?.map((v) => v.code).join(", ") ||
+          parentAuthResult.status ||
+          "unknown reason";
+        throw new OxDeAIAuthorizationError(`Parent authorization verification failed: ${reasons}. Execution blocked.`);
+      }
+
+      consumedAuthIds.add(parentAuth.auth_id);
+      consumedDelegationIds.add(delegation.delegation_id);
 
       // parentAuth is AuthorizationV1; cast to Authorization for hook/audit
       // compatibility. Legacy fields will be absent — callers on the delegation
@@ -218,14 +281,31 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
 
     const { authorization, nextState } = evalResult;
 
-    // ── 6b. Verify the authorization artifact ──────────────────────────────
-    const now = intent.timestamp;
-    const authCheck = config.engine.verifyAuthorization(intent, authorization, nextState, now);
-    if (!authCheck.valid) {
-      throw new OxDeAIAuthorizationError(
-        `Authorization verification failed: ${authCheck.reason ?? "unknown reason"}. Execution blocked.`
-      );
+    // ── 6b. Verify the authorization artifact (strict verifier, fail-closed) ─
+    const now = Math.floor(Date.now() / 1000);
+    if (consumedAuthIds.has(authorization.auth_id)) {
+      throw new OxDeAIAuthorizationError("Authorization replay detected: auth_id already consumed. Execution blocked.");
     }
+
+    const authResult = strictVerifyAuthorization(authorization as AuthorizationV1, {
+      now,
+      mode: "strict",
+      trustedKeySets,
+      requireSignatureVerification: true,
+      expectedPolicyId: authorization.policy_id,
+      expectedAudience: authorization.audience,
+      expectedIssuer: authorization.issuer,
+      consumedAuthIds: [...consumedAuthIds],
+    });
+
+    if (authResult.status !== "ok") {
+      const reasons =
+        authResult.violations?.map((v) => v.code).join(", ") || authResult.status || "unknown reason";
+      throw new OxDeAIAuthorizationError(`Authorization verification failed: ${reasons}. Execution blocked.`);
+    }
+
+    // Mark auth_id as consumed to prevent replay before execution.
+    consumedAuthIds.add(authorization.auth_id);
 
     // ── 7. beforeExecute hook ──────────────────────────────────────────────
     if (config.beforeExecute) {

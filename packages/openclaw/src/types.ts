@@ -78,6 +78,9 @@ export type OpenClawGuardConfig = {
 
   /** When true, missing optional normalizer fields cause hard failures. */
   strict?: boolean;
+
+  /** Trusted keysets required for strict authorization verification. */
+  trustedKeySets?: OxDeAIGuardConfig["trustedKeySets"];
 };
 
 /**

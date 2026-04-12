@@ -53,6 +53,7 @@ export function createLangGraphGuard(config: LangGraphGuardConfig): LangGraphGua
     beforeExecute: config.beforeExecute,
     onDecision: config.onDecision,
     strict: config.strict,
+    trustedKeySets: config.trustedKeySets,
   });
 
   return async function langGraphGuard<T>(

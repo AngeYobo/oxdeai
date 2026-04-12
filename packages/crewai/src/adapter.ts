@@ -53,6 +53,7 @@ export function createCrewAIGuard(config: CrewAIGuardConfig): CrewAIGuardFn {
     beforeExecute: config.beforeExecute,
     onDecision: config.onDecision,
     strict: config.strict,
+    trustedKeySets: config.trustedKeySets,
   });
 
   return async function crewAIGuard<T>(

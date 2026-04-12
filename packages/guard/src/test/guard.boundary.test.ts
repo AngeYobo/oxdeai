@@ -1,0 +1,615 @@
+// SPDX-License-Identifier: Apache-2.0
+import test from "node:test";
+import assert from "node:assert/strict";
+import { generateKeyPairSync } from "node:crypto";
+
+import { OxDeAIGuard } from "../index.js";
+import type { ProposedAction } from "../types.js";
+import type { State, Intent, Authorization, AuthorizationV1, KeySet } from "@oxdeai/core";
+import {
+  PolicyEngine,
+  signAuthorizationEd25519,
+  verifyAuthorization as strictVerifyAuthorization,
+  createDelegation,
+} from "@oxdeai/core";
+
+// ---------------------------------------------------------------------------
+// Fixtures
+
+const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
+  privateKeyEncoding: { format: "pem", type: "pkcs8" },
+  publicKeyEncoding: { format: "spki", type: "pem" },
+});
+
+const TRUSTED_KEYSET: KeySet = {
+  issuer: "issuer-test",
+  version: "v1",
+  keys: [
+    {
+      kid: "k1",
+      alg: "Ed25519",
+      public_key: publicKey.export({ type: "spki", format: "pem" }).toString(),
+    },
+  ],
+};
+
+function makeState(policyVersion = "policy-test"): State {
+  return {
+    policy_version: policyVersion,
+    period_id: "p1",
+    kill_switch: { global: false, agents: {} },
+    allowlists: {},
+    budget: { budget_limit: { "agent-1": 1_000_000n }, spent_in_period: { "agent-1": 0n } },
+    max_amount_per_action: { "agent-1": 1_000_000n },
+    velocity: { config: { window_seconds: 3600, max_actions: 100 }, counters: {} },
+    replay: { window_seconds: 3600, max_nonces_per_agent: 256, nonces: {} },
+    concurrency: { max_concurrent: { "agent-1": 3 }, active: {}, active_auths: {} },
+    recursion: { max_depth: { "agent-1": 5 } },
+    tool_limits: { window_seconds: 3600, max_calls: { "agent-1": 100 }, calls: {} },
+  };
+}
+
+function makeAction(overrides: Partial<ProposedAction["context"]> = {}, extra?: Partial<ProposedAction>): ProposedAction {
+  return {
+    name: "pay",
+    args: { amount: 1 },
+    estimatedCost: 0,
+    ...extra,
+    context: {
+      agent_id: "agent-1",
+      target: "vendor",
+      ...overrides,
+    },
+  } satisfies ProposedAction;
+}
+
+function makeEngine(policyVersion = "policy-test") {
+  return new PolicyEngine({
+    policy_version: policyVersion,
+    engine_secret: "a".repeat(32),
+    authorization_ttl_seconds: 60,
+    authorization_signing_alg: "Ed25519",
+    authorization_signing_kid: "k1",
+    authorization_issuer: TRUSTED_KEYSET.issuer,
+    authorization_audience: "aud-test",
+    authorization_private_key_pem: privateKey.export({ type: "pkcs8", format: "pem" }).toString(),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+
+test("expired authorization is denied (execute not called)", async () => {
+  const engine = makeEngine();
+  const state = makeState();
+  let storedState = state;
+  const guard = OxDeAIGuard({
+    engine,
+    getState: async () => storedState,
+    setState: async (s) => {
+      storedState = s;
+    },
+    trustedKeySets: [TRUSTED_KEYSET],
+  });
+
+  const pastTs = 1;
+  const action = makeAction({ timestampSeconds: pastTs } as any, { timestampSeconds: pastTs });
+
+  let executed = false;
+  await assert.rejects(
+    guard(action, async () => {
+      executed = true;
+    }),
+    /AUTH_EXPIRED|Authorization verification failed/i
+  );
+  assert.equal(executed, false);
+});
+
+test("audience tampering is denied by strict verifier", async () => {
+  const engine = makeEngine();
+  const state = makeState();
+  let storedState = state;
+
+  const originalEval = engine.evaluatePure.bind(engine);
+  engine.evaluatePure = ((intent: Intent, st: State) => {
+    const out = originalEval(intent, st);
+    if (out.decision === "ALLOW") {
+      const tampered: Authorization = { ...out.authorization, audience: "attacker" };
+      return { ...out, authorization: tampered };
+    }
+    return out;
+  }) as any;
+
+  const guard = OxDeAIGuard({
+    engine,
+    getState: async () => storedState,
+    setState: async (s) => {
+      storedState = s;
+    },
+    trustedKeySets: [TRUSTED_KEYSET],
+  });
+
+  const action = makeAction();
+  let executed = false;
+  await assert.rejects(
+    guard(action, async () => {
+      executed = true;
+    }),
+    /AUTH_AUDIENCE_MISMATCH|Authorization verification failed/i
+  );
+  assert.equal(executed, false);
+});
+
+test("auth_id replay is denied on second use", async () => {
+  const issued_at = Math.floor(Date.now() / 1000);
+  const auth: AuthorizationV1 = signAuthorizationEd25519(
+    {
+      auth_id: "auth-replay-test",
+      issuer: TRUSTED_KEYSET.issuer,
+      audience: "aud-test",
+      intent_hash: "i".repeat(64),
+      state_hash: "s".repeat(64),
+      policy_id: "p".repeat(64),
+      decision: "ALLOW",
+      issued_at,
+      expiry: issued_at + 300,
+      kid: "k1",
+      nonce: "1",
+      capability: "exec",
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  );
+
+  class FakeEngine {
+    evaluatePure(_intent: Intent, state: State) {
+      return { decision: "ALLOW" as const, reasons: [], authorization: auth as Authorization, nextState: state };
+    }
+    verifyAuthorization() {
+      return { valid: true };
+    }
+  }
+
+  const state = makeState();
+  let storedState = state;
+  const guard = OxDeAIGuard({
+    engine: new FakeEngine() as any,
+    getState: async () => storedState,
+    setState: async (s) => {
+      storedState = s;
+    },
+    trustedKeySets: [TRUSTED_KEYSET],
+  });
+
+  const action = makeAction();
+  let executions = 0;
+  await guard(action, async () => {
+    executions += 1;
+  });
+  await assert.rejects(
+    guard(action, async () => {
+      executions += 1;
+    }),
+    /Authorization replay detected|AUTH_REPLAY/i
+  );
+  assert.equal(executions, 1);
+});
+
+test("delegation tool widening is denied", async () => {
+  const parentAuth = signAuthorizationEd25519(
+    {
+      auth_id: "auth-parent-tool",
+      issuer: TRUSTED_KEYSET.issuer,
+      audience: "child",
+      intent_hash: "i".repeat(64),
+      state_hash: "s".repeat(64),
+      policy_id: "p".repeat(64),
+      decision: "ALLOW",
+      issued_at: Math.floor(Date.now() / 1000),
+      expiry: Math.floor(Date.now() / 1000) + 300,
+      kid: "k1",
+      capability: "exec",
+      nonce: "1",
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  ) as Authorization;
+  (parentAuth as any).scope = { tools: ["read"], max_amount: 100n };
+
+  const delegation = createDelegation(
+    parentAuth as AuthorizationV1,
+    {
+      delegatee: "child",
+      scope: { tools: ["read", "write"], max_amount: 100n },
+      expiry: parentAuth.expiry,
+      kid: "k1",
+      audience: "child",
+      issuer: TRUSTED_KEYSET.issuer,
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  );
+
+  const state = makeState();
+  let storedState = state;
+  const guard = OxDeAIGuard({
+    engine: makeEngine(),
+    getState: async () => storedState,
+    setState: async (s) => {
+      storedState = s;
+    },
+    trustedKeySets: [TRUSTED_KEYSET],
+  });
+
+  const action = makeAction();
+  let executed = false;
+  await assert.rejects(
+    guard(action, async () => {
+      executed = true;
+    }, { delegation: { delegation, parentAuth: parentAuth as AuthorizationV1 } }),
+    /DELEGATION_SCOPE_VIOLATION|execution blocked/i
+  );
+  assert.equal(executed, false);
+});
+
+test("delegation amount widening is denied", async () => {
+  const parentAuth = signAuthorizationEd25519(
+    {
+      auth_id: "auth-parent-amount",
+      issuer: TRUSTED_KEYSET.issuer,
+      audience: "child",
+      intent_hash: "i".repeat(64),
+      state_hash: "s".repeat(64),
+      policy_id: "p".repeat(64),
+      decision: "ALLOW",
+      issued_at: Math.floor(Date.now() / 1000),
+      expiry: Math.floor(Date.now() / 1000) + 300,
+      kid: "k1",
+      capability: "exec",
+      nonce: "2",
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  ) as Authorization;
+  (parentAuth as any).scope = { tools: ["read"], max_amount: 100n };
+
+  const delegation = createDelegation(
+    parentAuth as AuthorizationV1,
+    {
+      delegatee: "child",
+      scope: { tools: ["read"], max_amount: 1000n },
+      expiry: parentAuth.expiry,
+      kid: "k1",
+      audience: "child",
+      issuer: TRUSTED_KEYSET.issuer,
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  );
+
+  const state = makeState();
+  let storedState = state;
+  const guard = OxDeAIGuard({
+    engine: makeEngine(),
+    getState: async () => storedState,
+    setState: async (s) => {
+      storedState = s;
+    },
+    trustedKeySets: [TRUSTED_KEYSET],
+  });
+
+  const action = makeAction();
+  let executed = false;
+  await assert.rejects(
+    guard(action, async () => {
+      executed = true;
+    }, { delegation: { delegation, parentAuth: parentAuth as AuthorizationV1 } }),
+    /DELEGATION_SCOPE_VIOLATION|execution blocked/i
+  );
+  assert.equal(executed, false);
+});
+
+test("delegation narrowing is allowed", async () => {
+  const parentAuth = signAuthorizationEd25519(
+    {
+      auth_id: "auth-parent-narrow",
+      issuer: TRUSTED_KEYSET.issuer,
+      audience: "child",
+      intent_hash: "i".repeat(64),
+      state_hash: "s".repeat(64),
+      policy_id: "p".repeat(64),
+      decision: "ALLOW",
+      issued_at: Math.floor(Date.now() / 1000),
+      expiry: Math.floor(Date.now() / 1000) + 300,
+      kid: "k1",
+      capability: "exec",
+      nonce: "3",
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  ) as Authorization;
+  (parentAuth as any).scope = { tools: ["read", "write"], max_amount: 1000n };
+
+  const delegation = createDelegation(
+    parentAuth as AuthorizationV1,
+    {
+      delegatee: "child",
+      scope: { tools: ["read"], max_amount: 100n },
+      expiry: parentAuth.expiry,
+      kid: "k1",
+      audience: "child",
+      issuer: TRUSTED_KEYSET.issuer,
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  );
+
+  const state = makeState();
+  let storedState = state;
+  const guard = OxDeAIGuard({
+    engine: makeEngine(),
+    getState: async () => storedState,
+    setState: async (s) => {
+      storedState = s;
+    },
+    trustedKeySets: [TRUSTED_KEYSET],
+  });
+
+  const action = makeAction();
+  let executed = false;
+  await guard(action, async () => {
+    executed = true;
+  }, { delegation: { delegation, parentAuth: parentAuth as AuthorizationV1 } });
+
+  assert.equal(executed, true);
+});
+
+test("delegation replay is denied", async () => {
+  const issued_at = Math.floor(Date.now() / 1000);
+  const parentAuth = signAuthorizationEd25519(
+    {
+      auth_id: "auth-parent-replay",
+      issuer: TRUSTED_KEYSET.issuer,
+      audience: "child",
+      intent_hash: "i".repeat(64),
+      state_hash: "s".repeat(64),
+      policy_id: "p".repeat(64),
+      decision: "ALLOW",
+      issued_at,
+      expiry: issued_at + 300,
+      kid: "k1",
+      capability: "exec",
+      nonce: "4",
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  ) as Authorization;
+  (parentAuth as any).scope = { tools: ["read"], max_amount: 100n };
+
+  const delegation = createDelegation(
+    parentAuth as AuthorizationV1,
+    {
+      delegatee: "child",
+      scope: { tools: ["read"], max_amount: 100n },
+      expiry: parentAuth.expiry,
+      kid: "k1",
+      audience: "child",
+      issuer: TRUSTED_KEYSET.issuer,
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  );
+
+  const state = makeState();
+  let storedState = state;
+  const guard = OxDeAIGuard({
+    engine: makeEngine(),
+    getState: async () => storedState,
+    setState: async (s) => {
+      storedState = s;
+    },
+    trustedKeySets: [TRUSTED_KEYSET],
+  });
+
+  const action = makeAction();
+  let executions = 0;
+
+  await guard(action, async () => {
+    executions += 1;
+  }, { delegation: { delegation, parentAuth: parentAuth as AuthorizationV1 } });
+
+  await assert.rejects(
+    guard(action, async () => {
+      executions += 1;
+    }, { delegation: { delegation, parentAuth: parentAuth as AuthorizationV1 } }),
+    /Delegation replay detected|DELEGATION_REPLAY/i
+  );
+
+  assert.equal(executions, 1);
+});
+
+test("unsigned delegation is denied", async () => {
+  const issued_at = Math.floor(Date.now() / 1000);
+  const parentAuth = signAuthorizationEd25519(
+    {
+      auth_id: "auth-parent-unsigned",
+      issuer: TRUSTED_KEYSET.issuer,
+      audience: "child",
+      intent_hash: "i".repeat(64),
+      state_hash: "s".repeat(64),
+      policy_id: "p".repeat(64),
+      decision: "ALLOW",
+      issued_at,
+      expiry: issued_at + 300,
+      kid: "k1",
+      capability: "exec",
+      nonce: "5",
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  ) as Authorization;
+  (parentAuth as any).scope = { tools: ["read"], max_amount: 100n };
+
+  const unsignedDelegation = createDelegation(
+    parentAuth as AuthorizationV1,
+    {
+      delegatee: "child",
+      scope: { tools: ["read"], max_amount: 100n },
+      expiry: parentAuth.expiry,
+      kid: "k1",
+      audience: "child",
+      issuer: TRUSTED_KEYSET.issuer,
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  );
+  (unsignedDelegation as any).signature = "";
+
+  const state = makeState();
+  let storedState = state;
+  const guard = OxDeAIGuard({
+    engine: makeEngine(),
+    getState: async () => storedState,
+    setState: async (s) => {
+      storedState = s;
+    },
+    trustedKeySets: [TRUSTED_KEYSET],
+  });
+
+  const action = makeAction();
+  await assert.rejects(
+    guard(action, async () => {
+      /* no-op */
+    }, { delegation: { delegation: unsignedDelegation, parentAuth: parentAuth as AuthorizationV1 } }),
+    /DELEGATION_SIGNATURE_INVALID|signature verification failed|execution blocked/i
+  );
+});
+
+test("tampered delegation signature is denied", async () => {
+  const issued_at = Math.floor(Date.now() / 1000);
+  const parentAuth = signAuthorizationEd25519(
+    {
+      auth_id: "auth-parent-tamper",
+      issuer: TRUSTED_KEYSET.issuer,
+      audience: "child",
+      intent_hash: "i".repeat(64),
+      state_hash: "s".repeat(64),
+      policy_id: "p".repeat(64),
+      decision: "ALLOW",
+      issued_at,
+      expiry: issued_at + 300,
+      kid: "k1",
+      capability: "exec",
+      nonce: "6",
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  ) as Authorization;
+  (parentAuth as any).scope = { tools: ["read"], max_amount: 100n };
+
+  const delegation = createDelegation(
+    parentAuth as AuthorizationV1,
+    {
+      delegatee: "child",
+      scope: { tools: ["read"], max_amount: 100n },
+      expiry: parentAuth.expiry,
+      kid: "k1",
+      audience: "child",
+      issuer: TRUSTED_KEYSET.issuer,
+    },
+    privateKey.export({ type: "pkcs8", format: "pem" }).toString()
+  );
+  (delegation as any).signature = "invalid-signature";
+
+  const state = makeState();
+  let storedState = state;
+  const guard = OxDeAIGuard({
+    engine: makeEngine(),
+    getState: async () => storedState,
+    setState: async (s) => {
+      storedState = s;
+    },
+    trustedKeySets: [TRUSTED_KEYSET],
+  });
+
+  const action = makeAction();
+  await assert.rejects(
+    guard(action, async () => {
+      /* no-op */
+    }, { delegation: { delegation, parentAuth: parentAuth as AuthorizationV1 } }),
+    /DELEGATION_SIGNATURE_INVALID|signature verification failed|execution blocked/i
+  );
+});
+
+test("verifier failure (throws) blocks execution", async () => {
+  // Create an evil keyset that throws when accessed to simulate verifier throw.
+  const evilKeyset = new Proxy(
+    {
+      issuer: "issuer-evil",
+      version: "v1",
+      keys: [],
+    },
+    {
+      get() {
+        throw new Error("boom");
+      },
+    }
+  ) as unknown as KeySet;
+
+  const engine = makeEngine();
+  const state = makeState();
+  let storedState = state;
+  const guard = OxDeAIGuard({
+    engine,
+    getState: async () => storedState,
+    setState: async (s) => {
+      storedState = s;
+    },
+    trustedKeySets: [evilKeyset],
+  });
+
+  const action = makeAction();
+  let executed = false;
+  await assert.rejects(
+    guard(action, async () => {
+      executed = true;
+    }),
+    /boom|Authorization verification failed/i
+  );
+  assert.equal(executed, false);
+});
+
+test("missing required auth fields is denied before execution", async () => {
+  const badAuth: AuthorizationV1 = {
+    auth_id: "",
+    issuer: "",
+    audience: "",
+    intent_hash: "",
+    state_hash: "",
+    policy_id: "",
+    decision: "ALLOW",
+    issued_at: 0,
+    expiry: 0,
+    alg: "Ed25519",
+    kid: "k1",
+    signature: "",
+  };
+
+  class FakeEngineBadAuth {
+    evaluatePure(_intent: Intent, state: State) {
+      return { decision: "ALLOW" as const, reasons: [], authorization: badAuth as Authorization, nextState: state };
+    }
+    verifyAuthorization() {
+      return { valid: true };
+    }
+  }
+
+  const state = makeState();
+  let storedState = state;
+  const guard = OxDeAIGuard({
+    engine: new FakeEngineBadAuth() as any,
+    getState: async () => storedState,
+    setState: async (s) => {
+      storedState = s;
+    },
+    trustedKeySets: [TRUSTED_KEYSET],
+  });
+
+  const action = makeAction();
+  let executed = false;
+  await assert.rejects(
+    guard(action, async () => {
+      executed = true;
+    }),
+    /AUTH_MISSING_FIELD|Authorization verification failed/i
+  );
+  assert.equal(executed, false);
+});

@@ -17,18 +17,25 @@ import type { State } from "@oxdeai/core";
 import { buildState } from "@oxdeai/sdk";
 
 import { OxDeAIGuard } from "../guard.js";
+import { TEST_KEYSET, TEST_KEYPAIR } from "./helpers/fixtures.js";
 import { OxDeAIDenyError } from "../errors.js";
 import type { ProposedAction, OxDeAIGuardConfig } from "../types.js";
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
 const AGENT_ID = "agent-guard-toctou";
-const T0 = 1_700_000_000;
+const T0 = Math.floor(Date.now() / 1000);
 
 function makeEngine(): PolicyEngine {
   return new PolicyEngine({
     policy_version: "v1",
     engine_secret:  "guard-toctou-secret-32-bytes-ok!",
+    authorization_signing_alg: "Ed25519",
+    authorization_signing_kid: "k1",
+    authorization_issuer: TEST_KEYSET.issuer,
+    authorization_audience: "aud-test",
+    authorization_ttl_seconds: 600,
+    authorization_private_key_pem: TEST_KEYPAIR.privateKey.toString(),
   });
 }
 
@@ -44,6 +51,7 @@ function makeStatefulConfig(
     engine,
     getState: () => current,
     setState: (s) => { current = s; },
+    trustedKeySets: [TEST_KEYSET],
     ...overrides,
   };
 }
@@ -177,6 +185,7 @@ test("G-3 reverification: state mutated between calls → policy re-evaluated ea
     engine,
     getState: () => current,
     setState: (s) => { current = s; },
+    trustedKeySets: [TEST_KEYSET],
   };
 
   const guard = OxDeAIGuard(config);

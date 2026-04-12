@@ -17,6 +17,8 @@ import assert from "node:assert/strict";
 import type { Authorization, PolicyEngine, State } from "@oxdeai/core";
 import { buildState } from "@oxdeai/sdk";
 
+import { TEST_KEYSET, signAuth } from "./helpers/fixtures.js";
+
 import { defaultNormalizeAction } from "../normalizeAction.js";
 import { OxDeAIGuard } from "../guard.js";
 import {
@@ -75,6 +77,8 @@ const ACTION_KEYWORDS = [
   "blockchain", "subscribe", "order",
 ];
 const VALID_ACTION_TYPES = ["PAYMENT", "PURCHASE", "PROVISION", "ONCHAIN_TX"] as const;
+
+const BASE_TRUST = { trustedKeySets: [TEST_KEYSET] };
 
 function genAlphaStr(rng: () => number, minLen: number, maxLen: number): string {
   const len = randInt(rng, minLen, maxLen);
@@ -164,25 +168,10 @@ function genInvalidCost(rng: () => number): number {
 
 // ── mock engine factories ─────────────────────────────────────────────────────
 
-const STUB_AUTH: Authorization = {
-  authorization_id: "stub-legacy",
-  intent_hash: "a".repeat(64),
-  policy_version: "v1",
-  state_snapshot_hash: "b".repeat(64),
-  decision: "ALLOW",
-  expires_at: 9_999_999_999,
-  engine_signature: "stub-sig",
-  auth_id: "stub-v1",
-  issuer: "test-issuer",
-  audience: "test-audience",
-  state_hash: "b".repeat(64),
-  policy_id: "test-policy",
-  issued_at: 1_000,
-  expiry: 9_999_999_999,
-  alg: "HMAC-SHA256",
-  kid: "test-kid",
-  signature: "stub-v1-sig",
-};
+// Signed with TEST_KEYPAIR; valid for 10 minutes from module-load time.
+const VALID_STUB_AUTH = signAuth({ auth_id: "stub-valid" }) as unknown as Authorization;
+// Signed but long-expired — strict verifier will reject with AUTH_EXPIRED.
+const EXPIRED_STUB_AUTH = signAuth({ auth_id: "stub-expired", issued_at: 1_000, expiry: 2_000 }) as unknown as Authorization;
 
 function makeDenyEngine(): PolicyEngine {
   return {
@@ -196,7 +185,7 @@ function makeAllowEngine(nextState: State): PolicyEngine {
     evaluatePure: () => ({
       decision: "ALLOW" as const,
       reasons: [] as [],
-      authorization: STUB_AUTH,
+      authorization: VALID_STUB_AUTH,
       nextState,
     }),
     verifyAuthorization: () => ({ valid: true }),
@@ -220,10 +209,9 @@ function makeAuthFailEngine(nextState: State): PolicyEngine {
     evaluatePure: () => ({
       decision: "ALLOW" as const,
       reasons: [] as [],
-      authorization: STUB_AUTH,
+      authorization: EXPIRED_STUB_AUTH,
       nextState,
     }),
-    verifyAuthorization: () => ({ valid: false, reason: "AUTH_EXPIRED" as const }),
   } as unknown as PolicyEngine;
 }
 
@@ -455,6 +443,7 @@ test("G1 engine DENY always prevents execute() and setState() for any ProposedAc
       engine: makeDenyEngine(),
       getState: () => currentState,
       setState: (s) => { setStateCalled = true; currentState = s; },
+      ...BASE_TRUST,
     };
 
     const guard = OxDeAIGuard(config);
@@ -487,6 +476,7 @@ test("G2 missing agent_id always prevents execute() for any ProposedAction", asy
       engine: makeAllowEngine(currentState),
       getState: () => currentState,
       setState: (s) => { currentState = s; },
+      ...BASE_TRUST,
     };
 
     const guard = OxDeAIGuard(config);
@@ -522,6 +512,7 @@ test("G3 ALLOW without authorization artifact always prevents execute() for any 
       engine: makeAllowEngineNoAuth(currentState),
       getState: () => currentState,
       setState: (s) => { currentState = s; },
+      ...BASE_TRUST,
     };
 
     const guard = OxDeAIGuard(config);
@@ -557,6 +548,7 @@ test("G4 failed verifyAuthorization always prevents execute() for any ProposedAc
       engine: makeAuthFailEngine(currentState),
       getState: () => currentState,
       setState: (s) => { currentState = s; },
+      ...BASE_TRUST,
     };
 
     const guard = OxDeAIGuard(config);
@@ -605,6 +597,7 @@ test("G5 successful ALLOW always calls execute() then setState() and returns res
         setStateCalled = true;
         currentState = s;
       },
+      ...BASE_TRUST,
     };
 
     const guard = OxDeAIGuard(config);
@@ -642,6 +635,7 @@ test("G6 onDecision always receives correct decision value for any outcome", asy
         getState: () => currentState,
         setState: (s) => { currentState = s; },
         onDecision: ({ decision }) => { denyDecision = decision; },
+        ...BASE_TRUST,
       })(action, async () => {}),
       OxDeAIDenyError
     );
@@ -654,6 +648,7 @@ test("G6 onDecision always receives correct decision value for any outcome", asy
       getState: () => currentState,
       setState: (s) => { currentState = s; },
       onDecision: ({ decision }) => { allowDecision = decision; },
+      ...BASE_TRUST,
     })(action, async () => {});
     assert.equal(allowDecision, "ALLOW", `seed=${seed} onDecision must receive ALLOW`);
   }
@@ -674,6 +669,7 @@ test("G7 onDecision hook errors never surface to the caller for any ProposedActi
       getState: () => currentState,
       setState: (s) => { currentState = s; },
       onDecision: () => { throw new Error(`seed=${seed} hook explosion`); },
+      ...BASE_TRUST,
     });
 
     // Must not throw despite the hook error
