@@ -36,6 +36,7 @@ export const engine = new PolicyEngine({
   policy_version: "v1.0.0",
   engine_secret: _engineSecret,
   authorization_ttl_seconds: 60,
+  authorization_audience: AGENT_ID,
   policyId: POLICY_ID,
 });
 
