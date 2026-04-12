@@ -1,10 +1,6 @@
 # @oxdeai/autogen
-
-**Thin AutoGen binding for [@oxdeai/guard](../guard/README.md).**
-
-This package connects AutoGen function/tool calls to the OxDeAI universal
-execution guard. It contains no authorization logic - all policy evaluation
-and PEP enforcement is delegated to `@oxdeai/guard`.
+AutoGen adapter to the OxDeAI execution-time authorization protocol.
+Sends AutoGen tool calls through @oxdeai/guard; enforcement is local, fail-closed, non-bypassable.
 
 ---
 

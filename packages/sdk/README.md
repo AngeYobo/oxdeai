@@ -1,6 +1,6 @@
 # @oxdeai/sdk
-
-Developer-facing integration layer on top of `@oxdeai/core`.
+Developer toolkit for the OxDeAI execution-time authorization protocol (ETA).
+Builds intents/states and guard boundaries that remain non-bypassable and fail-closed at execution.
 
 ## Status
 

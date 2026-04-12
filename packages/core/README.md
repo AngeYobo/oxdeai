@@ -1,8 +1,7 @@
 # @oxdeai/core
-
-Deterministic Execution Authorization Layer for Autonomous Systems
-
-[High-signal] Controls whether actions are allowed to execute - before any side effect occurs.
+Execution-time authorization protocol (ETA) — non-bypassable execution boundary.
+Deterministic decision: (intent, state, policy) → ALLOW | DENY, emits AuthorizationV1 artifacts.
+Fail-closed verification at the PEP; no valid authorization → no execution path.
 
 [![npm version](https://img.shields.io/npm/v/@oxdeai/core.svg)](https://www.npmjs.com/package/@oxdeai/core)
 [![Snyk](https://snyk.io/test/github/AngeYobo/oxdeai-core/badge.svg)](https://snyk.io/test/github/AngeYobo/oxdeai-core)

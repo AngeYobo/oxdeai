@@ -1,6 +1,6 @@
 # @oxdeai/conformance
-
-Conformance vectors and validator for the OxDeAI protocol.
+Conformance vectors and validator for the OxDeAI execution-time authorization protocol.
+Ensures implementations reproduce deterministic AuthorizationV1 artifacts and boundary verification (fail-closed).
 
 ## Purpose
 `@oxdeai/conformance` verifies that an implementation matches the frozen protocol behavior for a specific version.

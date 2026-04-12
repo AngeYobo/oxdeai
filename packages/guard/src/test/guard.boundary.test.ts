@@ -9,17 +9,13 @@ import type { State, Intent, Authorization, AuthorizationV1, KeySet } from "@oxd
 import {
   PolicyEngine,
   signAuthorizationEd25519,
-  verifyAuthorization as strictVerifyAuthorization,
   createDelegation,
 } from "@oxdeai/core";
 
 // ---------------------------------------------------------------------------
 // Fixtures
 
-const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
-  privateKeyEncoding: { format: "pem", type: "pkcs8" },
-  publicKeyEncoding: { format: "spki", type: "pem" },
-});
+const { privateKey, publicKey } = generateKeyPairSync("ed25519");
 
 const TRUSTED_KEYSET: KeySet = {
   issuer: "issuer-test",
@@ -322,13 +318,13 @@ test("delegation narrowing is allowed", async () => {
     },
     privateKey.export({ type: "pkcs8", format: "pem" }).toString()
   ) as Authorization;
-  (parentAuth as any).scope = { tools: ["read", "write"], max_amount: 1000n };
+  (parentAuth as any).scope = { tools: ["pay", "read", "write"], max_amount: 1000n };
 
   const delegation = createDelegation(
     parentAuth as AuthorizationV1,
     {
       delegatee: "child",
-      scope: { tools: ["read"], max_amount: 100n },
+      scope: { tools: ["pay", "read"], max_amount: 100n },
       expiry: parentAuth.expiry,
       kid: "k1",
       audience: "child",
@@ -376,13 +372,13 @@ test("delegation replay is denied", async () => {
     },
     privateKey.export({ type: "pkcs8", format: "pem" }).toString()
   ) as Authorization;
-  (parentAuth as any).scope = { tools: ["read"], max_amount: 100n };
+  (parentAuth as any).scope = { tools: ["pay", "read"], max_amount: 100n };
 
   const delegation = createDelegation(
     parentAuth as AuthorizationV1,
     {
       delegatee: "child",
-      scope: { tools: ["read"], max_amount: 100n },
+      scope: { tools: ["pay", "read"], max_amount: 100n },
       expiry: parentAuth.expiry,
       kid: "k1",
       audience: "child",
