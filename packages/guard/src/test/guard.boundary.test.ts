@@ -86,6 +86,7 @@ test("expired authorization is denied (execute not called)", async () => {
       storedState = s;
     },
     trustedKeySets: [TRUSTED_KEYSET],
+    expectedAudience: "aud-test",
   });
 
   const pastTs = 1;
@@ -123,6 +124,7 @@ test("audience tampering is denied by strict verifier", async () => {
       storedState = s;
     },
     trustedKeySets: [TRUSTED_KEYSET],
+    expectedAudience: "aud-test",
   });
 
   const action = makeAction();
@@ -174,6 +176,7 @@ test("auth_id replay is denied on second use", async () => {
       storedState = s;
     },
     trustedKeySets: [TRUSTED_KEYSET],
+    expectedAudience: "aud-test",
   });
 
   const action = makeAction();
@@ -232,6 +235,7 @@ test("delegation tool widening is denied", async () => {
       storedState = s;
     },
     trustedKeySets: [TRUSTED_KEYSET],
+    expectedAudience: "child",
   });
 
   const action = makeAction();
@@ -287,6 +291,7 @@ test("delegation amount widening is denied", async () => {
       storedState = s;
     },
     trustedKeySets: [TRUSTED_KEYSET],
+    expectedAudience: "child",
   });
 
   const action = makeAction();
@@ -342,6 +347,7 @@ test("delegation narrowing is allowed", async () => {
       storedState = s;
     },
     trustedKeySets: [TRUSTED_KEYSET],
+    expectedAudience: "child",
   });
 
   const action = makeAction();
@@ -396,6 +402,7 @@ test("delegation replay is denied", async () => {
       storedState = s;
     },
     trustedKeySets: [TRUSTED_KEYSET],
+    expectedAudience: "child",
   });
 
   const action = makeAction();
@@ -459,6 +466,7 @@ test("unsigned delegation is denied", async () => {
       storedState = s;
     },
     trustedKeySets: [TRUSTED_KEYSET],
+    expectedAudience: "child",
   });
 
   const action = makeAction();
@@ -514,6 +522,7 @@ test("tampered delegation signature is denied", async () => {
       storedState = s;
     },
     trustedKeySets: [TRUSTED_KEYSET],
+    expectedAudience: "child",
   });
 
   const action = makeAction();
@@ -550,6 +559,7 @@ test("verifier failure (throws) blocks execution", async () => {
       storedState = s;
     },
     trustedKeySets: [evilKeyset],
+    expectedAudience: "aud-test",
   });
 
   const action = makeAction();
@@ -597,6 +607,7 @@ test("missing required auth fields is denied before execution", async () => {
       storedState = s;
     },
     trustedKeySets: [TRUSTED_KEYSET],
+    expectedAudience: "aud-test",
   });
 
   const action = makeAction();

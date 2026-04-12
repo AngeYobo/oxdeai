@@ -52,6 +52,7 @@ function makeStatefulConfig(
     getState: () => current,
     setState: (s) => { current = s; },
     trustedKeySets: [TEST_KEYSET],
+    expectedAudience: "aud-test",
     ...overrides,
   };
 }
@@ -186,6 +187,7 @@ test("G-3 reverification: state mutated between calls → policy re-evaluated ea
     getState: () => current,
     setState: (s) => { current = s; },
     trustedKeySets: [TEST_KEYSET],
+    expectedAudience: "aud-test",
   };
 
   const guard = OxDeAIGuard(config);

@@ -84,7 +84,7 @@ function makeGuard(overrides?: Partial<OxDeAIGuardConfig>) {
     getState: () => state,
     setState: () => {},
     trustedKeySets: [KEYSET],
-    requireDelegationSignatureVerification: true,
+    expectedAudience: "agent-A",
     ...overrides,
   });
 }

@@ -28,6 +28,12 @@ function validateConfig(config: OxDeAIGuardConfig): void {
   if (typeof config.setState !== "function") {
     throw new OxDeAIGuardConfigurationError("config.setState must be a function.");
   }
+  if (typeof config.expectedAudience !== "string" || config.expectedAudience.length === 0) {
+    throw new OxDeAIGuardConfigurationError(
+      "config.expectedAudience is required and must be a non-empty string. " +
+      "Set it to the agent identity this guard instance protects (matches authorization_audience in PolicyEngine)."
+    );
+  }
 }
 
 // ── decision audit ────────────────────────────────────────────────────────────
@@ -227,7 +233,7 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
         trustedKeySets,
         requireSignatureVerification: true,
         expectedPolicyId: parentAuth.policy_id,
-        expectedAudience: parentAuth.audience,
+        expectedAudience: config.expectedAudience,
         expectedIssuer: parentAuth.issuer,
       });
 
@@ -323,7 +329,7 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
       trustedKeySets,
       requireSignatureVerification: true,
       expectedPolicyId: authorization.policy_id,
-      expectedAudience: authorization.audience,
+      expectedAudience: config.expectedAudience,
       expectedIssuer: authorization.issuer,
     });
 

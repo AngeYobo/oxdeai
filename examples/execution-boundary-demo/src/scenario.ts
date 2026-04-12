@@ -89,6 +89,7 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     engine,
     getState: () => state,
     setState: (s: State) => { state = s; },
+    expectedAudience: AGENT_ID,
     // chargeIntent is identical for both calls — only state differs
     mapActionToIntent: () => chargeIntent,
     beforeExecute(_action: unknown, authorization: Authorization) {
@@ -169,6 +170,7 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     engine,
     getState: () => state,
     setState: (s: State) => { state = s; },
+    expectedAudience: AGENT_ID,
     mapActionToIntent: () => chargeIntent,
     beforeExecute() {
       secondDecision = "ALLOW"; // should not be reached

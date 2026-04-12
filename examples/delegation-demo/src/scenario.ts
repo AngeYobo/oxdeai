@@ -116,6 +116,7 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     engine,
     getState: () => state,
     setState: (s: State) => { state = s; },
+    expectedAudience: AGENT_A,
     mapActionToIntent: () => parentIntent,
     beforeExecute(_action, authorization) {
       parentDecision = "ALLOW";
@@ -228,6 +229,7 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     engine,
     getState: () => state,
     setState: (s: State) => { state = s; },
+    expectedAudience: AGENT_A,
     mapActionToIntent: () => childIntent1,
     beforeExecute() {
       child1Decision = "ALLOW";
@@ -291,6 +293,7 @@ export async function runScenario(): Promise<ScenarioStep[]> {
     engine,
     getState: () => state,
     setState: (s: State) => { state = s; },
+    expectedAudience: AGENT_A,
     mapActionToIntent: () => childIntent2,
     beforeExecute() {
       child2Decision = "ALLOW"; // should not be reached

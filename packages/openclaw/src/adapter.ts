@@ -54,7 +54,7 @@ export function createOpenClawGuard(config: OpenClawGuardConfig): OpenClawGuardF
     mapActionToIntent: config.mapActionToIntent,
     beforeExecute: config.beforeExecute,
     onDecision: config.onDecision,
-    strict: config.strict,
+    expectedAudience: config.agentId,
     trustedKeySets: config.trustedKeySets,
   });
 

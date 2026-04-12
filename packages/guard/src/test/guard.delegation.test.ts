@@ -84,13 +84,14 @@ function makeGuardConfig(overrides?: Partial<OxDeAIGuardConfig>): OxDeAIGuardCon
       authorization_signing_alg: "Ed25519",
       authorization_signing_kid: "k1",
       authorization_issuer: TEST_KEYSET.issuer,
-      authorization_audience: "aud-test",
+      authorization_audience: "agent-A",
       authorization_ttl_seconds: 600,
       authorization_private_key_pem: TEST_KEYPAIR.privateKey.toString(),
     }),
     getState: () => state,
     setState: () => {},
     trustedKeySets: [TEST_KEYSET],
+    expectedAudience: "agent-A",
     ...overrides,
   };
 }
@@ -111,7 +112,7 @@ const baseAction: ProposedAction = {
 test("delegation: valid delegation allows execution", async () => {
   const parentAuth = makeParentAuth();
   const delegation = makeDelegation(parentAuth);
-  const config = makeGuardConfig({ trustedKeySets: TEST_KEYSET, requireDelegationSignatureVerification: true });
+  const config = makeGuardConfig({ trustedKeySets: TEST_KEYSET });
   const guard = OxDeAIGuard(config);
 
   let executed = false;
@@ -280,10 +281,7 @@ test("delegation: blocks invalid signature when requireDelegationSignatureVerifi
   const delegation = makeDelegation(parentAuth);
   const tampered = { ...delegation, delegatee: "agent-EVIL" }; // breaks signature
 
-  const config = makeGuardConfig({
-    trustedKeySets: TEST_KEYSET,
-    requireDelegationSignatureVerification: true,
-  });
+  const config = makeGuardConfig({ trustedKeySets: TEST_KEYSET });
   const guard = OxDeAIGuard(config);
   let executed = false;
 

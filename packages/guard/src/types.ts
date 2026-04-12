@@ -88,23 +88,26 @@ export type OxDeAIGuardConfig = {
   onDecision?: (result: GuardDecisionRecord) => void | Promise<void>;
 
   /**
-   * When true, missing optional fields that can be defaulted will instead
-   * cause a hard failure. Defaults to false.
+   * The audience this guard instance expects in every AuthorizationV1 artifact.
+   *
+   * Must equal the `authorization_audience` value configured in the PolicyEngine
+   * (typically the agent's identity string). Every authorization issued by the
+   * engine carries this audience; the guard rejects tokens whose audience field
+   * does not exactly match.
+   *
+   * For adapter packages (openclaw, langgraph, crewai, etc.) this is derived
+   * automatically from `config.agentId` — callers do not set it directly.
+   *
+   * Enforcement: `validateConfig` throws `OxDeAIGuardConfigurationError` when
+   * absent. There is no default or fallback.
    */
-  strict?: boolean;
+  expectedAudience: string;
 
   /**
-   * KeySets used to verify Ed25519 signatures on DelegationV1 artifacts.
-   * When absent, signature verification is skipped (unless
-   * requireDelegationSignatureVerification is true, which will fail-closed).
+   * KeySets used to verify Ed25519 signatures on authorization artifacts.
+   * Required; `validateConfig` throws when absent or empty.
    */
   trustedKeySets?: KeySet | readonly KeySet[];
-
-  /**
-   * When true, the guard fails closed if no trustedKeySets are provided
-   * for delegation path verification. Defaults to false.
-   */
-  requireDelegationSignatureVerification?: boolean;
 
   /**
    * Pluggable replay store for durable auth_id and delegation_id tracking.

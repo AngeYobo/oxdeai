@@ -35,6 +35,7 @@ export const engine = new PolicyEngine({
   authorization_issuer: DEMO_KEYSET.issuer,
   authorization_private_key_pem: DEMO_PRIVATE_KEY_PEM,
   authorization_ttl_seconds: 600,
+  authorization_audience: AGENT_ID,
   policyId: POLICY_ID,
 });
 
