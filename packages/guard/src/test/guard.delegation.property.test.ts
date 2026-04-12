@@ -144,7 +144,7 @@ function makeGuardConfig(overrides?: Partial<OxDeAIGuardConfig>): OxDeAIGuardCon
     getState: () => buildState({ agent_id: "child-agent", allow_action_types: ["PROVISION"] }),
     setState: () => {},
     trustedKeySets: [KEYSET],
-    requireDelegationSignatureVerification: true,
+    expectedAudience: "parent-agent",
     ...overrides,
   };
 }

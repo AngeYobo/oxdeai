@@ -78,7 +78,7 @@ const ACTION_KEYWORDS = [
 ];
 const VALID_ACTION_TYPES = ["PAYMENT", "PURCHASE", "PROVISION", "ONCHAIN_TX"] as const;
 
-const BASE_TRUST = { trustedKeySets: [TEST_KEYSET] };
+const BASE_TRUST = { trustedKeySets: [TEST_KEYSET], expectedAudience: "aud-test" };
 
 function genAlphaStr(rng: () => number, minLen: number, maxLen: number): string {
   const len = randInt(rng, minLen, maxLen);

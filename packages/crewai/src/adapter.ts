@@ -52,7 +52,7 @@ export function createCrewAIGuard(config: CrewAIGuardConfig): CrewAIGuardFn {
     mapActionToIntent: config.mapActionToIntent,
     beforeExecute: config.beforeExecute,
     onDecision: config.onDecision,
-    strict: config.strict,
+    expectedAudience: config.agentId,
     trustedKeySets: config.trustedKeySets,
   });
 

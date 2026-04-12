@@ -154,6 +154,7 @@ function makeGuardConfig(
     getState: async () => get(),
     setState: async (s) => set(s),
     trustedKeySets: [TEST_KEYSET],
+    expectedAudience: "aud-test",
     replayStore: createRedisReplayStore({ client: redisClient }),
   };
 }
@@ -312,6 +313,7 @@ test("RS-R7 Redis error in consumeDelegationId: throws OxDeAIAuthorizationError 
     getState: async () => storedState,
     setState: async (s) => { storedState = s; },
     trustedKeySets: [TEST_KEYSET],
+    expectedAudience: "agent-redis",
     replayStore: createRedisReplayStore({ client: hybridClient }),
   });
 
@@ -346,6 +348,7 @@ test("RS-R8 shared Redis client: replay blocked across two distinct guard instan
     getState: async () => stateA,
     setState: async (s) => { stateA = s; },
     trustedKeySets: [TEST_KEYSET],
+    expectedAudience: "aud-test",
     replayStore: sharedStore,
   });
 
@@ -355,6 +358,7 @@ test("RS-R8 shared Redis client: replay blocked across two distinct guard instan
     getState: async () => stateB,
     setState: async (s) => { stateB = s; },
     trustedKeySets: [TEST_KEYSET],
+    expectedAudience: "aud-test",
     replayStore: sharedStore,
   });
 

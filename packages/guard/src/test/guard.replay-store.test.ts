@@ -78,6 +78,7 @@ function makeGuardConfig(
     getState: async () => storedState,
     setState: async (s) => { storedState = s; },
     trustedKeySets: [TEST_KEYSET],
+    expectedAudience: "aud-test",
     ...overrides,
   };
 }
@@ -121,6 +122,7 @@ test("RS-2 default store: delegation_id replay blocked on second call to same gu
     getState: async () => storedState,
     setState: async (s) => { storedState = s; },
     trustedKeySets: [TEST_KEYSET],
+    expectedAudience: "agent-rs",
   });
   const action = makeAction();
 
@@ -185,6 +187,7 @@ test("RS-4 shared store: delegation_id replay blocked across two distinct guard 
       getState: async () => storedState,
       setState: async (s) => { storedState = s; },
       trustedKeySets: [TEST_KEYSET],
+      expectedAudience: "agent-rs",
       replayStore: sharedStore,
     });
   }
@@ -261,6 +264,7 @@ test("RS-6 failing consumeDelegationId: execution blocked when store throws on d
     getState: async () => storedState,
     setState: async (s) => { storedState = s; },
     trustedKeySets: [TEST_KEYSET],
+    expectedAudience: "agent-rs",
     replayStore: failingStore,
   });
 
@@ -304,6 +308,7 @@ test("RS-7 store without consumeDelegationId: delegation executes; parentAuth re
     getState: async () => storedState,
     setState: async (s) => { storedState = s; },
     trustedKeySets: [TEST_KEYSET],
+    expectedAudience: "agent-rs",
     replayStore: authOnlyStore,
   });
   const action = makeAction();
@@ -374,6 +379,7 @@ test("RS-9 store unavailable for parentAuth auth_id: execution blocked on delega
     getState: async () => storedState,
     setState: async (s) => { storedState = s; },
     trustedKeySets: [TEST_KEYSET],
+    expectedAudience: "agent-rs",
     replayStore: partialFailStore,
   });
 
