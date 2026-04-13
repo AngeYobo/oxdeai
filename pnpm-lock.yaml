@@ -322,6 +322,12 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/sift:
+    devDependencies:
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+
   tests:
     dependencies:
       '@oxdeai/core':
