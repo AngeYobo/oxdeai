@@ -121,6 +121,74 @@ A Sift receipt MUST NOT directly authorize execution. A receipt alone cannot tri
 | `receipt_hash` integrity mismatch | DENY, no execution |
 | Verification ambiguity      | DENY, no execution  |
 
+### Receipt hash integrity
+
+`receipt_hash` MUST be computed over the canonical JSON payload with:
+
+- `signature` excluded
+- `receipt_hash` excluded
+
+Canonicalization requirements:
+- lexicographic key ordering
+- no whitespace
+- UTF-8 encoding
+
+The adapter MUST:
+
+1. recompute the hash locally
+2. compare with the provided `receipt_hash`
+3. only proceed if they match
+
+### Signature verification scope
+
+The Ed25519 signature is verified over the canonical payload with:
+
+- `signature` excluded
+- `receipt_hash` INCLUDED
+
+This enforces the sequence:
+
+```text
+payload → integrity check (receipt_hash) → signature verification
+```
+
+The adapter MUST NOT:
+- verify signature before validating `receipt_hash`
+- mutate payload before verification
+
+### Verification ordering
+
+The adapter MUST perform verification in the following order:
+
+1. `receipt_hash` integrity validation
+2. signature verification
+3. semantic validation (decision, freshness, replay prechecks, etc.)
+
+The adapter MUST NOT proceed to a later step if an earlier step fails.
+
+### Key management and rotation
+
+The adapter verifies Sift receipts using trusted Ed25519 public keys.
+
+Production deployments SHOULD support key rotation via a key set:
+
+- multiple public keys identified by `kid`
+- deterministic key selection
+- ability to revoke keys without downtime
+
+Minimum requirements:
+
+- support multiple active keys
+- fail closed if key cannot be resolved
+- no fallback guessing
+
+If the receipt includes a key identifier (`kid`), it MUST be used to select the correct key.
+
+If the receipt does not include a `kid`, key selection MUST be deterministic and externally configured.
+
+If no matching key is found:
+→ verification MUST fail
+
 ---
 
 ## Intent Normalization (Normative)
@@ -176,10 +244,24 @@ Example canonical intent shape:
 ## Time Validation
 
 - The adapter MUST validate receipt freshness using explicit, bounded time rules before proceeding.
-- The adapter MUST define a maximum acceptable receipt age window (e.g., 30 seconds). If the Sift receipt contract does not provide sufficient expiry semantics, the adapter MUST define and enforce its own bounded freshness policy.
+- The adapter MUST define a maximum acceptable receipt age window. This window is a security parameter and MUST be configurable per deployment. If the Sift receipt contract does not provide sufficient expiry semantics, the adapter MUST define and enforce its own bounded freshness policy.
 - If receipt freshness cannot be determined deterministically (e.g., missing or unparseable `timestamp`), the adapter MUST DENY.
 - Stale, expired, or time-ambiguous receipts MUST NOT be converted into `AuthorizationV1`.
 - `AuthorizationV1.expiry` MUST be set to a short absolute TTL derived from `issued_at`. The PEP Gateway enforces `expiry > now` independently.
+
+### Freshness window
+
+The adapter enforces a bounded freshness window on Sift receipts.
+
+- Default: 30 seconds
+- MUST be configurable per deployment
+- MUST be treated as a security parameter, not a convenience value
+
+A shorter window reduces replay exposure but increases sensitivity to clock skew and network latency.
+
+The adapter MUST reject:
+- stale receipts (age > configured window)
+- receipts too far in the future (beyond allowed clock skew)
 
 ---
 
