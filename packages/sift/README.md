@@ -28,6 +28,25 @@ This adapter bridges the two without weakening OxDeAI invariants:
 * local verification at execution time
 * no runtime dependency on remote receipt verification
 
+## Wire format
+
+The Sift verifier contract specifies a particular canonicalization and encoding scheme.
+This package implements it exactly so that digests and signatures computed locally
+match those produced by the Sift service.
+
+| Surface | Format |
+|---|---|
+| Canonical JSON | Python `json.dumps(sort_keys=True, separators=(",",":"), ensure_ascii=True)` — keys sorted lexicographically, no whitespace, non-ASCII UTF-16 code units escaped as `\uXXXX` (lowercase); supplementary characters (U+10000+) as two surrogate escapes each |
+| Signatures | Ed25519 over canonical JSON UTF-8 bytes, encoded as base64url without padding (RFC 4648 §5) |
+| Public keys | Raw 32-byte Ed25519 key material — matches the `x` field of a JWKS entry (RFC 8037 OKP); no PEM wrapper required at this boundary |
+
+**Algorithm naming.** There are two distinct surfaces:
+
+* `alg: "EdDSA"` — JWKS metadata field for key-discovery tooling (RFC 8037).
+* `alg: "ed25519"` — Sift contract runtime literal present in `AuthorizationV1.signature.alg` (lowercase).
+
+These are not interchangeable. The runtime artifact always uses `"ed25519"`.
+
 ## What this package does
 
 ### `verifyReceipt`
@@ -36,12 +55,21 @@ Validates and verifies a Sift receipt locally.
 
 Responsibilities:
 
-* structural validation
+* structural validation (field presence and types)
 * receipt version validation
+* receipt hash integrity validation (Sift-canonical JSON, ensure_ascii=True)
+* Ed25519 signature verification (raw 32-byte key; base64url-decoded signature)
+* `ALLOW` / `DENY` decision enforcement
 * bounded freshness validation (`maxAgeMs` — configurable per deployment; treat as a security parameter)
-* `ALLOW` / `DENY` handling
-* receipt hash integrity validation
-* local Ed25519 signature verification
+
+Verification order (integrity before semantics):
+
+1. Structural validation
+2. Version check
+3. `receipt_hash` integrity
+4. Ed25519 signature
+5. Decision (`ALLOW` / `DENY`)
+6. Freshness
 
 Properties:
 
@@ -49,6 +77,13 @@ Properties:
 * no network calls
 * explicit typed errors
 * deterministic behavior
+
+**Public key input.** `verifyReceipt` accepts the public key as:
+
+* `publicKeyRaw` — raw 32-byte Ed25519 key material, either as a `Uint8Array` or a base64url-no-padding string matching the JWKS `x` field. This is the primary Sift-contract-native path.
+* `publicKeyPem` — PEM-encoded SPKI Ed25519 public key. Accepted for backward compatibility. `publicKeyRaw` takes precedence when both are provided.
+
+In production, the raw key is obtained by decoding the JWKS `x` field for the `kid` matching the receipt, after confirming the key is not revoked in the KRL.
 
 ### `normalizeIntent`
 
@@ -86,18 +121,31 @@ Builds an unsigned `AuthorizationV1`-style payload from:
 
 Explicit bindings:
 
-| Authorization field | Source                          |
-| ------------------- | ------------------------------- |
-| `auth_id`           | `receipt.nonce`                 |
-| `policy_id`         | `receipt.policy_matched`        |
-| `intent_hash`       | SHA-256 of canonicalized intent |
-| `state_hash`        | SHA-256 of canonicalized state  |
-| `issued_at`         | single captured adapter time    |
-| `expires_at`        | derived from configured TTL     |
-| `audience`          | caller-supplied                 |
-| `issuer`            | caller-supplied                 |
+| Authorization field | Source                                                              |
+| ------------------- | ------------------------------------------------------------------- |
+| `auth_id`           | `receipt.nonce`                                                     |
+| `policy_id`         | `receipt.policy_matched`                                            |
+| `intent_hash`       | SHA-256 of Sift-canonical JSON bytes of intent (ensure_ascii=True)  |
+| `state_hash`        | SHA-256 of Sift-canonical JSON bytes of state (ensure_ascii=True)   |
+| `issued_at`         | single captured adapter time (Unix seconds)                         |
+| `expires_at`        | derived from configured TTL                                         |
+| `audience`          | caller-supplied                                                     |
+| `issuer`            | caller-supplied                                                     |
+| `signature.alg`     | `"ed25519"` — Sift contract runtime literal (lowercase)             |
+| `signature.kid`     | caller-supplied `keyId`                                             |
+| `signature.sig`     | `""` placeholder — caller MUST sign the returned `signingPayload`  |
 
-This file constructs the authorization payload. It does **not** sign it.
+This function constructs the payload. It does **not** sign it.
+
+**Signing preimage.** The returned `signingPayload` is `AuthorizationV1` with `signature.sig` **absent**.
+`signature.alg` and `signature.kid` are present. The caller MUST:
+
+1. Sift-canonicalize `signingPayload` (ensure_ascii=True, sort_keys).
+2. Sign the resulting UTF-8 bytes with Ed25519.
+3. Encode the signature as base64url without padding.
+4. Place the result in `authorization.signature.sig`.
+
+The PEP Gateway reconstructs the same `signingPayload` to verify the signature.
 
 ## What this package does not do
 
@@ -112,7 +160,7 @@ This package does **not**:
 
 ## Security model
 
-This package is designed around OxDeAI’s execution-boundary model.
+This package is designed around OxDeAI's execution-boundary model.
 
 ### Important constraint
 
@@ -151,14 +199,16 @@ The adapter MUST reject:
 
 ### Receipt hash integrity
 
-`receipt_hash` MUST be computed over the canonical JSON payload with:
+`receipt_hash` MUST be computed over the Sift-canonical JSON payload with:
 
 - `signature` excluded
 - `receipt_hash` excluded
 
-Canonicalization requirements:
+Canonicalization requirements (Sift wire format):
+
 - lexicographic key ordering
-- no whitespace
+- no whitespace between tokens
+- `ensure_ascii=True` — every UTF-16 code unit above U+007F escaped as `\uXXXX`; supplementary characters as two surrogate escapes each
 - UTF-8 encoding
 
 The adapter MUST:
@@ -169,7 +219,7 @@ The adapter MUST:
 
 ### Signature verification scope
 
-The Ed25519 signature is verified over the canonical payload with:
+The Ed25519 signature is verified over the Sift-canonical payload with:
 
 - `signature` excluded
 - `receipt_hash` INCLUDED
@@ -184,38 +234,42 @@ The adapter MUST NOT:
 - verify signature before validating `receipt_hash`
 - mutate payload before verification
 
-### Verification ordering
+Signatures are base64url without padding. The verifier accepts both base64url (Sift-native) and
+standard base64 — both normalize to the same underlying bytes before decoding.
 
-The adapter MUST perform verification in the following order:
+### Key management and JWKS/KRL surface
 
-1. `receipt_hash` integrity validation
-2. signature verification
-3. semantic validation (decision, freshness, replay prechecks, etc.)
+The adapter verifies Sift receipts using raw 32-byte Ed25519 keys distributed via the Sift JWKS endpoint.
 
-The adapter MUST NOT proceed to a later step if an earlier step fails.
+JWKS entry shape (RFC 8037 OKP):
 
-### Key management and rotation
+```json
+{
+  "kty": "OKP",
+  "crv": "Ed25519",
+  "alg": "EdDSA",
+  "use": "sig",
+  "kid": "<key-id>",
+  "x": "<base64url-no-padding 32-byte raw public key>"
+}
+```
 
-The adapter verifies Sift receipts using trusted Ed25519 public keys.
+Production key resolution sequence:
 
-Production deployments SHOULD support key rotation via a key set:
-
-- multiple public keys identified by `kid`
-- deterministic key selection
-- ability to revoke keys without downtime
+1. Extract `kid` from the receipt.
+2. Check `kid` against the KRL — if revoked, DENY immediately.
+3. Look up the JWKS entry for `kid`. If not found, trigger a JWKS refresh (cache may be stale) and retry once.
+4. If still not found → DENY. No fallback guessing.
+5. Decode `x` (base64url → 32 bytes) and pass as `publicKeyRaw` to `verifyReceipt`.
 
 Minimum requirements:
 
-- support multiple active keys
-- fail closed if key cannot be resolved
+- support multiple active keys identified by `kid`
+- check the KRL before trusting any key when KRL is available
+- refresh JWKS on unknown `kid` before failing closed
+- fail closed if the key cannot be resolved after refresh
 - no fallback guessing
-
-If the receipt includes a key identifier (`kid`), it MUST be used to select the correct key.
-
-If the receipt does not include a `kid`, key selection MUST be deterministic and externally configured.
-
-If no matching key is found:
-→ verification MUST fail
+- deterministic key selection
 
 ### Prototype safety
 
@@ -228,6 +282,7 @@ This prevents `__proto__` setter side effects and silent key loss during normali
 ```text
 packages/sift/
 ├── src/
+│   ├── siftCanonical.ts        ← Sift-contract canonicalization, base64url, raw key import
 │   ├── verifyReceipt.ts
 │   ├── normalizeIntent.ts
 │   ├── state.ts
@@ -237,6 +292,8 @@ packages/sift/
 ├── package.json
 └── tsconfig.json
 ```
+
+`siftCanonical.ts` is an internal module. It is not exported from `index.ts`. Use the public API (`verifyReceipt`, `receiptToAuthorization`, etc.) at integration boundaries.
 
 ## API surface
 
@@ -248,10 +305,10 @@ import { verifyReceipt } from "@oxdeai/sift";
 
 Verifies:
 
-* structure
-* freshness
-* receipt hash
-* Ed25519 signature
+* structure and version
+* receipt hash integrity (Sift-canonical, ensure_ascii=True)
+* Ed25519 signature (raw 32-byte key; base64url signature)
+* decision and freshness
 
 ### Intent normalization
 
@@ -283,7 +340,7 @@ Builds a deterministic state object suitable for later canonicalization and hash
 import { receiptToAuthorization } from "@oxdeai/sift";
 ```
 
-Builds an unsigned `AuthorizationV1` payload plus signing payload.
+Builds an unsigned `AuthorizationV1` payload plus the signing payload ready for Ed25519 signing.
 
 ## Example
 
@@ -295,10 +352,12 @@ import {
   receiptToAuthorization,
 } from "@oxdeai/sift";
 
+// publicKeyRaw is the raw 32-byte key decoded from the JWKS x field for the
+// matching kid, after confirming the key is not revoked in the KRL.
 const verified = verifyReceipt(receipt, {
-  publicKeyPem,
+  publicKeyRaw: jwksXDecoded,        // Uint8Array or base64url string (JWKS x field)
   requireAllowDecision: true,
-  maxAgeMs: 30_000, // configurable per deployment; treat as a security parameter
+  maxAgeMs: 30_000,                  // configurable per deployment; treat as a security parameter
 });
 
 if (!verified.ok) {
@@ -345,6 +404,9 @@ if (!authResult.ok) {
   throw new Error(`${authResult.code}: ${authResult.message}`);
 }
 
+// authResult.authorization.signature.sig is "" — sign it before use.
+// authResult.signingPayload is AuthorizationV1 with signature.sig absent.
+// Sign sift_canonical(signingPayload) with Ed25519 → base64url, no padding.
 console.log(authResult.authorization);
 console.log(authResult.signingPayload);
 ```
@@ -398,6 +460,20 @@ receipt.nonce → AuthorizationV1.auth_id
 ```
 
 No generated UUIDs. No mutation. No hidden prefixes.
+
+### Why `ensure_ascii=True`?
+
+The Sift staging verifier canonicalizes payloads with Python's `json.dumps(ensure_ascii=True)`.
+This escapes every non-ASCII UTF-16 code unit as `\uXXXX`, including both halves of surrogate pairs
+for supplementary characters. The TypeScript implementation must match this exactly so that hashes
+computed locally are identical to those the Sift service produces.
+
+### Why raw 32-byte keys instead of PEM?
+
+The Sift JWKS endpoint distributes Ed25519 public keys as raw 32-byte material in the `x` field
+(RFC 8037 OKP). Accepting the key in that form directly — rather than requiring a PEM-wrapped
+derivative — eliminates a conversion step and removes any ambiguity about which encoding is
+authoritative at the Sift contract boundary.
 
 ## Related docs
 

@@ -43,16 +43,17 @@ Nothing upstream of the PEP Gateway can authorize execution.
 
 2. **Sift returns a signed receipt.**
    The receipt contains the decision (`ALLOW`/`DENY`), action metadata, nonce, and timestamp.
-   It is signed with an Ed25519 key.
+   It is signed with an Ed25519 key identified by a `kid` that corresponds to an entry in the Sift JWKS endpoint.
 
 3. **Adapter verifies the receipt signature locally.**
-   The adapter MUST verify the Ed25519 signature against a pinned or trusted Sift public key before any transformation occurs.
+   The adapter MUST verify the Ed25519 signature against a trusted Sift public key before any transformation occurs.
+   The public key is a raw 32-byte Ed25519 key obtained by decoding the JWKS `x` field (base64url, no padding) for the matching `kid`.
    Verification MUST be performed locally. The adapter MUST NOT call a remote `/verify-receipt` endpoint at execution time.
 
 4. **Adapter validates receipt fields.**
-   - `decision == ALLOW` - any non-ALLOW value MUST halt the flow immediately
-   - freshness - `timestamp` MUST be within the adapter's configured bounded window
-   - replay protection - the mapped `auth_id` MUST NOT have been previously consumed
+   - `decision == ALLOW` — any non-ALLOW value MUST halt the flow immediately
+   - freshness — `timestamp` MUST be within the adapter's configured bounded window
+   - replay protection — the mapped `auth_id` MUST NOT have been previously consumed
 
 5. **Adapter normalizes intent deterministically.**
    The adapter MUST transform Sift receipt fields into a deterministic OxDeAI intent object conforming to canonicalization-v1.
@@ -97,11 +98,11 @@ A Sift receipt MUST NOT directly authorize execution. A receipt alone cannot tri
 
 ### Gaps the adapter MUST fill
 
-**Audience** - Sift receipts carry no audience binding. Without it, an `AuthorizationV1` issued for one service could be replayed against another. The adapter MUST inject the trusted audience identifier from its own configuration before issuing `AuthorizationV1`.
+**Audience** — Sift receipts carry no audience binding. Without it, an `AuthorizationV1` issued for one service could be replayed against another. The adapter MUST inject the trusted audience identifier from its own configuration before issuing `AuthorizationV1`.
 
-**State binding** - Sift receipts carry no policy state reference. Without it, a receipt issued under one policy state could be replayed after state has changed. The adapter MUST derive, canonicalize, and hash the current execution-relevant policy state and bind it as `state_hash`.
+**State binding** — Sift receipts carry no policy state reference. Without it, a receipt issued under one policy state could be replayed after state has changed. The adapter MUST derive, canonicalize, and hash the current execution-relevant policy state and bind it as `state_hash`.
 
-**Canonical intent** - Sift action fields are not in OxDeAI canonical form. The adapter MUST normalize them into deterministic canonical bytes under canonicalization-v1 before computing `intent_hash`. Canonicalization failure MUST produce DENY.
+**Canonical intent** — Sift action fields are not in OxDeAI canonical form. The adapter MUST normalize them into deterministic canonical bytes under canonicalization-v1 before computing `intent_hash`. Canonicalization failure MUST produce DENY.
 
 ---
 
@@ -113,13 +114,14 @@ A Sift receipt MUST NOT directly authorize execution. A receipt alone cannot tri
 - The adapter MUST NOT call `/verify-receipt` or any remote Sift endpoint in the runtime execution path. Remote verification introduces a network dependency that would produce indeterminate outcomes on failure, violating the fail-closed invariant.
 - The following conditions MUST result in DENY and MUST NOT proceed to `AuthorizationV1` issuance:
 
-| Condition                   | Required behavior   |
-|-----------------------------|----------------------|
-| Invalid Ed25519 signature   | DENY, no execution  |
-| Unknown or untrusted key    | DENY, no execution  |
-| Malformed receipt payload   | DENY, no execution  |
-| `receipt_hash` integrity mismatch | DENY, no execution |
-| Verification ambiguity      | DENY, no execution  |
+| Condition                         | Required behavior   |
+|-----------------------------------|----------------------|
+| Invalid Ed25519 signature         | DENY, no execution  |
+| Unknown or untrusted key          | DENY, no execution  |
+| Revoked key (KRL check required)  | DENY, no execution  |
+| Malformed receipt payload         | DENY, no execution  |
+| `receipt_hash` integrity mismatch | DENY, no execution  |
+| Verification ambiguity            | DENY, no execution  |
 
 ### Receipt hash integrity
 
@@ -128,10 +130,17 @@ A Sift receipt MUST NOT directly authorize execution. A receipt alone cannot tri
 - `signature` excluded
 - `receipt_hash` excluded
 
-Canonicalization requirements:
+Canonicalization requirements (Sift wire format):
+
 - lexicographic key ordering
-- no whitespace
-- UTF-8 encoding
+- no whitespace between tokens
+- `ensure_ascii=True` — every UTF-16 code unit above U+007F is escaped as `\uXXXX` (lowercase four-digit hex); supplementary characters (U+10000+) are encoded as two `\uXXXX` surrogate escapes each
+- UTF-8 encoding of the resulting ASCII-only string
+
+Equivalent to Python:
+```python
+json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+```
 
 The adapter MUST:
 
@@ -156,38 +165,61 @@ The adapter MUST NOT:
 - verify signature before validating `receipt_hash`
 - mutate payload before verification
 
+The signature is a raw Ed25519 signature over the UTF-8 bytes of the Sift-canonical JSON of the signed scope.
+It is encoded as base64url without padding (RFC 4648 §5).
+
 ### Verification ordering
 
 The adapter MUST perform verification in the following order:
 
-1. `receipt_hash` integrity validation
-2. signature verification
-3. semantic validation (decision, freshness, replay prechecks, etc.)
+1. Structural validation (field presence, types)
+2. Version check (supported receipt_version values)
+3. `receipt_hash` integrity validation
+4. Ed25519 signature verification
+5. Semantic validation (decision, freshness, replay prechecks, etc.)
 
 The adapter MUST NOT proceed to a later step if an earlier step fails.
+Integrity and authenticity checks MUST complete before any semantic interpretation of receipt fields.
 
-### Key management and rotation
+### Key management and JWKS/KRL surface
 
-The adapter verifies Sift receipts using trusted Ed25519 public keys.
+The adapter verifies Sift receipts using trusted Ed25519 public keys distributed via the Sift JWKS endpoint.
 
-Production deployments SHOULD support key rotation via a key set:
+**Key format.** Sift public keys are raw 32-byte Ed25519 key material encoded as the `x` field in a JWKS entry (RFC 8037 OKP). No PEM wrapper is required or expected at this boundary.
 
-- multiple public keys identified by `kid`
-- deterministic key selection
-- ability to revoke keys without downtime
+JWKS entry shape:
 
-Minimum requirements:
+```json
+{
+  "kty": "OKP",
+  "crv": "Ed25519",
+  "alg": "EdDSA",
+  "use": "sig",
+  "kid": "<key-id>",
+  "x": "<base64url-no-padding 32-byte raw public key>"
+}
+```
 
-- support multiple active keys
-- fail closed if key cannot be resolved
+The `alg: "EdDSA"` field is JWKS metadata for key-discovery tooling. It is distinct from the `AuthorizationV1.signature.alg` runtime literal (see §4). Do not conflate these two surfaces.
+
+**`kid` resolution.** The `kid` identifying the signing key is present in the receipt. The adapter MUST use it to select the correct JWKS entry. The adapter MUST NOT guess or fall back to an arbitrary key.
+
+**KRL enforcement.** The Sift verifier contract provides a Key Revocation List (KRL). The adapter MUST check the KRL before trusting any key:
+
+1. Extract `kid` from the receipt.
+2. Check `kid` against the KRL. If revoked → DENY immediately; do not proceed to signature verification.
+3. Look up the JWKS entry for `kid`. If not found → attempt a JWKS refresh (cache may be stale). Retry once.
+4. If still not found after refresh → DENY. Do not guess.
+5. Decode `x` (base64url → 32 bytes) and verify the signature.
+
+**Minimum requirements:**
+
+- support multiple active keys identified by `kid`
+- check the KRL before trusting any key
+- refresh JWKS on unknown `kid` before failing closed
+- fail closed if the key cannot be resolved after refresh
 - no fallback guessing
-
-If the receipt includes a key identifier (`kid`), it MUST be used to select the correct key.
-
-If the receipt does not include a `kid`, key selection MUST be deterministic and externally configured.
-
-If no matching key is found:
-→ verification MUST fail
+- deterministic key selection
 
 ---
 
@@ -213,7 +245,7 @@ Example canonical intent shape:
 }
 ```
 
-`intent_hash` is computed over the canonical serialization of this object under canonicalization-v1. It is NOT derived from `receipt_hash` unless the adapter's normalization contract explicitly defines and proves that relationship.
+`intent_hash` is computed as SHA-256 over the Sift-canonical JSON bytes of this object (ensure_ascii=True, sort_keys). It is NOT derived from `receipt_hash` unless the adapter's normalization contract explicitly defines and proves that relationship.
 
 ---
 
@@ -225,7 +257,7 @@ Example canonical intent shape:
   - account or permission state
   - resource quota or rate-limit counters
   - prior execution or consumption history relevant to policy
-- The state snapshot MUST be canonicalized under canonicalization-v1 before hashing. The same state content MUST produce the same `state_hash` regardless of field insertion order.
+- The state snapshot MUST be canonicalized under canonicalization-v1 (ensure_ascii=True) before hashing. The same state content MUST produce the same `state_hash` regardless of field insertion order.
 - If the required state cannot be deterministically derived, validated, or hashed, the adapter MUST DENY.
 - State ambiguity MUST NOT fall back to receipt-only authorization. There is no partial state binding.
 
@@ -247,7 +279,7 @@ Example canonical intent shape:
 - The adapter MUST define a maximum acceptable receipt age window. This window is a security parameter and MUST be configurable per deployment. If the Sift receipt contract does not provide sufficient expiry semantics, the adapter MUST define and enforce its own bounded freshness policy.
 - If receipt freshness cannot be determined deterministically (e.g., missing or unparseable `timestamp`), the adapter MUST DENY.
 - Stale, expired, or time-ambiguous receipts MUST NOT be converted into `AuthorizationV1`.
-- `AuthorizationV1.expiry` MUST be set to a short absolute TTL derived from `issued_at`. The PEP Gateway enforces `expiry > now` independently.
+- `AuthorizationV1.expires_at` MUST be set to a short absolute TTL derived from `issued_at`. The PEP Gateway enforces `expires_at > now` independently.
 
 ### Freshness window
 
@@ -290,34 +322,48 @@ The adapter MUST reject:
 
 `AuthorizationV1` MUST be generated by the adapter only after ALL of the following have succeeded:
 
-- receipt signature verified locally
+- receipt signature verified locally (Ed25519 over Sift-canonical bytes, base64url-decoded)
 - `receipt_hash` integrity confirmed
+- `kid` checked against KRL; not revoked
 - `decision == ALLOW`
 - receipt freshness confirmed within bounded window
 - `auth_id` prechecked for obvious replay at adapter (advisory, if implemented)
-- intent normalized, canonicalized, and `intent_hash` computed
-- state derived, canonicalized, and `state_hash` computed
+- intent normalized, canonicalized (ensure_ascii=True), and `intent_hash` computed
+- state derived, canonicalized (ensure_ascii=True), and `state_hash` computed
 - audience injected from trusted configuration
 
 If any prerequisite fails, the adapter MUST NOT produce `AuthorizationV1` and MUST return DENY.
 
 ### Required fields in `AuthorizationV1`
 
-| Field              | Source                                                        |
-|--------------------|---------------------------------------------------------------|
-| `intent_hash`      | SHA-256 of canonical intent bytes (canonicalization-v1)       |
-| `state_hash`       | SHA-256 of canonical state snapshot (canonicalization-v1)     |
-| `audience`         | Injected by adapter from trusted configuration                |
-| `expiry`           | Adapter-configured bounded TTL from `issued_at`               |
-| `auth_id`          | Explicitly mapped from Sift `nonce` per adapter contract      |
-| `decision`         | `ALLOW`                                                       |
-| `policy_id`        | Current policy version identifier                             |
-| `issuer`           | OxDeAI authorization issuer identity                          |
-| `signature.alg`    | Signature algorithm; produced by issuer per AuthorizationV1 signing rules |
-| `signature.kid`    | Key identifier; produced by issuer per AuthorizationV1 signing rules      |
-| `signature.sig`    | Signature bytes; produced by issuer per AuthorizationV1 signing rules     |
+| Field              | Source                                                                              |
+|--------------------|-------------------------------------------------------------------------------------|
+| `intent_hash`      | SHA-256 of Sift-canonical JSON bytes of the normalized intent (ensure_ascii=True)   |
+| `state_hash`       | SHA-256 of Sift-canonical JSON bytes of the normalized state (ensure_ascii=True)    |
+| `audience`         | Injected by adapter from trusted configuration                                      |
+| `expires_at`       | Adapter-configured bounded TTL from `issued_at` (Unix seconds)                     |
+| `auth_id`          | Explicitly mapped from Sift `nonce` per adapter contract                            |
+| `decision`         | `"ALLOW"`                                                                           |
+| `policy_id`        | Mapped from `receipt.policy_matched`                                                |
+| `issuer`           | OxDeAI authorization issuer identity                                                |
+| `signature.alg`    | `"ed25519"` — Sift contract runtime literal (lowercase); distinct from JWKS `alg: "EdDSA"` |
+| `signature.kid`    | Key identifier, nested in `signature`; identifies the issuer signing key            |
+| `signature.sig`    | Base64url-no-padding Ed25519 signature over the Sift-canonical signing payload      |
 
 A canonicalization failure at any field MUST produce DENY and MUST NOT produce a partial `AuthorizationV1`.
+
+### Authorization signing preimage
+
+The signing preimage for `signature.sig` is the `AuthorizationV1` payload with `signature.sig` **omitted entirely**. `signature.alg` and `signature.kid` MUST be present in the preimage.
+
+```text
+signingPayload = AuthorizationV1 MINUS signature.sig
+                 (signature.alg and signature.kid are INCLUDED)
+```
+
+The signer canonicalizes `signingPayload` under the Sift contract (ensure_ascii=True, sort_keys) and signs the resulting UTF-8 bytes with Ed25519. The resulting signature is base64url-encoded without padding and placed in `signature.sig`.
+
+The PEP Gateway reconstructs the same `signingPayload` to verify the signature. Any discrepancy in preimage construction between issuer and verifier will cause signature verification to fail.
 
 ---
 
@@ -330,20 +376,20 @@ The PEP Gateway is the only path to execution. It is non-bypassable.
 Before executing any side effect, the PEP MUST verify, in order:
 
 1. Parse `AuthorizationV1` and reject malformed payloads.
-2. Verify signature and key resolution (`alg`, `kid`, trusted issuer keyset).
-3. Verify issuer and audience binding - exact match required.
+2. Verify signature — resolve `signature.kid` against the trusted issuer keyset; verify the Ed25519 signature over the reconstructed signing payload (authorization minus `signature.sig`; `signature.alg` and `signature.kid` present).
+3. Verify issuer and audience binding — exact match required.
 4. Verify `decision == ALLOW`.
-5. Verify not expired (`expiry > now`).
+5. Verify not expired (`expires_at > floor(now / 1000)`).
 6. Verify policy binding (`policy_id` matches expected policy context).
-7. Verify intent binding (`intent_hash` equals hash of the canonical form of the exact action about to execute).
-8. Verify state binding (`state_hash` matches current canonical state snapshot).
+7. Verify intent binding (`intent_hash` equals SHA-256 of the Sift-canonical form of the exact action about to execute).
+8. Verify state binding (`state_hash` matches SHA-256 of the current canonical state snapshot).
 9. Verify replay protection (`auth_id` not previously consumed).
 
 If any step fails, execution MUST NOT occur.
 
 On successful verification:
 1. Execute the side effect.
-2. Persist `auth_id` as consumed - this write MUST be durable and atomic with respect to execution.
+2. Persist `auth_id` as consumed — this write MUST be durable and atomic with respect to execution.
 3. Emit audit evidence.
 
 ### Upstream isolation
@@ -353,9 +399,9 @@ The PEP Gateway is the sole execution entry point.
 
 ### Issuer Trust Model
 
-- The PEP Gateway MUST verify AuthorizationV1 using a configured trusted key set.
+- The PEP Gateway MUST verify `AuthorizationV1` using a configured trusted key set.
 - The `issuer` field alone is not sufficient to establish trust.
-- Key resolution MUST use (`issuer`, `kid`, `alg`) against the trusted key set.
+- Key resolution MUST use (`issuer`, `signature.kid`, `signature.alg`) against the trusted key set.
 - If the issuer is unknown or the key is not trusted, verification MUST fail and result in DENY.
 
 No implicit trust is allowed.
@@ -397,98 +443,104 @@ Sift receipts do not provide the following. The adapter MUST compensate for each
 
 ```json
 {
-  "action": "transfer_funds",
+  "receipt_version": "1.0",
+  "tenant_id": "tenant-abc",
+  "agent_id": "agent-xyz",
+  "action": "call_tool",
   "tool": "payments_api",
-  "parameters": {
-    "amount": 500,
-    "currency": "USD",
-    "destination": "acct_9f3a"
-  },
   "decision": "ALLOW",
+  "risk_tier": 1,
   "nonce": "b3c4d5e6-1234-5678-abcd-ef0123456789",
-  "timestamp": 1744574400,
-  "receipt_hash": "sha256:aabbcc...",
-  "signature": "ed25519:<base64-signature>"
+  "timestamp": "2026-04-15T12:00:00.000Z",
+  "policy_matched": "payments-policy-v4",
+  "receipt_hash": "aabbcc...",
+  "signature": "<base64url-no-padding Ed25519 signature>"
 }
 ```
 
 ### Adapter processing (success path)
 
 ```text
-1. Verify Ed25519 signature over signed payload using pinned Sift public key
+1. Structural validation
+   → all required fields present; types valid
+
+2. Version check
+   → receipt_version "1.0" supported
+
+3. Recompute receipt_hash over sift_canonical(receipt MINUS signature AND receipt_hash)
+   → matches provided receipt_hash
+
+4. Resolve kid → check KRL (not revoked) → decode JWKS x → 32-byte raw key
+   Verify Ed25519 signature over sift_canonical(receipt MINUS signature, WITH receipt_hash)
    → valid
 
-2. Verify receipt_hash integrity over payload bytes
-   → match
-
-3. Check decision == ALLOW
+5. Check decision == ALLOW
    → pass
 
-4. Check timestamp freshness: now (1744574412) - timestamp (1744574400) = 12s < 30s window
+6. Check timestamp freshness: age = 12s < 30s window
    → pass
 
-5. Precheck mapped auth_id "b3c4d5e6-..." against duplicate cache (advisory)
+7. Precheck mapped auth_id "b3c4d5e6-..." against duplicate cache (advisory)
    → not seen; proceed (authoritative single-use enforcement occurs at PEP)
 
-6. Normalize intent to canonical OxDeAI form:
+8. Normalize intent to canonical OxDeAI form:
    {
      "type": "EXECUTE",
      "tool": "payments_api",
-     "params": {
-       "amount": 500,
-       "currency": "USD",
-       "destination": "acct_9f3a"
-     }
+     "params": { "amount": 500, "currency": "USD", "destination": "acct_9f3a" }
    }
-   → canonicalize under canonicalization-v1
-   → compute intent_hash: sha256:1122dd...
+   → sift_canonical (ensure_ascii=True, sort_keys)
+   → intent_hash: sha256:1122dd...
 
-7. Derive state snapshot from execution environment:
-   {
-     "available_budget": 10000,
-     "account_status": "active",
-     "prior_transfers_today": 2
-   }
-   → canonicalize → compute state_hash: sha256:334455...
+9. Derive state snapshot from execution environment:
+   { "available_budget": 10000, "account_status": "active", "prior_transfers_today": 2 }
+   → sift_canonical (ensure_ascii=True, sort_keys)
+   → state_hash: sha256:334455...
 
-8. Inject audience from adapter config: "payments-service-prod"
+10. Inject audience from adapter config: "payments-service-prod"
 
-9. Issue AuthorizationV1
+11. Issue AuthorizationV1
 ```
 
 ### `AuthorizationV1` issued by adapter
 
 ```json
 {
+  "version": "AuthorizationV1",
   "decision": "ALLOW",
   "issuer": "did:example:oxdeai-issuer-1",
   "audience": "payments-service-prod",
   "auth_id": "b3c4d5e6-1234-5678-abcd-ef0123456789",
   "policy_id": "payments-policy-v4",
-  "intent_hash": "sha256:1122dd...",
-  "state_hash": "sha256:334455...",
+  "intent_hash": "1122dd...",
+  "state_hash": "334455...",
   "issued_at": 1744574412,
-  "expiry": 1744574442,
+  "expires_at": 1744574442,
   "signature": {
-    "alg": "EdDSA",
+    "alg": "ed25519",
     "kid": "2026-rot-01",
-    "sig": "<base64-signature-bytes>"
+    "sig": "<base64url-no-padding Ed25519 signature over signing payload>"
   }
 }
 ```
 
+Note: `signature.alg` is the Sift contract runtime literal `"ed25519"` (lowercase). This is distinct from the JWKS entry field `"alg": "EdDSA"` used for key-discovery metadata. The `kid` is nested inside `signature`, not at the top level of `AuthorizationV1`.
+
 ### PEP Gateway verification (success path)
 
 ```text
-1. Parse AuthorizationV1            → ok
-2. Verify engine signature          → valid
-3. Verify audience                  → "payments-service-prod" == own identifier → match
-4. Verify decision == ALLOW         → pass
-5. Verify expiry > now              → 1744574442 > 1744574415 → pass
-6. Verify policy_id                 → "payments-policy-v4" == expected → match
-7. Verify intent_hash               → hash(canonical action) == sha256:1122dd... → match
-8. Verify state_hash                → hash(current state snapshot) == sha256:334455... → match
-9. Verify auth_id not consumed      → not consumed → pass; persist as consumed
+1. Parse AuthorizationV1                     → ok
+2. Resolve signature.kid against issuer keyset;
+   verify Ed25519 sig over signing payload
+   (AuthorizationV1 minus signature.sig;
+    signature.alg and signature.kid present)  → valid
+3. Verify audience                            → "payments-service-prod" == own identifier → match
+4. Verify decision == ALLOW                   → pass
+5. Verify expires_at > now                    → 1744574442 > 1744574415 → pass
+6. Verify policy_id                           → "payments-policy-v4" == expected → match
+7. Verify intent_hash                         → sha256(sift_canonical(action)) == 1122dd... → match
+8. Verify state_hash                          → sha256(sift_canonical(state)) == 334455... → match
+9. Verify auth_id not consumed                → not consumed → pass; persist as consumed
 
 → EXECUTE
 ```
@@ -499,6 +551,12 @@ Each of the following independently terminates in DENY with no execution:
 
 ```text
 Invalid Ed25519 signature
+  → adapter: DENY → NO EXECUTION
+
+Revoked kid (KRL check)
+  → adapter: DENY → NO EXECUTION
+
+receipt_hash mismatch
   → adapter: DENY → NO EXECUTION
 
 Receipt timestamp outside freshness window
@@ -532,6 +590,6 @@ AuthorizationV1 absent
 
 Sift decides. OxDeAI enforces.
 
-Execution requires `AuthorizationV1`. A Sift receipt is a governance decision artifact. It is not an authorization artifact. The adapter translates between them - but only after verifying the receipt locally, normalizing intent deterministically, deriving and hashing state, injecting audience, and mapping replay identity. Each of these steps is mandatory and non-delegable.
+Execution requires `AuthorizationV1`. A Sift receipt is a governance decision artifact. It is not an authorization artifact. The adapter translates between them — but only after verifying the receipt locally (Ed25519 over Sift-canonical bytes; `kid` checked against the KRL; JWKS key resolved by `kid`), normalizing intent deterministically (Sift-canonical JSON, ensure_ascii=True), deriving and hashing state, injecting audience, and mapping replay identity. Each of these steps is mandatory and non-delegable.
 
 The PEP Gateway is the only path to execution. Any failure at any verification step produces DENY. There is no partial authorization and no fallback execution path.
