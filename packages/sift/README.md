@@ -336,6 +336,12 @@ Key resolution sequence:
    - If still not found → `UNKNOWN_KID`.
 5. Call `verifyReceipt` with the resolved key.
 
+**KRL cache freshness.** Steps 2 and 4b check revocation against the in-memory cache only.
+A kid that is already in the key cache does **not** trigger a refresh, so a revocation added
+to the KRL after the last `refresh()` call will not be detected until the next explicit
+`refresh()`.  Callers SHOULD call `refresh()` on a schedule appropriate to their revocation
+latency requirements — not just on startup.
+
 ### Key store
 
 ```ts

@@ -117,12 +117,10 @@ function isNonEmptyString(v: unknown): v is string {
 }
 
 function isFiniteNonNegativeInteger(v: unknown): v is number {
-  return (
-    typeof v === "number" &&
-    Number.isFinite(v) &&
-    Number.isInteger(v) &&
-    v >= 0
-  );
+  // Number.isSafeInteger implies finite and integer.  Unsafe integers (> 2^53 − 1)
+  // cannot be represented exactly in IEEE 754 doubles; JSON.stringify would produce
+  // a different decimal than Python's json.dumps, breaking receipt_hash verification.
+  return typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
 }
 
 // ─── Structural validation ────────────────────────────────────────────────────
@@ -301,11 +299,29 @@ export function verifyReceipt(
 
     let signatureValid: boolean;
     try {
+      // ── Signature string validation ───────────────────────────────────────────
+      // Normalize before the character check so that standard base64 input
+      // (+ / =) is accepted on equal footing with base64url (- _) input.
+      const normalizedSigStr = signatureStr
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+      // A 64-byte Ed25519 signature encodes to exactly 86 base64url characters
+      // (no padding).  Reject any string outside that format.
+      //
+      // Node.js's Buffer.from(..., "base64url") silently ignores characters
+      // not in the base64url alphabet, so without this guard a string like
+      // "<validBase64url>!!!" would decode to the same 64 bytes and verify
+      // successfully.  That must be INVALID_SIGNATURE, not a silent pass.
+      if (!/^[A-Za-z0-9_-]{86}$/.test(normalizedSigStr)) {
+        return fail(
+          "INVALID_SIGNATURE",
+          "Signature must be exactly 86 base64url characters (encoding a 64-byte Ed25519 signature)"
+        );
+      }
       // Sift-canonical bytes (ensure_ascii=True) for the signed scope.
       const sigInput = siftCanonicalJsonBytes(signedPayload);
-      // b64uDecode accepts both base64url (Sift-native) and standard base64
-      // (backward-compat) — see siftCanonical.ts for the normalization rationale.
-      const sigBytes = b64uDecode(signatureStr);
+      const sigBytes = Buffer.from(normalizedSigStr, "base64url");
       // null algorithm is the correct form for Ed25519 in Node.js crypto.
       signatureValid = verifySignature(null, sigInput, publicKey, sigBytes);
     } catch {
