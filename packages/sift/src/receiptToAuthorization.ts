@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { createHash } from "node:crypto";
 import type { SiftReceipt } from "./verifyReceipt.js";
 import type { OxDeAIIntent } from "./normalizeIntent.js";
 import type { NormalizedState } from "./state.js";
+import { siftCanonicalJsonHash } from "./siftCanonical.js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -22,7 +22,8 @@ export interface AuthorizationV1Payload {
   issued_at: number;
   expires_at: number;
   signature: {
-    alg: "Ed25519";
+    /** Runtime algorithm identifier for the Sift contract. */
+    alg: "ed25519";
     kid: string;
     sig: string;
   };
@@ -34,7 +35,7 @@ export interface AuthorizationV1Payload {
  * the sig field must not be present when producing the bytes to sign.
  */
 export type SigningPayload = Omit<AuthorizationV1Payload, "signature"> & {
-  signature: { alg: "Ed25519"; kid: string };
+  signature: { alg: "ed25519"; kid: string };
 };
 
 export interface ReceiptToAuthorizationInput {
@@ -86,60 +87,6 @@ function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.length > 0;
 }
 
-// ─── Local canonical JSON ─────────────────────────────────────────────────────
-
-const textEncoder = new TextEncoder();
-
-type JsonPrimitive = string | number | boolean | null;
-type JsonValue = JsonPrimitive | JsonValue[] | { [k: string]: JsonValue };
-
-/**
- * Recursively produces a canonically-structured value: object keys are sorted
- * lexicographically, arrays preserve order, primitives pass through.
- *
- * Throws TypeError on bigint, symbol, function, undefined, or class instances
- * (Date, Map, Set, Buffer, Uint8Array, etc.). Inputs are expected to be
- * already-normalized plain data, but we guard defensively.
- *
- * Output objects use Object.create(null) so any key named "__proto__" is
- * stored as an own data property rather than invoking the setter.
- */
-function canonicalize(value: unknown): JsonValue {
-  if (value === null || value === undefined) return null;
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") return value;
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) {
-      throw new TypeError(`Non-finite number in payload: ${value}`);
-    }
-    return value;
-  }
-  if (Array.isArray(value)) {
-    return value.map(canonicalize);
-  }
-  if (typeof value === "object") {
-    const proto = Object.getPrototypeOf(value) as unknown;
-    if (proto !== Object.prototype && proto !== null) {
-      throw new TypeError(
-        `Non-plain object in payload: ${Object.prototype.toString.call(value)}`
-      );
-    }
-    const keys = Object.keys(value as object).sort();
-    const out = Object.create(null) as { [k: string]: JsonValue };
-    for (const k of keys) {
-      out[k] = canonicalize((value as Record<string, unknown>)[k]);
-    }
-    return out;
-  }
-  throw new TypeError(`Unsupported type in payload: ${typeof value}`);
-}
-
-/** SHA-256 lowercase hex of the canonical JSON UTF-8 encoding of `value`. */
-function canonicalJsonHash(value: unknown): string {
-  const json = JSON.stringify(canonicalize(value));
-  return createHash("sha256").update(textEncoder.encode(json)).digest("hex");
-}
-
 // ─── Main exported function ───────────────────────────────────────────────────
 
 /**
@@ -148,10 +95,14 @@ function canonicalJsonHash(value: unknown): string {
  * the corresponding signing payload ready for Ed25519 signing.
  *
  * Binding invariants enforced here:
- *   auth_id   ← receipt.nonce          (explicit replay identity)
- *   policy_id ← receipt.policy_matched (explicit policy binding)
- *   intent_hash ← SHA-256(canonical intent)
- *   state_hash  ← SHA-256(canonical state)
+ *   auth_id     ← receipt.nonce            (explicit replay identity)
+ *   policy_id   ← receipt.policy_matched   (explicit policy binding)
+ *   intent_hash ← SHA-256(Sift-canonical intent)
+ *   state_hash  ← SHA-256(Sift-canonical state)
+ *
+ * `intent_hash` and `state_hash` are computed with the Sift-canonical
+ * (ensure_ascii=True) function so the PEP can recompute them from the same
+ * intent/state objects and produce identical digests.
  *
  * The returned `authorization.signature.sig` is an empty string placeholder.
  * Signing must happen outside this file.
@@ -164,7 +115,7 @@ export function receiptToAuthorization(
   try {
     const { receipt, intent, state, issuer, audience, keyId } = input;
 
-    // ── 1. Receipt decision ────────────────────────────────────────────────
+    // ── 1. Receipt decision ──────────────────────────────────────────────────
     // Only ALLOW receipts may produce authorization payloads.
     if (receipt.decision !== "ALLOW") {
       return fail(
@@ -173,7 +124,7 @@ export function receiptToAuthorization(
       );
     }
 
-    // ── 2. Binding string preconditions ────────────────────────────────────
+    // ── 2. Binding string preconditions ─────────────────────────────────────
     if (!isNonEmptyString(issuer)) {
       return fail("INVALID_ISSUER", "issuer must be a non-empty string");
     }
@@ -184,7 +135,7 @@ export function receiptToAuthorization(
       return fail("INVALID_KEY_ID", "keyId must be a non-empty string");
     }
 
-    // ── 3. Policy binding ─────────────────────────────────────────────────
+    // ── 3. Policy binding ────────────────────────────────────────────────────
     // policy_id maps explicitly from receipt.policy_matched.
     if (!isNonEmptyString(receipt.policy_matched)) {
       return fail(
@@ -193,8 +144,8 @@ export function receiptToAuthorization(
       );
     }
 
-    // ── 4. Binding object preconditions ───────────────────────────────────
-    // intent and state are typed as their normalized forms, but guard
+    // ── 4. Binding object preconditions ──────────────────────────────────────
+    // intent and state are typed as their normalized forms, but guarded
     // defensively against runtime bypass via `as any`.
     if (intent === null || intent === undefined || typeof intent !== "object") {
       return fail("INVALID_BINDING_INPUT", "intent must be a non-null object");
@@ -203,7 +154,7 @@ export function receiptToAuthorization(
       return fail("INVALID_BINDING_INPUT", "state must be a non-null object");
     }
 
-    // ── 5. TTL validation ─────────────────────────────────────────────────
+    // ── 5. TTL validation ────────────────────────────────────────────────────
     const ttlSeconds = input.ttlSeconds ?? DEFAULT_TTL_SECONDS;
     if (!Number.isSafeInteger(ttlSeconds) || ttlSeconds <= 0) {
       return fail(
@@ -212,7 +163,7 @@ export function receiptToAuthorization(
       );
     }
 
-    // ── 6. Time binding ───────────────────────────────────────────────────
+    // ── 6. Time binding ──────────────────────────────────────────────────────
     // Capture time exactly once; derive issued_at and expires_at from it.
     const nowDate = input.now ?? new Date();
     // instanceof guard defends against non-Date values passed via `as any`
@@ -223,10 +174,12 @@ export function receiptToAuthorization(
     const issuedAt = Math.floor(nowMs / 1000);
     const expiresAt = issuedAt + ttlSeconds;
 
-    // ── 7. Intent hash ────────────────────────────────────────────────────
+    // ── 7. Intent hash ───────────────────────────────────────────────────────
+    // Computed with Sift-canonical JSON (ensure_ascii=True) so that the PEP
+    // can independently recompute the hash from the same intent object.
     let intentHash: string;
     try {
-      intentHash = canonicalJsonHash(intent);
+      intentHash = siftCanonicalJsonHash(intent);
     } catch (e) {
       return fail(
         "INTENT_HASH_FAILED",
@@ -234,10 +187,10 @@ export function receiptToAuthorization(
       );
     }
 
-    // ── 8. State hash ─────────────────────────────────────────────────────
+    // ── 8. State hash ────────────────────────────────────────────────────────
     let stateHash: string;
     try {
-      stateHash = canonicalJsonHash(state);
+      stateHash = siftCanonicalJsonHash(state);
     } catch (e) {
       return fail(
         "STATE_HASH_FAILED",
@@ -245,12 +198,12 @@ export function receiptToAuthorization(
       );
     }
 
-    // ── 9. Construct authorization payload ────────────────────────────────
+    // ── 9. Construct authorization payload ───────────────────────────────────
     // Every field is explicitly bound — no computed defaults that weaken
     // audience, issuer, or policy binding.
     const authorization: AuthorizationV1Payload = {
       version: "AuthorizationV1",
-      auth_id: receipt.nonce,          // replay identity ← receipt.nonce
+      auth_id: receipt.nonce,            // replay identity ← receipt.nonce
       issuer,
       audience,
       decision: "ALLOW",
@@ -260,13 +213,13 @@ export function receiptToAuthorization(
       issued_at: issuedAt,
       expires_at: expiresAt,
       signature: {
-        alg: "Ed25519",
+        alg: "ed25519",                  // Sift contract runtime literal (lowercase)
         kid: keyId,
-        sig: "",                       // placeholder — sig is empty until signed
+        sig: "",                         // placeholder — sig is empty until signed
       },
     };
 
-    // ── 10. Construct signing payload ─────────────────────────────────────
+    // ── 10. Construct signing payload ────────────────────────────────────────
     // Identical to authorization except signature.sig is absent.
     // A signer MUST canonicalize this object and produce the Ed25519 sig.
     const signingPayload: SigningPayload = {
@@ -281,7 +234,7 @@ export function receiptToAuthorization(
       issued_at: authorization.issued_at,
       expires_at: authorization.expires_at,
       signature: {
-        alg: "Ed25519",
+        alg: "ed25519",
         kid: keyId,
         // sig intentionally absent
       },
