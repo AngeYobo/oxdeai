@@ -574,7 +574,7 @@ test("P10a – authorization.signature.sig is an empty string placeholder", () =
         });
 
         assert.ok(result.ok);
-        assert.equal(result.authorization.signature.alg, "Ed25519");
+        assert.equal(result.authorization.signature.alg, "ed25519");
         assert.equal(result.authorization.signature.kid, keyId);
         assert.equal(result.authorization.signature.sig, "");
       }
@@ -600,7 +600,7 @@ test("P10b – signingPayload.signature has no `sig` own property", () => {
         });
 
         assert.ok(result.ok);
-        assert.equal(result.signingPayload.signature.alg, "Ed25519");
+        assert.equal(result.signingPayload.signature.alg, "ed25519");
         assert.equal(result.signingPayload.signature.kid, keyId);
         // The sig field MUST be absent: bytes signed must not include the
         // placeholder empty string from the authorization payload.
