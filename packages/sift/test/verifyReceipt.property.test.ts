@@ -784,3 +784,68 @@ test("P8: verifying a receipt with the wrong Ed25519 public key always fails wit
     { numRuns: RUNS }
   );
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// H1. risk_tier must be a safe integer
+//
+// Number.isSafeInteger(Number.MAX_SAFE_INTEGER + 1) is false.  The value is
+// 9007199254740992 (= 2^53), which JavaScript stores exactly but which Python
+// json.dumps serialises differently from the JS JSON.stringify output for 2^53−1,
+// creating a cross-runtime receipt_hash mismatch.  This test confirms structural
+// validation rejects such values before any hash or signature work occurs.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+test("H1: risk_tier > Number.MAX_SAFE_INTEGER is rejected without throwing", () => {
+  // Build a receipt object where risk_tier is one past the safe-integer boundary.
+  // We do not need a valid hash/signature — structural validation rejects the
+  // receipt before those checks run.
+  const { receipt, publicKeyPem } = makeSignedReceipt();
+  const mutated = cloneWithField(receipt, "risk_tier", Number.MAX_SAFE_INTEGER + 1);
+
+  let result;
+  try {
+    result = verifyReceipt(mutated, { publicKeyPem, now: FIXED_NOW });
+  } catch (e) {
+    assert.fail(`verifyReceipt threw on unsafe risk_tier: ${String(e)}`);
+    return;
+  }
+
+  assert.equal(result.ok, false, "risk_tier > MAX_SAFE_INTEGER must fail closed");
+  assert.ok(!result.ok);
+  assert.equal(result.code, "MALFORMED_RECEIPT");
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// H2. Signature strings with invalid trailing characters must be rejected
+//
+// Node.js's Buffer.from(..., "base64url") silently ignores characters not in
+// the base64url alphabet, so "<valid86chars>!!!" decodes to the same 64 bytes
+// as the clean signature.  The verifier must reject such strings rather than
+// accepting them because the underlying bytes happen to be valid.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+test("H2: signature with appended invalid base64url characters is rejected with INVALID_SIGNATURE", () => {
+  const { receipt, publicKeyPem } = makeSignedReceipt();
+  const originalSig = receipt["signature"] as string;
+
+  // Confirm the original receipt verifies correctly before mutating.
+  const baseline = verifyReceipt(receipt, { publicKeyPem, now: FIXED_NOW });
+  assert.equal(baseline.ok, true, "baseline receipt must verify before mutation");
+
+  // Append three characters that are not in the base64url alphabet.
+  // Buffer.from would silently ignore them, yielding the same 64-byte signature.
+  const mutatedSig = originalSig + "!!!";
+  const mutated = cloneWithField(receipt, "signature", mutatedSig);
+
+  let result;
+  try {
+    result = verifyReceipt(mutated, { publicKeyPem, now: FIXED_NOW });
+  } catch (e) {
+    assert.fail(`verifyReceipt threw on garbage-appended signature: ${String(e)}`);
+    return;
+  }
+
+  assert.equal(result.ok, false, "signature with garbage suffix must be rejected");
+  assert.ok(!result.ok);
+  assert.equal(result.code, "INVALID_SIGNATURE");
+});
