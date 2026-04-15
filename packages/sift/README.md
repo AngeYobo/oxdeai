@@ -283,7 +283,8 @@ This prevents `__proto__` setter side effects and silent key loss during normali
 packages/sift/
 ├── src/
 │   ├── siftCanonical.ts        ← Sift-contract canonicalization, base64url, raw key import
-│   ├── verifyReceipt.ts
+│   ├── siftKeyStore.ts         ← JWKS/KRL key store (SiftHttpKeyStore, createStagingKeyStore)
+│   ├── verifyReceipt.ts        ← verifyReceipt + verifyReceiptWithKeyStore
 │   ├── normalizeIntent.ts
 │   ├── state.ts
 │   ├── receiptToAuthorization.ts
@@ -297,11 +298,13 @@ packages/sift/
 
 ## API surface
 
-### Receipt verification
+### Receipt verification — local key path
 
 ```ts
 import { verifyReceipt } from "@oxdeai/sift";
 ```
+
+Synchronous.  Accepts the public key directly via `publicKeyRaw` (raw 32-byte `Uint8Array` or base64url string matching the JWKS `x` field) or the deprecated `publicKeyPem`.  No network calls.  Use this path for deterministic offline tests or when your application resolves the key externally.
 
 Verifies:
 
@@ -309,6 +312,58 @@ Verifies:
 * receipt hash integrity (Sift-canonical, ensure_ascii=True)
 * Ed25519 signature (raw 32-byte key; base64url signature)
 * decision and freshness
+
+### Receipt verification — keystore path
+
+```ts
+import { verifyReceiptWithKeyStore, createStagingKeyStore } from "@oxdeai/sift";
+
+const keyStore = createStagingKeyStore();
+const result   = await verifyReceiptWithKeyStore(receipt, { kid, keyStore });
+```
+
+Async.  Resolves the Ed25519 public key by `kid` from a `SiftKeyStore`.  Enforces KRL revocation, refresh-on-unknown-kid (once), and fail-closed on any unresolvable key.  After key resolution it delegates to `verifyReceipt` with the same verification ordering.
+
+Key resolution sequence:
+
+1. Reject empty `kid` → `MISSING_KID`.
+2. Check KRL → `REVOKED_KID` if revoked.
+3. Look up `kid` in the in-memory cache.
+4. If not found: call `keyStore.refresh()` once.
+   - On refresh failure → `JWKS_FETCH_FAILED` / `KRL_FETCH_FAILED` / `KEYSTORE_REFRESH_FAILED`.
+   - Re-check KRL after refresh.
+   - Re-check key lookup after refresh.
+   - If still not found → `UNKNOWN_KID`.
+5. Call `verifyReceipt` with the resolved key.
+
+### Key store
+
+```ts
+import { SiftHttpKeyStore, createStagingKeyStore, type SiftKeyStore } from "@oxdeai/sift";
+
+// Staging (Sift-hosted JWKS + KRL endpoints):
+const store = createStagingKeyStore();
+await store.refresh();
+
+// Custom endpoints:
+const custom = new SiftHttpKeyStore({ jwksUrl: "...", krlUrl: "..." });
+
+// Inject a mock fetch for tests:
+const testStore = new SiftHttpKeyStore({ jwksUrl, krlUrl, fetch: mockFetch });
+```
+
+`SiftKeyStore` is the interface.  `SiftHttpKeyStore` is the HTTP-backed implementation.  Both `getPublicKeyByKid` and `isKidRevoked` operate on the in-memory cache; only `refresh()` makes network calls.
+
+Staging endpoints:
+
+* JWKS: `https://sift-staging.walkosystems.com/sift-jwks.json`
+* KRL:  `https://sift-staging.walkosystems.com/sift-krl.json`
+
+To run the live staging integration test:
+
+```bash
+SIFT_STAGING_LIVE=1 pnpm -C packages/sift test
+```
 
 ### Intent normalization
 

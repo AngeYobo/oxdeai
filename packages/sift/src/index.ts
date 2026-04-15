@@ -5,10 +5,11 @@ export type {
   SiftDecision,
   SiftReceipt,
   VerifyReceiptOptions,
+  KeyStoreVerifyOptions,
   VerifyReceiptErrorCode,
   VerifyReceiptResult,
 } from "./verifyReceipt.js";
-export { verifyReceipt } from "./verifyReceipt.js";
+export { verifyReceipt, verifyReceiptWithKeyStore } from "./verifyReceipt.js";
 
 // Intent normalization
 export type {
@@ -39,3 +40,15 @@ export type {
   ReceiptToAuthorizationResult,
 } from "./receiptToAuthorization.js";
 export { receiptToAuthorization } from "./receiptToAuthorization.js";
+
+// Key store
+export type {
+  SiftKeyStore,
+  SiftHttpKeyStoreOptions,
+  KeyStoreErrorCode,
+} from "./siftKeyStore.js";
+export {
+  KeyStoreError,
+  SiftHttpKeyStore,
+  createStagingKeyStore,
+} from "./siftKeyStore.js";

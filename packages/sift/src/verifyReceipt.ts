@@ -5,6 +5,10 @@ import {
   b64uDecode,
   publicKeyFromRaw,
 } from "./siftCanonical.js";
+import {
+  type SiftKeyStore,
+  KeyStoreError,
+} from "./siftKeyStore.js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -55,6 +59,21 @@ export interface VerifyReceiptOptions {
   requireAllowDecision?: boolean;
 }
 
+/**
+ * Options for keystore-based receipt verification.
+ *
+ * The `kid` identifies which key in the keystore should be used to verify
+ * the receipt signature.  In production it comes from the receipt itself or
+ * from the receipt delivery context; here it is passed explicitly.
+ */
+export interface KeyStoreVerifyOptions {
+  kid: string;
+  keyStore: SiftKeyStore;
+  now?: Date;
+  maxAgeMs?: number;
+  requireAllowDecision?: boolean;
+}
+
 export type VerifyReceiptErrorCode =
   | "MALFORMED_RECEIPT"
   | "UNSUPPORTED_RECEIPT_VERSION"
@@ -65,7 +84,14 @@ export type VerifyReceiptErrorCode =
   | "INVALID_RECEIPT_HASH"
   | "INVALID_SIGNATURE"
   | "UNSUPPORTED_PUBLIC_KEY"
-  | "VERIFICATION_ERROR";
+  | "VERIFICATION_ERROR"
+  // ── keystore-path codes ──────────────────────────────────────────────────
+  | "MISSING_KID"
+  | "REVOKED_KID"
+  | "UNKNOWN_KID"
+  | "JWKS_FETCH_FAILED"
+  | "KRL_FETCH_FAILED"
+  | "KEYSTORE_REFRESH_FAILED";
 
 export type VerifyReceiptResult =
   | {
@@ -330,6 +356,92 @@ export function verifyReceipt(
     return fail(
       "VERIFICATION_ERROR",
       `Unexpected error during verification: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+}
+
+// ─── Keystore-based verification ─────────────────────────────────────────────
+
+/**
+ * Verifies a Sift governance receipt using a `SiftKeyStore` for key resolution.
+ *
+ * Key resolution sequence:
+ *   1. Check `kid` is non-empty.
+ *   2. Check KRL — if `kid` is revoked → REVOKED_KID.
+ *   3. Look up `kid` in the keystore cache.
+ *   4. If not found (unknown kid):
+ *        a. Call `keyStore.refresh()` once.
+ *        b. Re-check KRL after refresh.
+ *        c. Re-check key lookup after refresh.
+ *        d. If still not found → UNKNOWN_KID.
+ *   5. Call `verifyReceipt` with the resolved raw key.
+ *
+ * Preserves the existing verification ordering (steps 1–6 in verifyReceipt):
+ * struct → version → receipt_hash → signature → decision → freshness.
+ * Key management (KRL + JWKS) is resolved before any receipt crypto work.
+ *
+ * No network calls are made unless the kid is unknown in the current cache
+ * or refresh() is explicitly needed.
+ */
+export async function verifyReceiptWithKeyStore(
+  receipt: unknown,
+  options: KeyStoreVerifyOptions
+): Promise<VerifyReceiptResult> {
+  const { kid, keyStore, ...verifyOpts } = options;
+
+  // 1. kid must be non-empty.
+  if (kid.length === 0) {
+    return fail("MISSING_KID", "A non-empty kid must be provided for keystore verification");
+  }
+
+  try {
+    // 2. Check revocation before any key work.
+    if (await keyStore.isKidRevoked(kid)) {
+      return fail("REVOKED_KID", `Key '${kid}' is revoked`);
+    }
+
+    // 3. Attempt key lookup from current cache.
+    let rawKey = await keyStore.getPublicKeyByKid(kid);
+
+    // 4. Unknown kid — refresh once and retry.
+    if (rawKey === null) {
+      try {
+        await keyStore.refresh();
+      } catch (err) {
+        // Map KeyStoreError codes to VerifyReceiptErrorCode directly —
+        // they are a subset of the same union type.
+        if (err instanceof KeyStoreError) {
+          return fail(err.code, err.message);
+        }
+        return fail(
+          "KEYSTORE_REFRESH_FAILED",
+          `Unexpected error during keystore refresh: ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+
+      // 4b. Re-check revocation after refresh — the KRL may have been updated.
+      if (await keyStore.isKidRevoked(kid)) {
+        return fail("REVOKED_KID", `Key '${kid}' is revoked`);
+      }
+
+      // 4c. Re-check key lookup after refresh.
+      rawKey = await keyStore.getPublicKeyByKid(kid);
+
+      // 4d. Still unknown → fail closed.
+      if (rawKey === null) {
+        return fail("UNKNOWN_KID", `Key '${kid}' not found in JWKS after refresh`);
+      }
+    }
+
+    // 5. Delegate to the synchronous verifier with the resolved key.
+    return verifyReceipt(receipt, { ...verifyOpts, publicKeyRaw: rawKey });
+  } catch (err) {
+    if (err instanceof KeyStoreError) {
+      return fail(err.code, err.message);
+    }
+    return fail(
+      "VERIFICATION_ERROR",
+      `Unexpected error during keystore-based verification: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 }
