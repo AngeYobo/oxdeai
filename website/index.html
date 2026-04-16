@@ -26,7 +26,10 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://github.com/AngeYobo/oxdeai" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="OxDeAI — Control What AI Agents Can Execute" />
+    <meta
+      name="twitter:title"
+      content="OxDeAI — Control What AI Agents Can Execute"
+    />
     <meta
       name="twitter:description"
       content="Agent proposes. Policy evaluates. ALLOW or DENY. No authorization → no execution."
@@ -97,9 +100,7 @@
     <section id="hero">
       <div class="container">
         <div class="hero-eyebrow">execution authorization protocol</div>
-        <h1 class="hero-title">
-          Control what AI agents can execute.
-        </h1>
+        <h1 class="hero-title">Control what AI agents can execute.</h1>
         <p class="hero-sub">
           Deterministic evaluation: (intent, state, policy) → ALLOW | DENY.
           OxDeAI controls execution, not behavior.
@@ -189,25 +190,35 @@
         <div class="section-label">demo</div>
         <h2 class="section-title">The boundary holds in every case.</h2>
         <p class="section-sub">
-          Four outcomes. No path to execution without a valid authorization artifact.
+          Four outcomes. No path to execution without a valid authorization
+          artifact.
         </p>
 
         <div class="demo-legend">
           <div class="demo-legend-row allow">
             <span class="demo-legend-badge">ALLOW</span>
-            <span class="demo-legend-desc">Policy passes. Signed artifact issued. Execution proceeds.</span>
+            <span class="demo-legend-desc"
+              >Policy passes. Signed artifact issued. Execution proceeds.</span
+            >
           </div>
           <div class="demo-legend-row deny">
             <span class="demo-legend-badge">DENY</span>
-            <span class="demo-legend-desc">Policy blocks. No artifact issued. No execution. No side effect.</span>
+            <span class="demo-legend-desc"
+              >Policy blocks. No artifact issued. No execution. No side
+              effect.</span
+            >
           </div>
           <div class="demo-legend-row replay">
             <span class="demo-legend-badge">REPLAY</span>
-            <span class="demo-legend-desc">auth_id already consumed. Execution blocked. Fail-closed.</span>
+            <span class="demo-legend-desc"
+              >auth_id already consumed. Execution blocked. Fail-closed.</span
+            >
           </div>
           <div class="demo-legend-row bypass">
             <span class="demo-legend-badge">BYPASS</span>
-            <span class="demo-legend-desc">Direct upstream call without authorization → 403 rejected.</span>
+            <span class="demo-legend-desc"
+              >Direct upstream call without authorization → 403 rejected.</span
+            >
           </div>
         </div>
 
@@ -224,7 +235,7 @@
             loading="lazy"
           />
 
-          <p class="demo-conclusion" style="text-align:center">
+          <p class="demo-conclusion" style="text-align: center">
             <strong>No valid authorization → no execution path.</strong>
           </p>
         </div>
@@ -232,16 +243,20 @@
         <div class="install-strip" style="margin-top: 24px">
           <div class="install-lines">
             <div class="install-code">
-              <span class="prefix">$ </span>export UPSTREAM_EXECUTOR_TOKEN=demo-internal-token
+              <span class="prefix">$ </span>export
+              UPSTREAM_EXECUTOR_TOKEN=demo-internal-token
             </div>
             <div class="install-code">
-              <span class="prefix">$ </span>node examples/non-bypassable-demo/protected-upstream.mjs
+              <span class="prefix">$ </span>node
+              examples/non-bypassable-demo/protected-upstream.mjs
             </div>
             <div class="install-code">
-              <span class="prefix">$ </span>node examples/non-bypassable-demo/pep-gateway.mjs
+              <span class="prefix">$ </span>node
+              examples/non-bypassable-demo/pep-gateway.mjs
             </div>
             <div class="install-code">
-              <span class="prefix">$ </span>node examples/non-bypassable-demo/agent.mjs
+              <span class="prefix">$ </span>node
+              examples/non-bypassable-demo/agent.mjs
             </div>
           </div>
           <a
@@ -259,9 +274,7 @@
     <section id="how">
       <div class="container">
         <div class="section-label">how it works</div>
-        <h2 class="section-title">
-          Decision and execution are separated.
-        </h2>
+        <h2 class="section-title">Decision and execution are separated.</h2>
         <p class="section-sub">
           The Policy Decision Point (PDP) decides. The Policy Enforcement Point
           (PEP) enforces. The Verifier checks trust. Execution is impossible
@@ -280,9 +293,7 @@
           </div>
           <div class="flow-step">
             <div class="flow-num">02</div>
-            <div class="flow-step-title">
-              PEP normalizes → PDP evaluates
-            </div>
+            <div class="flow-step-title">PEP normalizes → PDP evaluates</div>
             <div class="flow-step-body">
               Guard normalizes to Intent.<br />
               (intent, state, policy) →<br />
@@ -293,7 +304,8 @@
             <div class="flow-num">03a</div>
             <div class="flow-step-title">ALLOW</div>
             <div class="flow-step-body">
-              Signed <code class="mono">AuthorizationV1</code> artifact issued.<br />
+              Signed <code class="mono">AuthorizationV1</code> artifact
+              issued.<br />
               Verifier checks <code class="mono">trustedKeySets</code>.<br />
               auth_id consumed (replay-safe).
             </div>
@@ -314,8 +326,9 @@
           <code class="mono" style="color: var(--yellow)">trustedKeySets</code>
           must be configured explicitly by the verifier. In strict mode, missing
           key sets →
-          <code class="mono" style="color: var(--yellow)">TRUSTED_KEYSETS_REQUIRED</code>.
-          A valid signature from an unknown issuer still fails closed.
+          <code class="mono" style="color: var(--yellow)"
+            >TRUSTED_KEYSETS_REQUIRED</code
+          >. A valid signature from an unknown issuer still fails closed.
         </div>
       </div>
     </section>
@@ -328,7 +341,8 @@
           What the implementation actually guarantees.
         </h2>
         <p class="section-sub">
-          Properties derived directly from the protocol spec and conformance tests.
+          Properties derived directly from the protocol spec and conformance
+          tests.
         </p>
 
         <div class="proof-grid">
@@ -338,7 +352,8 @@
             <div class="proof-body">
               Same <code class="mono">(intent, state, policy)</code> inputs
               produce identical outputs across runtimes, restarts, and replicas.
-              Policy-critical logic has no ambient randomness or shared mutable state.
+              Policy-critical logic has no ambient randomness or shared mutable
+              state.
             </div>
           </div>
           <div class="proof-block">
@@ -346,9 +361,9 @@
             <div class="proof-title">Replay protection</div>
             <div class="proof-body">
               Authorization IDs are single-use via a pluggable
-              <code class="mono">ReplayStore</code>. Nonce window tracking per agent.
-              Durable backends (Redis, Postgres) drop in without changing the guard API.
-              TOCTOU tests are part of the conformance suite.
+              <code class="mono">ReplayStore</code>. Nonce window tracking per
+              agent. Durable backends (Redis, Postgres) drop in without changing
+              the guard API. TOCTOU tests are part of the conformance suite.
             </div>
           </div>
           <div class="proof-block">
@@ -375,9 +390,10 @@
             <div class="proof-title">Signed audit trail</div>
             <div class="proof-body">
               Hash-chained audit log built into the engine. Decisions are
-              serialized to a verification envelope
-              (<code class="mono">VerificationEnvelopeV1</code> draft) with
-              state snapshots and event sequences.
+              serialized to a verification envelope (<code class="mono"
+                >VerificationEnvelopeV1</code
+              >
+              draft) with state snapshots and event sequences.
             </div>
           </div>
           <div class="proof-block">
@@ -546,7 +562,8 @@
         </h2>
         <p class="section-sub">
           All adapters delegate to <code class="mono">@oxdeai/guard</code>.
-          Identical inputs produce identical authorization decisions across all of them.
+          Identical inputs produce identical authorization decisions across all
+          of them.
         </p>
 
         <div class="adapter-grid">
@@ -592,7 +609,9 @@
           </div>
         </div>
 
-        <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-subtle)">
+        <p
+          style="margin-top: 20px; font-size: 0.8rem; color: var(--text-subtle)"
+        >
           Cross-adapter conformance validated in CI: same intent + state +
           policy → same decision across all adapters.
         </p>
@@ -603,12 +622,10 @@
     <section id="cta">
       <div class="container" style="text-align: center">
         <div class="section-label">get started</div>
-        <h2 class="section-title">
-          Production-safe agents start here.
-        </h2>
+        <h2 class="section-title">Production-safe agents start here.</h2>
         <p class="section-sub" style="max-width: 540px; margin: 0 auto 32px">
-          OxDeAI is open source, Apache-2.0 licensed, and ready to drop into
-          any TypeScript agent stack today.
+          OxDeAI is open source, Apache-2.0 licensed, and ready to drop into any
+          TypeScript agent stack today.
         </p>
         <div class="cta-group" style="justify-content: center">
           <a
@@ -693,8 +710,15 @@
         </div>
         <div
           class="container"
-          style="text-align:center; padding:20px 0; color: var(--text-subtle); font-size: 0.7rem;">
-          © 2026 OxDeAI — Deterministic execution authorization. No authorization → no execution.
+          style="
+            text-align: center;
+            padding: 20px 0;
+            color: var(--text-subtle);
+            font-size: 0.7rem;
+          "
+        >
+          © 2026 OxDeAI — Deterministic execution authorization. No
+          authorization → no execution.
         </div>
       </div>
     </footer>

@@ -48,11 +48,11 @@ function allowOutput() {
   if (out.decision !== "ALLOW") {
     throw new Error(`expected ALLOW, got DENY: ${out.reasons.join(",")}`);
   }
-  return { out, intent };
+  return { out, intent, state, engine };
 }
 
 test("creation emits AuthorizationV1 fields on ALLOW", () => {
-  const { out } = allowOutput();
+  const { out, state, engine } = allowOutput();
   const auth = out.authorization;
 
   assert.equal(auth.decision, "ALLOW");
@@ -60,7 +60,13 @@ test("creation emits AuthorizationV1 fields on ALLOW", () => {
   assert.equal(auth.auth_id, auth.authorization_id);
   assert.equal(auth.issuer, "issuer-A");
   assert.equal(auth.audience, "rp-A");
-  assert.equal(auth.state_hash, auth.state_snapshot_hash);
+  // state_hash commits to the pre-evaluation input state (PEP boundary binding).
+  // state_snapshot_hash commits to the post-evaluation state (engine_signature HMAC).
+  // They must differ because evaluation changes the state (nonces, budget, etc.).
+  assert.equal(auth.state_hash, engine.computeStateHash(state),
+    "state_hash must equal the canonical hash of the pre-evaluation input state");
+  assert.notEqual(auth.state_hash, auth.state_snapshot_hash,
+    "state_hash and state_snapshot_hash must differ: evaluation changes state");
   assert.equal(auth.policy_id, "a".repeat(64));
   assert.equal(auth.expiry, auth.expires_at);
   assert.equal(auth.issued_at, 1000);
