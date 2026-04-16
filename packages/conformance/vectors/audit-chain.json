@@ -51,7 +51,7 @@
           },
           {
             "type": "AUTH_EMITTED",
-            "authorization_id": "3af7ac8ae55c1b38dd6dca70aeccc200656f04ff971b5463fc90118cd802a774",
+            "authorization_id": "90975a9303c7c24633d4ccc3b8e824bce2d71873214486871fcb580f0f2d072b",
             "intent_hash": "d17664c344609e5bd498107bcf12d31bfa289afaa3516b34d96f1d6785a8e0b9",
             "expires_at": 1730000060,
             "timestamp": 1730000000,
@@ -62,7 +62,7 @@
       "expected": {
         "head_1": "c673c25dd89343acc3475712bdf30e41f1ef0e3a41f7bc8454885646e720ab08",
         "head_2": "470e52c94946ed14693a379b95d56b477ade9413c53539d48cea4e9b2daaa186",
-        "head_3": "3c1bb5f3b00bc0dcb11df16ce51bad201d5d2425014c0c6e56394d65629c3fbf"
+        "head_3": "41154cf2be0d1daa6329dc0a4f8dec68f1cc93bfbf54ce610ec61b42f0a99e16"
       }
     },
     {

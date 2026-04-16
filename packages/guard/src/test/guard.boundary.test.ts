@@ -9,6 +9,7 @@ import type { State, Intent, Authorization, AuthorizationV1, KeySet } from "@oxd
 import {
   PolicyEngine,
   signAuthorizationEd25519,
+  stateSnapshotHash,
   createDelegation,
 } from "@oxdeai/core";
 
@@ -140,13 +141,14 @@ test("audience tampering is denied by strict verifier", async () => {
 
 test("auth_id replay is denied on second use", async () => {
   const issued_at = Math.floor(Date.now() / 1000);
+  const replayState = makeState();
   const auth: AuthorizationV1 = signAuthorizationEd25519(
     {
       auth_id: "auth-replay-test",
       issuer: TRUSTED_KEYSET.issuer,
       audience: "aud-test",
       intent_hash: "i".repeat(64),
-      state_hash: "s".repeat(64),
+      state_hash: stateSnapshotHash(replayState),
       policy_id: "p".repeat(64),
       decision: "ALLOW",
       issued_at,
@@ -162,13 +164,15 @@ test("auth_id replay is denied on second use", async () => {
     evaluatePure(_intent: Intent, state: State) {
       return { decision: "ALLOW" as const, reasons: [], authorization: auth as Authorization, nextState: state };
     }
+    computeStateHash(state: State) {
+      return stateSnapshotHash(state);
+    }
     verifyAuthorization() {
       return { valid: true };
     }
   }
 
-  const state = makeState();
-  let storedState = state;
+  let storedState = replayState;
   const guard = OxDeAIGuard({
     engine: new FakeEngine() as any,
     getState: async () => storedState,

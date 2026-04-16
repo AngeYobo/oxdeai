@@ -339,6 +339,30 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
       throw new OxDeAIAuthorizationError(`Authorization verification failed: ${reasons}. Execution blocked.`);
     }
 
+    // ── 6c. Enforce state hash binding ────────────────────────────────────
+    // The authorization artifact commits to the execution-time state snapshot
+    // that the policy engine evaluated. Verify the current state matches.
+    // Fail closed on mismatch, missing hash, or canonicalization failure.
+    const expectedStateHash = (authorization as AuthorizationV1).state_hash;
+    if (!expectedStateHash) {
+      throw new OxDeAIAuthorizationError(
+        "Authorization is missing state_hash. Execution blocked."
+      );
+    }
+    let actualStateHash: string;
+    try {
+      actualStateHash = config.engine.computeStateHash(state);
+    } catch (err) {
+      throw new OxDeAIAuthorizationError(
+        `State canonicalization failed: ${err instanceof Error ? err.message : String(err)}. Execution blocked.`
+      );
+    }
+    if (actualStateHash !== expectedStateHash) {
+      throw new OxDeAIAuthorizationError(
+        "Authorization state_hash does not match the current execution-time state snapshot. Execution blocked."
+      );
+    }
+
     // ── 7. beforeExecute hook ──────────────────────────────────────────────
     if (config.beforeExecute) {
       await config.beforeExecute(action, authorization);

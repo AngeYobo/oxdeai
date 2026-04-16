@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { canonicalJson } from "../crypto/hashes.js";
 import type { AuditEvent } from "../audit/AuditLog.js";
+import { AUDIT_GENESIS_HASH } from "../audit/auditGenesis.js";
 import { mapIssuesToViolation, validateAuditEventJson } from "../schemas/validate.js";
 import type { VerificationResult, VerificationViolation, VerifyAuditOptions } from "./types.js";
 
@@ -54,7 +55,7 @@ export function verifyAuditEvents(
   const policyIds = new Set<string>();
   let inferredPolicyId: string | undefined;
   let hasStateAnchor = false;
-  let head = "";
+  let head = AUDIT_GENESIS_HASH;
   let lastTimestamp: number | undefined;
 
   for (let i = 0; i < events.length; i++) {

@@ -20,6 +20,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import type { Authorization, AuthorizationV1, Intent, State } from "@oxdeai/core";
+import { stateSnapshotHash } from "@oxdeai/core";
 
 import { OxDeAIGuard, createInMemoryReplayStore } from "../index.js";
 import type { ReplayStore, OxDeAIGuardConfig, ProposedAction } from "../index.js";
@@ -65,6 +66,7 @@ function makeFakeEngine(auth: AuthorizationV1) {
         nextState: state,
       };
     },
+    computeStateHash: (state: State) => stateSnapshotHash(state),
   };
 }
 
@@ -87,7 +89,7 @@ function makeGuardConfig(
 // RS-1: Default in-memory store blocks auth_id replay within one guard instance
 
 test("RS-1 default store: auth_id replay blocked on second call to same guard instance", async () => {
-  const auth = signAuth({ auth_id: "rs-auth-1" });
+  const auth = signAuth({ auth_id: "rs-auth-1", state_hash: stateSnapshotHash(makeBaseState()) });
   const guard = OxDeAIGuard(makeGuardConfig(auth));
   const action = makeAction();
 
@@ -147,7 +149,7 @@ test("RS-2 default store: delegation_id replay blocked on second call to same gu
 test("RS-3 shared store: auth_id replay blocked across two distinct guard instances", async () => {
   // A shared store simulates a durable backend (e.g. Redis) shared between processes.
   const sharedStore = createInMemoryReplayStore();
-  const auth = signAuth({ auth_id: "rs-auth-3" });
+  const auth = signAuth({ auth_id: "rs-auth-3", state_hash: stateSnapshotHash(makeBaseState()) });
 
   const guardA = OxDeAIGuard(makeGuardConfig(auth, { replayStore: sharedStore }));
   const guardB = OxDeAIGuard(makeGuardConfig(auth, { replayStore: sharedStore }));

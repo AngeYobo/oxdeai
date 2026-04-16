@@ -18,7 +18,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync } from "node:crypto";
-import { signAuthorizationEd25519 } from "@oxdeai/core";
+import { signAuthorizationEd25519, stateSnapshotHash } from "@oxdeai/core";
 import type { Authorization, AuthorizationV1, Intent, State } from "@oxdeai/core";
 
 import { OxDeAIGuard } from "../guard.js";
@@ -58,6 +58,7 @@ function makeFakeEngine(auth: AuthorizationV1) {
         nextState: state,
       };
     },
+    computeStateHash: (state: State) => stateSnapshotHash(state),
   };
 }
 
@@ -220,7 +221,7 @@ test("A-5 missing trustedKeySets: OxDeAIGuardConfigurationError thrown at constr
 // ---------------------------------------------------------------------------
 
 test("A-6 valid auth: execute runs and result is returned", async () => {
-  const auth = signAuth({ auth_id: "a6-auth", audience: "aud-test" });
+  const auth = signAuth({ auth_id: "a6-auth", audience: "aud-test", state_hash: stateSnapshotHash(makeBaseState()) });
   const guard = OxDeAIGuard(makeGuardConfig(auth));
 
   let executed = false;
