@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import type { AuditEvent } from "./AuditLog.js";
 import { canonicalJson } from "../crypto/hashes.js";
+import { AUDIT_GENESIS_HASH } from "./auditGenesis.js";
 
 type ChainedEntry = {
   event: AuditEvent;
@@ -14,7 +15,7 @@ type AuditEntryLike = AuditEvent;
 /** @public */
 export class HashChainedLog {
   private chain: ChainedEntry[] = [];
-  private head: string = "GENESIS";
+  private head: string = AUDIT_GENESIS_HASH;
 
   private canonicalizeEntry(e: AuditEntryLike): Uint8Array {
     const normalized = {
@@ -67,7 +68,7 @@ export class HashChainedLog {
    * Returns false if any link is inconsistent.
    */
   verify(): boolean {
-    let prev = "GENESIS";
+    let prev = AUDIT_GENESIS_HASH;
     for (const e of this.chain) {
       if (e.prev_hash !== prev) return false;
       const expected = this.computeNextHash(e.prev_hash, e.event);

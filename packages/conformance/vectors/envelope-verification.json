@@ -8,7 +8,7 @@
         "status": "ok",
         "policyId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "stateHash": "af9020dcf23b68ca00ae29a5b1371d892763e0a49fe07866fbdba88b0b2f56a8",
-        "auditHeadHash": "317b2691f0b897bcdb64725b240331bb877daf69b15c2f6ac3d84107ec8297e0",
+        "auditHeadHash": "ae47035e849bbc046bd17489186ad3b899edb170ad1cedcee01ad0dcdb25b409",
         "violations": []
       }
     },
