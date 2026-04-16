@@ -15,6 +15,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import type { Authorization, PolicyEngine, State } from "@oxdeai/core";
+import { stateSnapshotHash } from "@oxdeai/core";
 import { buildState } from "@oxdeai/sdk";
 
 import { TEST_KEYSET, signAuth } from "./helpers/fixtures.js";
@@ -168,8 +169,6 @@ function genInvalidCost(rng: () => number): number {
 
 // ── mock engine factories ─────────────────────────────────────────────────────
 
-// Signed with TEST_KEYPAIR; valid for 10 minutes from module-load time.
-const VALID_STUB_AUTH = signAuth({ auth_id: "stub-valid" }) as unknown as Authorization;
 // Signed but long-expired — strict verifier will reject with AUTH_EXPIRED.
 const EXPIRED_STUB_AUTH = signAuth({ auth_id: "stub-expired", issued_at: 1_000, expiry: 2_000 }) as unknown as Authorization;
 
@@ -180,14 +179,17 @@ function makeDenyEngine(): PolicyEngine {
   } as unknown as PolicyEngine;
 }
 
-function makeAllowEngine(nextState: State): PolicyEngine {
+function makeAllowEngine(state: State, nextState?: State): PolicyEngine {
+  // Auth must commit to the state snapshot the engine evaluated.
+  const auth = signAuth({ auth_id: "stub-valid", state_hash: stateSnapshotHash(state) }) as unknown as Authorization;
   return {
     evaluatePure: () => ({
       decision: "ALLOW" as const,
       reasons: [] as [],
-      authorization: VALID_STUB_AUTH,
-      nextState,
+      authorization: auth,
+      nextState: nextState ?? state,
     }),
+    computeStateHash: (s: State) => stateSnapshotHash(s),
     verifyAuthorization: () => ({ valid: true }),
   } as unknown as PolicyEngine;
 }

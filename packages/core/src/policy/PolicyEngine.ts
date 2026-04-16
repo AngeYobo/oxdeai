@@ -427,12 +427,20 @@ export class PolicyEngine {
       };
 
       const engine_signature = engineSignHmac(authPayload, this.opts.engine_secret);
+      // state_hash binds the authorization to the evaluation-time input state.
+      // Uses computeStateHashFor (module-codec canonical hash) rather than a raw
+      // JSON hash so it is insensitive to key-insertion order and missing optional
+      // fields — the same guarantee the engine already provides for state_snapshot_hash.
+      // This allows the PEP boundary to verify the current state matches the state
+      // the engine evaluated against via engine.computeStateHash(state).
+      const state_hash = this.computeStateHashFor(state);
+
       const authorizationCorePayload = {
         auth_id: "",
         issuer,
         audience,
         intent_hash,
-        state_hash: state_snapshot_hash,
+        state_hash,
         policy_id,
         decision: "ALLOW" as const,
         issued_at,
@@ -462,7 +470,7 @@ export class PolicyEngine {
         issuer,
         audience,
         intent_hash,
-        state_hash: state_snapshot_hash,
+        state_hash,
         policy_id,
         policy_version: state.policy_version,
         state_snapshot_hash,

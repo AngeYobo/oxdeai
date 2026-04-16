@@ -30,6 +30,7 @@ import { OxDeAIGuard } from "../index.js";
 import type { OxDeAIGuardConfig, ProposedAction } from "../index.js";
 import { OxDeAIAuthorizationError } from "../errors.js";
 import type { Authorization, AuthorizationV1, Intent, State } from "@oxdeai/core";
+import { stateSnapshotHash } from "@oxdeai/core";
 import { TEST_KEYSET, signAuth } from "./helpers/fixtures.js";
 
 // ---------------------------------------------------------------------------
@@ -138,6 +139,7 @@ function makeFakeEngine(auth: AuthorizationV1) {
         nextState: state,
       };
     },
+    computeStateHash: (state: State) => stateSnapshotHash(state),
   };
 }
 
@@ -165,7 +167,7 @@ function makeGuardConfig(
 
 test("RS-R1 first consumeAuthId via guard: execution succeeds", async () => {
   const fake = new FakeRedisClient();
-  const auth = signAuth({ auth_id: "redis-auth-r1" });
+  const auth = signAuth({ auth_id: "redis-auth-r1", state_hash: stateSnapshotHash(makeBaseState()) });
   const guard = OxDeAIGuard(makeGuardConfig(auth, fake));
 
   let executed = false;
@@ -179,7 +181,7 @@ test("RS-R1 first consumeAuthId via guard: execution succeeds", async () => {
 
 test("RS-R2 second consumeAuthId via guard: replay blocked", async () => {
   const fake = new FakeRedisClient();
-  const auth = signAuth({ auth_id: "redis-auth-r2" });
+  const auth = signAuth({ auth_id: "redis-auth-r2", state_hash: stateSnapshotHash(makeBaseState()) });
   const guard = OxDeAIGuard(makeGuardConfig(auth, fake));
   const action = makeAction();
 
@@ -338,7 +340,7 @@ test("RS-R7 Redis error in consumeDelegationId: throws OxDeAIAuthorizationError 
 test("RS-R8 shared Redis client: replay blocked across two distinct guard instances", async () => {
   // Simulates two processes sharing a Redis cluster via a shared FakeRedisClient.
   const sharedFake = new FakeRedisClient();
-  const auth = signAuth({ auth_id: "redis-auth-r8" });
+  const auth = signAuth({ auth_id: "redis-auth-r8", state_hash: stateSnapshotHash(makeBaseState()) });
 
   const sharedStore = createRedisReplayStore({ client: sharedFake });
 
