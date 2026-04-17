@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "issuer": "sift-staging.walkosystems.com",
+  "algorithm": "ed25519",
+  "generated_at": "2026-04-15T09:12:19Z",
+  "revoked_kids": []
+}

