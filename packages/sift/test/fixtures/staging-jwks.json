@@ -1,0 +1,12 @@
+{
+  "keys": [
+    {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "kid": "sift-staging-2026-04-15-a",
+      "use": "sig",
+      "alg": "EdDSA",
+      "x": "0MKMpMJEFZo0QeJZFsRZQZd4bw3N1j0KjwDpjP406aI"
+    }
+  ]
+}
