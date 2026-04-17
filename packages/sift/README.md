@@ -36,14 +36,14 @@ match those produced by the Sift service.
 
 | Surface | Format |
 |---|---|
-| Canonical JSON | Python `json.dumps(sort_keys=True, separators=(",",":"), ensure_ascii=True)` — keys sorted lexicographically, no whitespace, non-ASCII UTF-16 code units escaped as `\uXXXX` (lowercase); supplementary characters (U+10000+) as two surrogate escapes each |
+| Canonical JSON | Python `json.dumps(sort_keys=True, separators=(",",":"), ensure_ascii=True)` - keys sorted lexicographically, no whitespace, non-ASCII UTF-16 code units escaped as `\uXXXX` (lowercase); supplementary characters (U+10000+) as two surrogate escapes each |
 | Signatures | Ed25519 over canonical JSON UTF-8 bytes, encoded as base64url without padding (RFC 4648 §5) |
-| Public keys | Raw 32-byte Ed25519 key material — matches the `x` field of a JWKS entry (RFC 8037 OKP); no PEM wrapper required at this boundary |
+| Public keys | Raw 32-byte Ed25519 key material - matches the `x` field of a JWKS entry (RFC 8037 OKP); no PEM wrapper required at this boundary |
 
 **Algorithm naming.** There are two distinct surfaces:
 
-* `alg: "EdDSA"` — JWKS metadata field for key-discovery tooling (RFC 8037).
-* `alg: "ed25519"` — Sift contract runtime literal present in `AuthorizationV1.signature.alg` (lowercase).
+* `alg: "EdDSA"` - JWKS metadata field for key-discovery tooling (RFC 8037).
+* `alg: "ed25519"` - Sift contract runtime literal present in `AuthorizationV1.signature.alg` (lowercase).
 
 These are not interchangeable. The runtime artifact always uses `"ed25519"`.
 
@@ -60,7 +60,7 @@ Responsibilities:
 * receipt hash integrity validation (Sift-canonical JSON, ensure_ascii=True)
 * Ed25519 signature verification (raw 32-byte key; base64url-decoded signature)
 * `ALLOW` / `DENY` decision enforcement
-* bounded freshness validation (`maxAgeMs` — configurable per deployment; treat as a security parameter)
+* bounded freshness validation (`maxAgeMs` - configurable per deployment; treat as a security parameter)
 
 Verification order (integrity before semantics):
 
@@ -80,8 +80,8 @@ Properties:
 
 **Public key input.** `verifyReceipt` accepts the public key as:
 
-* `publicKeyRaw` — raw 32-byte Ed25519 key material, either as a `Uint8Array` or a base64url-no-padding string matching the JWKS `x` field. This is the primary Sift-contract-native path.
-* `publicKeyPem` — PEM-encoded SPKI Ed25519 public key. Accepted for backward compatibility. `publicKeyRaw` takes precedence when both are provided.
+* `publicKeyRaw` - raw 32-byte Ed25519 key material, either as a `Uint8Array` or a base64url-no-padding string matching the JWKS `x` field. This is the primary Sift-contract-native path.
+* `publicKeyPem` - PEM-encoded SPKI Ed25519 public key. Accepted for backward compatibility. `publicKeyRaw` takes precedence when both are provided.
 
 In production, the raw key is obtained by decoding the JWKS `x` field for the `kid` matching the receipt, after confirming the key is not revoked in the KRL.
 
@@ -131,9 +131,9 @@ Explicit bindings:
 | `expires_at`        | derived from configured TTL                                         |
 | `audience`          | caller-supplied                                                     |
 | `issuer`            | caller-supplied                                                     |
-| `signature.alg`     | `"ed25519"` — Sift contract runtime literal (lowercase)             |
+| `signature.alg`     | `"ed25519"` - Sift contract runtime literal (lowercase)             |
 | `signature.kid`     | caller-supplied `keyId`                                             |
-| `signature.sig`     | `""` placeholder — caller MUST sign the returned `signingPayload`  |
+| `signature.sig`     | `""` placeholder - caller MUST sign the returned `signingPayload`  |
 
 This function constructs the payload. It does **not** sign it.
 
@@ -208,7 +208,7 @@ Canonicalization requirements (Sift wire format):
 
 - lexicographic key ordering
 - no whitespace between tokens
-- `ensure_ascii=True` — every UTF-16 code unit above U+007F escaped as `\uXXXX`; supplementary characters as two surrogate escapes each
+- `ensure_ascii=True` - every UTF-16 code unit above U+007F escaped as `\uXXXX`; supplementary characters as two surrogate escapes each
 - UTF-8 encoding
 
 The adapter MUST:
@@ -235,7 +235,7 @@ The adapter MUST NOT:
 - mutate payload before verification
 
 Signatures are base64url without padding. The verifier accepts both base64url (Sift-native) and
-standard base64 — both normalize to the same underlying bytes before decoding.
+standard base64 - both normalize to the same underlying bytes before decoding.
 
 ### Key management and JWKS/KRL surface
 
@@ -257,7 +257,7 @@ JWKS entry shape (RFC 8037 OKP):
 Production key resolution sequence:
 
 1. Extract `kid` from the receipt.
-2. Check `kid` against the KRL — if revoked, DENY immediately.
+2. Check `kid` against the KRL - if revoked, DENY immediately.
 3. Look up the JWKS entry for `kid`. If not found, trigger a JWKS refresh (cache may be stale) and retry once.
 4. If still not found → DENY. No fallback guessing.
 5. Decode `x` (base64url → 32 bytes) and pass as `publicKeyRaw` to `verifyReceipt`.
@@ -298,7 +298,7 @@ packages/sift/
 
 ## API surface
 
-### Receipt verification — local key path
+### Receipt verification - local key path
 
 ```ts
 import { verifyReceipt } from "@oxdeai/sift";
@@ -313,7 +313,7 @@ Verifies:
 * Ed25519 signature (raw 32-byte key; base64url signature)
 * decision and freshness
 
-### Receipt verification — keystore path
+### Receipt verification - keystore path
 
 ```ts
 import { verifyReceiptWithKeyStore, createStagingKeyStore } from "@oxdeai/sift";
@@ -340,7 +340,7 @@ Key resolution sequence:
 A kid that is already in the key cache does **not** trigger a refresh, so a revocation added
 to the KRL after the last `refresh()` call will not be detected until the next explicit
 `refresh()`.  Callers SHOULD call `refresh()` on a schedule appropriate to their revocation
-latency requirements — not just on startup.
+latency requirements - not just on startup.
 
 ### Key store
 
@@ -465,7 +465,7 @@ if (!authResult.ok) {
   throw new Error(`${authResult.code}: ${authResult.message}`);
 }
 
-// authResult.authorization.signature.sig is "" — sign it before use.
+// authResult.authorization.signature.sig is "" - sign it before use.
 // authResult.signingPayload is AuthorizationV1 with signature.sig absent.
 // Sign sift_canonical(signingPayload) with Ed25519 → base64url, no padding.
 console.log(authResult.authorization);
@@ -532,8 +532,8 @@ computed locally are identical to those the Sift service produces.
 ### Why raw 32-byte keys instead of PEM?
 
 The Sift JWKS endpoint distributes Ed25519 public keys as raw 32-byte material in the `x` field
-(RFC 8037 OKP). Accepting the key in that form directly — rather than requiring a PEM-wrapped
-derivative — eliminates a conversion step and removes any ambiguity about which encoding is
+(RFC 8037 OKP). Accepting the key in that form directly - rather than requiring a PEM-wrapped
+derivative - eliminates a conversion step and removes any ambiguity about which encoding is
 authoritative at the Sift contract boundary.
 
 ## Related docs
