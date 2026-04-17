@@ -149,12 +149,18 @@ function makeGuardConfig(
   stateOverride?: { get: () => State; set: (s: State) => void }
 ): OxDeAIGuardConfig {
   let storedState = makeBaseState();
+  let storedVersion = 0;
   const get = stateOverride?.get ?? (() => storedState);
   const set = stateOverride?.set ?? ((s: State) => { storedState = s; });
   return {
     engine: makeFakeEngine(auth) as any,
-    getState: async () => get(),
-    setState: async (s) => set(s),
+    getState: async () => ({ state: get(), version: storedVersion }),
+    setState: async (s, v) => {
+      if (v !== storedVersion) return false;
+      set(s);
+      storedVersion++;
+      return true;
+    },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
     replayStore: createRedisReplayStore({ client: redisClient }),
@@ -309,11 +315,10 @@ test("RS-R7 Redis error in consumeDelegationId: throws OxDeAIAuthorizationError 
   );
   const delegation = makeDelegationWithScope(parentAuth, { tools: ["pay"], max_amount: 1_000_000n });
 
-  let storedState = makeBaseState();
   const guard = OxDeAIGuard({
     engine: { evaluatePure: () => { throw new Error("should not reach engine"); } } as any,
-    getState: async () => storedState,
-    setState: async (s) => { storedState = s; },
+    getState: async () => ({ state: makeBaseState(), version: 0 }),
+    setState: async () => true,
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "agent-redis",
     replayStore: createRedisReplayStore({ client: hybridClient }),
@@ -345,20 +350,22 @@ test("RS-R8 shared Redis client: replay blocked across two distinct guard instan
   const sharedStore = createRedisReplayStore({ client: sharedFake });
 
   let stateA = makeBaseState();
+  let versionA = 0;
   const guardA = OxDeAIGuard({
     engine: makeFakeEngine(auth) as any,
-    getState: async () => stateA,
-    setState: async (s) => { stateA = s; },
+    getState: async () => ({ state: stateA, version: versionA }),
+    setState: async (s, v) => { if (v !== versionA) return false; stateA = s; versionA++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
     replayStore: sharedStore,
   });
 
   let stateB = makeBaseState();
+  let versionB = 0;
   const guardB = OxDeAIGuard({
     engine: makeFakeEngine(auth) as any,
-    getState: async () => stateB,
-    setState: async (s) => { stateB = s; },
+    getState: async () => ({ state: stateB, version: versionB }),
+    setState: async (s, v) => { if (v !== versionB) return false; stateB = s; versionB++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
     replayStore: sharedStore,

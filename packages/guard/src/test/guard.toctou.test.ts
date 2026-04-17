@@ -47,10 +47,11 @@ function makeStatefulConfig(
   overrides: Partial<OxDeAIGuardConfig> = {}
 ): OxDeAIGuardConfig {
   let current = initialState;
+  let version = 0;
   return {
     engine,
-    getState: () => current,
-    setState: (s) => { current = s; },
+    getState: () => ({ state: current, version }),
+    setState: (s, v) => { if (v !== version) return false; current = s; version++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
     ...overrides,
@@ -182,10 +183,11 @@ test("G-3 reverification: state mutated between calls → policy re-evaluated ea
   });
 
   let current = initial;
+  let version = 0;
   const config: OxDeAIGuardConfig = {
     engine,
-    getState: () => current,
-    setState: (s) => { current = s; },
+    getState: () => ({ state: current, version }),
+    setState: (s, v) => { if (v !== version) return false; current = s; version++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
   };

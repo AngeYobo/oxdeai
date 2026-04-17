@@ -76,10 +76,11 @@ function makeGuardConfig(
   overrides?: Partial<OxDeAIGuardConfig>
 ): OxDeAIGuardConfig {
   let stored = state;
+  let storedVersion = 0;
   return {
     engine: makeFakeEngine(auth, state) as any,
-    getState: async () => stored,
-    setState: async (s) => { stored = s; },
+    getState: async () => ({ state: stored, version: storedVersion }),
+    setState: async (s, v) => { if (v !== storedVersion) return false; stored = s; storedVersion++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
     ...overrides,
@@ -308,9 +309,9 @@ test("SB-7 null execution state: computeStateHash throws and execution is blocke
 
   const config: OxDeAIGuardConfig = {
     engine: engineWithNullGuard as any,
-    // getState returns null — simulates a broken/uninitialized state store.
-    getState: async () => null as unknown as State,
-    setState: async () => {},
+    // getState returns null state — simulates a broken/uninitialized state store.
+    getState: async () => ({ state: null as unknown as State, version: 0 }),
+    setState: async () => true,
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
   };
@@ -355,7 +356,7 @@ test("SB-8 boundary integrity: state_hash mismatch blocks beforeExecute, execute
 
   const config = makeGuardConfig(auth, executionState, {
     beforeExecute: async () => { beforeExecuteCalled = true; },
-    setState: async () => { setStateCalled = true; },
+    setState: async () => { setStateCalled = true; return true; },
   });
 
   const guard = OxDeAIGuard(config);

@@ -441,10 +441,11 @@ test("G1 engine DENY always prevents execute() and setState() for any ProposedAc
     let executeCalled = false;
     let setStateCalled = false;
 
+    let currentVersion = 0;
     const config: OxDeAIGuardConfig = {
       engine: makeDenyEngine(),
-      getState: () => currentState,
-      setState: (s) => { setStateCalled = true; currentState = s; },
+      getState: () => ({ state: currentState, version: currentVersion }),
+      setState: (s, v) => { setStateCalled = true; if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
       ...BASE_TRUST,
     };
 
@@ -474,10 +475,11 @@ test("G2 missing agent_id always prevents execute() for any ProposedAction", asy
     let currentState = state;
     let executeCalled = false;
 
+    let currentVersion = 0;
     const config: OxDeAIGuardConfig = {
       engine: makeAllowEngine(currentState),
-      getState: () => currentState,
-      setState: (s) => { currentState = s; },
+      getState: () => ({ state: currentState, version: currentVersion }),
+      setState: (s, v) => { if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
       ...BASE_TRUST,
     };
 
@@ -510,10 +512,11 @@ test("G3 ALLOW without authorization artifact always prevents execute() for any 
     let currentState = state;
     let executeCalled = false;
 
+    let currentVersion = 0;
     const config: OxDeAIGuardConfig = {
       engine: makeAllowEngineNoAuth(currentState),
-      getState: () => currentState,
-      setState: (s) => { currentState = s; },
+      getState: () => ({ state: currentState, version: currentVersion }),
+      setState: (s, v) => { if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
       ...BASE_TRUST,
     };
 
@@ -546,10 +549,11 @@ test("G4 failed verifyAuthorization always prevents execute() for any ProposedAc
     let currentState = state;
     let executeCalled = false;
 
+    let currentVersion = 0;
     const config: OxDeAIGuardConfig = {
       engine: makeAuthFailEngine(currentState),
-      getState: () => currentState,
-      setState: (s) => { currentState = s; },
+      getState: () => ({ state: currentState, version: currentVersion }),
+      setState: (s, v) => { if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
       ...BASE_TRUST,
     };
 
@@ -575,9 +579,9 @@ test("G4 failed verifyAuthorization always prevents execute() for any ProposedAc
   }
 });
 
-// ── G5: ALLOW always calls execute and setState ───────────────────────────────
+// ── G5: ALLOW always calls setState then execute ──────────────────────────────
 
-test("G5 successful ALLOW always calls execute() then setState() and returns result for any ProposedAction", async () => {
+test("G5 successful ALLOW always calls setState() before execute() and returns result for any ProposedAction", async () => {
   const SENTINEL = Symbol("execution-result");
 
   for (const seed of seeds()) {
@@ -586,6 +590,7 @@ test("G5 successful ALLOW always calls execute() then setState() and returns res
     const agentId = action.context?.agent_id as string;
     const state = makePermissiveState(agentId);
     let currentState = state;
+    let currentVersion = 0;
 
     let executeCalled = false;
     let setStateCalled = false;
@@ -593,11 +598,14 @@ test("G5 successful ALLOW always calls execute() then setState() and returns res
 
     const config: OxDeAIGuardConfig = {
       engine: makeAllowEngine(currentState),
-      getState: () => currentState,
-      setState: (s) => {
+      getState: () => ({ state: currentState, version: currentVersion }),
+      setState: (s, v) => {
         callOrder.push("setState");
         setStateCalled = true;
+        if (v !== currentVersion) return false;
         currentState = s;
+        currentVersion++;
+        return true;
       },
       ...BASE_TRUST,
     };
@@ -613,9 +621,9 @@ test("G5 successful ALLOW always calls execute() then setState() and returns res
     assert.ok(setStateCalled, `seed=${seed} setState must be called on ALLOW`);
     assert.equal(result, SENTINEL, `seed=${seed} guard must return the execute() result`);
 
-    // execute must happen before setState
-    assert.equal(callOrder[0], "execute", `seed=${seed} execute must be called before setState`);
-    assert.equal(callOrder[1], "setState", `seed=${seed} setState must be called after execute`);
+    // setState (CAS commit) must happen before execute
+    assert.equal(callOrder[0], "setState", `seed=${seed} setState must be called before execute`);
+    assert.equal(callOrder[1], "execute", `seed=${seed} execute must be called after setState`);
   }
 });
 
@@ -631,11 +639,12 @@ test("G6 onDecision always receives correct decision value for any outcome", asy
 
     // DENY path
     let denyDecision: string | undefined;
+    let denyVersion = 0;
     await assert.rejects(
       () => OxDeAIGuard({
         engine: makeDenyEngine(),
-        getState: () => currentState,
-        setState: (s) => { currentState = s; },
+        getState: () => ({ state: currentState, version: denyVersion }),
+        setState: (s, v) => { if (v !== denyVersion) return false; currentState = s; denyVersion++; return true; },
         onDecision: ({ decision }) => { denyDecision = decision; },
         ...BASE_TRUST,
       })(action, async () => {}),
@@ -645,10 +654,11 @@ test("G6 onDecision always receives correct decision value for any outcome", asy
 
     // ALLOW path
     let allowDecision: string | undefined;
+    let allowVersion = 0;
     await OxDeAIGuard({
       engine: makeAllowEngine(currentState),
-      getState: () => currentState,
-      setState: (s) => { currentState = s; },
+      getState: () => ({ state: currentState, version: allowVersion }),
+      setState: (s, v) => { if (v !== allowVersion) return false; currentState = s; allowVersion++; return true; },
       onDecision: ({ decision }) => { allowDecision = decision; },
       ...BASE_TRUST,
     })(action, async () => {});
@@ -666,10 +676,11 @@ test("G7 onDecision hook errors never surface to the caller for any ProposedActi
     const state = makePermissiveState(agentId);
     let currentState = state;
 
+    let currentVersion = 0;
     const guard = OxDeAIGuard({
       engine: makeAllowEngine(currentState),
-      getState: () => currentState,
-      setState: (s) => { currentState = s; },
+      getState: () => ({ state: currentState, version: currentVersion }),
+      setState: (s, v) => { if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
       onDecision: () => { throw new Error(`seed=${seed} hook explosion`); },
       ...BASE_TRUST,
     });

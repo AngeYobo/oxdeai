@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { PolicyEngine, State } from "@oxdeai/core";
+import type { PolicyEngine } from "@oxdeai/core";
 import type { OxDeAIGuardConfig } from "@oxdeai/guard";
 
 /**
@@ -35,10 +35,10 @@ export type CrewAIToolCall = {
 export type CrewAIGuardConfig = {
   /** The PolicyEngine instance that evaluates intent policy. */
   engine: PolicyEngine;
-  /** Load the current policy state. May be async. */
-  getState: () => State | Promise<State>;
-  /** Persist the next state after a successful execution. May be async. */
-  setState: (state: State) => void | Promise<void>;
+  /** Load current state with its version token. The version is passed back to setState for CAS. May be async. */
+  getState: OxDeAIGuardConfig["getState"];
+  /** Persist next state using compare-and-set. Return true on success, false on version mismatch. May be async. */
+  setState: OxDeAIGuardConfig["setState"];
 
   /**
    * Identity of the acting agent. Injected as `context.agent_id` on every

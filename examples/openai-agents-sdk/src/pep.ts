@@ -73,8 +73,8 @@ export async function guardedProvision(
   const guard = createOpenAIAgentsGuard({
     engine,
     agentId: AGENT_ID,
-    getState: () => state,
-    setState: (s: State) => { nextState = s; },
+    getState: () => ({ state, version: 0 }),
+    setState: (s) => { nextState = s; return true; },
     trustedKeySets: [DEMO_KEYSET],
     // Return the pre-built intent so nonce/intent_id are stable.
     mapActionToIntent: () => intent,

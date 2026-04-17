@@ -141,8 +141,8 @@ function makeGuardConfig(overrides?: Partial<OxDeAIGuardConfig>): OxDeAIGuardCon
       policy_version: "v1-test",
       engine_secret: "test-secret-must-be-at-least-32-chars!!",
     }),
-    getState: () => buildState({ agent_id: "child-agent", allow_action_types: ["PROVISION"] }),
-    setState: () => {},
+    getState: () => ({ state: buildState({ agent_id: "child-agent", allow_action_types: ["PROVISION"] }), version: 0 }),
+    setState: () => true,
     trustedKeySets: [KEYSET],
     expectedAudience: "parent-agent",
     ...overrides,
@@ -176,7 +176,7 @@ test("G-D1: any action matching delegation scope.tools is allowed; setState is n
     let executeCalled = false;
     let setStateCalled = false;
 
-    const config = makeGuardConfig({ setState: () => { setStateCalled = true; } });
+    const config = makeGuardConfig({ setState: () => { setStateCalled = true; return true; } });
     const guard = OxDeAIGuard(config);
     const action = makeAction(toolName, T_NOW);
 
@@ -268,7 +268,7 @@ test("G-D2: any invalid delegation class always blocks execution (fail-closed)",
     let executeCalled = false;
     let setStateCalled = false;
 
-    const config = makeGuardConfig({ setState: () => { setStateCalled = true; } });
+    const config = makeGuardConfig({ setState: () => { setStateCalled = true; return true; } });
     const guard = OxDeAIGuard(config);
 
     await assert.rejects(
@@ -355,7 +355,7 @@ test("G-D3: delegation presented with wrong parent authorization is rejected (DE
     let executeCalled = false;
     let setStateCalled = false;
 
-    const config = makeGuardConfig({ setState: () => { setStateCalled = true; } });
+    const config = makeGuardConfig({ setState: () => { setStateCalled = true; return true; } });
     const guard = OxDeAIGuard(config);
 
     await assert.rejects(

@@ -81,10 +81,11 @@ const stubAuth: Authorization = {
 
 function makeGuardConfig(overrides: Partial<OxDeAIGuardConfig> = {}): OxDeAIGuardConfig {
   let currentState = makeState();
+  let currentVersion = 0;
   return {
     engine: makeEngine(),
-    getState: () => currentState,
-    setState: (s) => { currentState = s; },
+    getState: () => ({ state: currentState, version: currentVersion }),
+    setState: (s, v) => { if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
     ...overrides,
@@ -206,11 +207,12 @@ test("defaultNormalizeAction: metadata_hash is deterministic for same args", () 
 test("guard: uses custom mapActionToIntent when provided", async () => {
   let mapperCalled = false;
   let currentState = makeState();
+  let currentVersion = 0;
 
   const config: OxDeAIGuardConfig = {
     engine: makeEngine(),
-    getState: () => currentState,
-    setState: (s) => { currentState = s; },
+    getState: () => ({ state: currentState, version: currentVersion }),
+    setState: (s, v) => { if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
     mapActionToIntent(action) {
@@ -241,11 +243,12 @@ test("guard: DENY throws OxDeAIDenyError and does not call execute", async () =>
     kill_switch: { global: true, agents: {} },
   };
   let currentState = deniedState;
+  let currentVersion = 0;
 
   const config: OxDeAIGuardConfig = {
     engine: makeEngine(),
-    getState: () => currentState,
-    setState: (s) => { currentState = s; },
+    getState: () => ({ state: currentState, version: currentVersion }),
+    setState: (s, v) => { if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
   };
@@ -272,13 +275,14 @@ test("guard: DENY fires onDecision hook with DENY decision", async () => {
     kill_switch: { global: true, agents: {} },
   };
   let currentState = deniedState;
+  let currentVersion = 0;
   let decisionFired = false;
   let capturedDecision: string | undefined;
 
   const config: OxDeAIGuardConfig = {
     engine: makeEngine(),
-    getState: () => currentState,
-    setState: (s) => { currentState = s; },
+    getState: () => ({ state: currentState, version: currentVersion }),
+    setState: (s, v) => { if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
     onDecision({ decision }) {
@@ -340,6 +344,7 @@ test("guard: ALLOW calls beforeExecute before execute", async () => {
 
 test("guard: ALLOW without authorization artifact throws OxDeAIAuthorizationError", async () => {
   let currentState = makeState();
+  let currentVersion = 0;
 
   const mockEngine = {
     evaluatePure: () => ({
@@ -353,8 +358,8 @@ test("guard: ALLOW without authorization artifact throws OxDeAIAuthorizationErro
 
   const config: OxDeAIGuardConfig = {
     engine: mockEngine,
-    getState: () => currentState,
-    setState: (s) => { currentState = s; },
+    getState: () => ({ state: currentState, version: currentVersion }),
+    setState: (s, v) => { if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
   };
@@ -376,6 +381,7 @@ test("guard: ALLOW without authorization artifact throws OxDeAIAuthorizationErro
 
 test("guard: ALLOW without nextState throws OxDeAIAuthorizationError", async () => {
   let currentState = makeState();
+  let currentVersion = 0;
 
   const mockEngine = {
     evaluatePure: () => ({
@@ -389,8 +395,8 @@ test("guard: ALLOW without nextState throws OxDeAIAuthorizationError", async () 
 
   const config: OxDeAIGuardConfig = {
     engine: mockEngine,
-    getState: () => currentState,
-    setState: (s) => { currentState = s; },
+    getState: () => ({ state: currentState, version: currentVersion }),
+    setState: (s, v) => { if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
   };
@@ -414,6 +420,7 @@ test("guard: ALLOW without nextState throws OxDeAIAuthorizationError", async () 
 
 test("guard: failed verifyAuthorization throws OxDeAIAuthorizationError", async () => {
   let currentState = makeState();
+  let currentVersion = 0;
   // A properly-signed but expired artifact — the strict verifier will reject it with AUTH_EXPIRED.
   const expiredAuth = signAuth({ auth_id: "stub-expired", issued_at: 1_000, expiry: 2_000 });
 
@@ -428,8 +435,8 @@ test("guard: failed verifyAuthorization throws OxDeAIAuthorizationError", async 
 
   const config: OxDeAIGuardConfig = {
     engine: mockEngine,
-    getState: () => currentState,
-    setState: (s) => { currentState = s; },
+    getState: () => ({ state: currentState, version: currentVersion }),
+    setState: (s, v) => { if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
   };
@@ -454,11 +461,12 @@ test("guard: failed verifyAuthorization throws OxDeAIAuthorizationError", async 
 test("guard: setState is called with nextState after successful execution", async () => {
   let storedState: State | undefined;
   const initialState = makeState();
+  let storedVersion = 0;
 
   const config: OxDeAIGuardConfig = {
     engine: makeEngine(),
-    getState: () => initialState,
-    setState: (s) => { storedState = s; },
+    getState: () => ({ state: initialState, version: storedVersion }),
+    setState: (s, _v) => { storedState = s; storedVersion++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
   };
@@ -480,11 +488,12 @@ test("guard: setState is NOT called when execution is denied", async () => {
   };
   let setStateCalled = false;
   let currentState = deniedState;
+  let currentVersion = 0;
 
   const config: OxDeAIGuardConfig = {
     engine: makeEngine(),
-    getState: () => currentState,
-    setState: (s) => { setStateCalled = true; currentState = s; },
+    getState: () => ({ state: currentState, version: currentVersion }),
+    setState: (s, v) => { setStateCalled = true; if (v !== currentVersion) return false; currentState = s; currentVersion++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
   };
@@ -499,7 +508,7 @@ test("guard: setState is NOT called when execution is denied", async () => {
 
 test("OxDeAIGuard: throws OxDeAIGuardConfigurationError when engine missing", () => {
   assert.throws(
-    () => OxDeAIGuard({ engine: null as unknown as PolicyEngine, getState: () => makeState(), setState: () => {}, expectedAudience: "aud-test" }),
+    () => OxDeAIGuard({ engine: null as unknown as PolicyEngine, getState: () => ({ state: makeState(), version: 0 }), setState: () => true, expectedAudience: "aud-test" }),
     (err: unknown) => {
       assert.ok(err instanceof OxDeAIGuardConfigurationError);
       return true;
@@ -509,7 +518,7 @@ test("OxDeAIGuard: throws OxDeAIGuardConfigurationError when engine missing", ()
 
 test("OxDeAIGuard: throws OxDeAIGuardConfigurationError when getState missing", () => {
   assert.throws(
-    () => OxDeAIGuard({ engine: makeEngine(), getState: null as unknown as () => State, setState: () => {}, expectedAudience: "aud-test" }),
+    () => OxDeAIGuard({ engine: makeEngine(), getState: null as unknown as () => { state: State; version: number }, setState: () => true, expectedAudience: "aud-test" }),
     (err: unknown) => {
       assert.ok(err instanceof OxDeAIGuardConfigurationError);
       return true;

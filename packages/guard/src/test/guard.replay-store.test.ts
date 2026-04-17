@@ -75,10 +75,11 @@ function makeGuardConfig(
   overrides: Partial<OxDeAIGuardConfig> = {}
 ): OxDeAIGuardConfig {
   let storedState = makeBaseState();
+  let storedVersion = 0;
   return {
     engine: makeFakeEngine(auth) as any,
-    getState: async () => storedState,
-    setState: async (s) => { storedState = s; },
+    getState: async () => ({ state: storedState, version: storedVersion }),
+    setState: async (s, v) => { if (v !== storedVersion) return false; storedState = s; storedVersion++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
     ...overrides,
@@ -118,11 +119,10 @@ test("RS-2 default store: delegation_id replay blocked on second call to same gu
   );
   const delegation = makeDelegationWithScope(parentAuth, { tools: ["pay"], max_amount: 1_000_000n });
 
-  let storedState = makeBaseState();
   const guard = OxDeAIGuard({
     engine: { evaluatePure: () => { throw new Error("should not reach engine on delegation path"); } } as any,
-    getState: async () => storedState,
-    setState: async (s) => { storedState = s; },
+    getState: async () => ({ state: makeBaseState(), version: 0 }),
+    setState: async () => true,
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "agent-rs",
   });
@@ -183,11 +183,10 @@ test("RS-4 shared store: delegation_id replay blocked across two distinct guard 
   const delegation = makeDelegationWithScope(parentAuth, { tools: ["pay"], max_amount: 1_000_000n });
 
   function makeDelGuard() {
-    let storedState = makeBaseState();
     return OxDeAIGuard({
       engine: { evaluatePure: () => { throw new Error("should not reach engine"); } } as any,
-      getState: async () => storedState,
-      setState: async (s) => { storedState = s; },
+      getState: async () => ({ state: makeBaseState(), version: 0 }),
+      setState: async () => true,
       trustedKeySets: [TEST_KEYSET],
       expectedAudience: "agent-rs",
       replayStore: sharedStore,
@@ -260,11 +259,10 @@ test("RS-6 failing consumeDelegationId: execution blocked when store throws on d
   );
   const delegation = makeDelegationWithScope(parentAuth, { tools: ["pay"], max_amount: 1_000_000n });
 
-  let storedState = makeBaseState();
   const guard = OxDeAIGuard({
     engine: { evaluatePure: () => { throw new Error("should not reach engine"); } } as any,
-    getState: async () => storedState,
-    setState: async (s) => { storedState = s; },
+    getState: async () => ({ state: makeBaseState(), version: 0 }),
+    setState: async () => true,
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "agent-rs",
     replayStore: failingStore,
@@ -304,11 +302,10 @@ test("RS-7 store without consumeDelegationId: delegation executes; parentAuth re
   );
   const delegation = makeDelegationWithScope(parentAuth, { tools: ["pay"], max_amount: 1_000_000n });
 
-  let storedState = makeBaseState();
   const guard = OxDeAIGuard({
     engine: { evaluatePure: () => { throw new Error("should not reach engine"); } } as any,
-    getState: async () => storedState,
-    setState: async (s) => { storedState = s; },
+    getState: async () => ({ state: makeBaseState(), version: 0 }),
+    setState: async () => true,
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "agent-rs",
     replayStore: authOnlyStore,
@@ -375,11 +372,10 @@ test("RS-9 store unavailable for parentAuth auth_id: execution blocked on delega
   );
   const delegation = makeDelegationWithScope(parentAuth, { tools: ["pay"], max_amount: 1_000_000n });
 
-  let storedState = makeBaseState();
   const guard = OxDeAIGuard({
     engine: { evaluatePure: () => { throw new Error("should not reach engine"); } } as any,
-    getState: async () => storedState,
-    setState: async (s) => { storedState = s; },
+    getState: async () => ({ state: makeBaseState(), version: 0 }),
+    setState: async () => true,
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "agent-rs",
     replayStore: partialFailStore,

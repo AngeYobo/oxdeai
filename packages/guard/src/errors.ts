@@ -47,6 +47,22 @@ export class OxDeAINormalizationError extends Error {
 }
 
 /**
+ * Thrown when a compare-and-set (CAS) state commit fails because the persisted
+ * version no longer matches the version read at evaluation time. This indicates
+ * a concurrent modification — another request updated state between this guard's
+ * getState() and setState() calls.
+ *
+ * Execution is blocked and no side effects are committed.
+ * Extends OxDeAIAuthorizationError so existing catch blocks remain valid.
+ */
+export class OxDeAIConflictError extends OxDeAIAuthorizationError {
+  constructor(message: string) {
+    super(message);
+    this.name = "OxDeAIConflictError";
+  }
+}
+
+/**
  * Thrown when DelegationV1 verification fails at the guard boundary.
  * Extends OxDeAIAuthorizationError so existing catch blocks remain valid.
  * The `violations` field carries structured delegation-specific failure codes.
