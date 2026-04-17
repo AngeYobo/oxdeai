@@ -123,12 +123,15 @@ The `alg: "EdDSA"` field is JWKS metadata.  The runtime artifact uses
 
 ## Run
 
+### Local mode (no network required)
+
 ```bash
 pnpm -C examples/sift start
 ```
 
-The `start` script builds `packages/sift` first (`prebuild`), compiles this
-example, then runs it.  No environment variables or network access required.
+Builds `packages/sift`, compiles the example, runs three fully local
+scenarios (ALLOW, DENY, REPLAY) using in-process key generation.  No
+environment variables or network access required.
 
 Expected output:
 
@@ -157,6 +160,79 @@ Scenario 3 — REPLAY
   reason: REPLAY
   executed: false
 ```
+
+### Live staging mode (network required)
+
+```bash
+pnpm -C examples/sift start:staging
+```
+
+Calls the real Sift staging infrastructure and runs three scenarios:
+
+| Scenario | What is live | What is local |
+|---|---|---|
+| **1 — LIVE ALLOW** | POST `/api/v1/authorize`; JWKS/KRL fetch; Ed25519 verify | PEP enforcement (`pepVerify`) |
+| **2 — LIVE DENY** | POST `/api/v1/authorize`; JWKS/KRL fetch; Ed25519 verify | decision gate (non-ALLOW blocks before PEP) |
+| **3a — LIVE REPLAY** | POST `/api/v1/authorize` with REPLAY decision; verify | decision gate |
+| **3b — LOCAL REPLAY CHECK** | — | PEP in-memory replay store; ALLOW artifact from Scenario 1 |
+
+Live surfaces contacted:
+
+```
+POST https://sift-staging.walkosystems.com/api/v1/authorize
+GET  https://sift-staging.walkosystems.com/sift-jwks.json
+GET  https://sift-staging.walkosystems.com/sift-krl.json
+```
+
+Expected output (when staging is reachable):
+
+```
+OxDeAI Sift Live Staging Demo
+
+Scenario 1 — LIVE ALLOW
+  authorize call: OK
+  local receipt verification: OK
+  authorization conversion: OK
+  auth_id: staging-<uuid>
+  issuer:  sift-staging.walkosystems.com
+  policy:  read-only-low-risk
+  sift decision: ALLOW
+  pep decision: ALLOW
+  executed: true
+
+Scenario 3b — LOCAL REPLAY CHECK (OxDeAI PEP)
+  (live ALLOW artifact reused — no additional network call)
+  authorization reused: auth_id=staging-<uuid>
+  pep decision: DENY
+  reason: REPLAY
+  executed: false
+
+Scenario 2 — LIVE DENY
+  authorize call: OK
+  local receipt verification: OK
+  auth_id: staging-<uuid>
+  issuer:  sift-staging.walkosystems.com
+  policy:  data-exfil-block
+  sift decision: DENY
+  pep boundary: not reached — non-ALLOW decision blocks before PEP
+  executed: false
+
+Scenario 3a — LIVE REPLAY (Sift-signed REPLAY decision)
+  authorize call: OK
+  local receipt verification: OK
+  auth_id: staging-<uuid>
+  issuer:  sift-staging.walkosystems.com
+  policy:  replay-window-violation
+  sift decision: REPLAY
+  pep boundary: not reached — non-ALLOW decision blocks before PEP
+  executed: false
+```
+
+**CI note:** The `start:staging` command is not run in CI.  It requires
+staging network access and depends on external service availability.
+The offline staging vector regression suite (`pnpm test` in `packages/sift`)
+covers byte-level canonicalization and signature parity without any network
+dependency.
 
 ---
 
