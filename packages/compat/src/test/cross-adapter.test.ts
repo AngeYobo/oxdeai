@@ -64,7 +64,7 @@ import {
   defaultNormalizeAction,
   OxDeAIDenyError,
 } from "@oxdeai/guard";
-import type { GuardDecisionRecord, ProposedAction } from "@oxdeai/guard";
+import type { GuardDecisionRecord, OxDeAIGuardConfig, ProposedAction } from "@oxdeai/guard";
 import { buildState } from "@oxdeai/sdk";
 
 import { createLangGraphGuard } from "@oxdeai/langgraph";
@@ -346,7 +346,7 @@ type RunnerOptions = {
    *
    * Defaults to () => structuredClone(POLICY_STATE).
    */
-  getState?: () => State;
+  getState?: OxDeAIGuardConfig["getState"];
   /**
    * Base normalizer applied before capture-wrapping. Use this to pin fields
    * (e.g. nonce) that the adapter's framework-native tool call cannot carry
@@ -363,8 +363,8 @@ async function runLangGraph(ca: ConceptualAction, opts: RunnerOptions = {}): Pro
 
   const guard = createLangGraphGuard({
     engine: opts.engine ?? ENGINE,
-    getState: opts.getState ?? (() => structuredClone(POLICY_STATE)),
-    setState: () => {},
+    getState: opts.getState ?? (() => ({ state: structuredClone(POLICY_STATE), version: 0 })),
+    setState: () => true,
     agentId: AGENT_ID,
     mapActionToIntent: norm.mapActionToIntent,
     onDecision: r => { record = r; },
@@ -403,8 +403,8 @@ async function runOpenAIAgents(ca: ConceptualAction, opts: RunnerOptions = {}): 
 
   const guard = createOpenAIAgentsGuard({
     engine: opts.engine ?? ENGINE,
-    getState: opts.getState ?? (() => structuredClone(POLICY_STATE)),
-    setState: () => {},
+    getState: opts.getState ?? (() => ({ state: structuredClone(POLICY_STATE), version: 0 })),
+    setState: () => true,
     agentId: AGENT_ID,
     mapActionToIntent: norm.mapActionToIntent,
     onDecision: r => { record = r; },
@@ -444,8 +444,8 @@ async function runCrewAI(ca: ConceptualAction, opts: RunnerOptions = {}): Promis
 
   const guard = createCrewAIGuard({
     engine: opts.engine ?? ENGINE,
-    getState: opts.getState ?? (() => structuredClone(POLICY_STATE)),
-    setState: () => {},
+    getState: opts.getState ?? (() => ({ state: structuredClone(POLICY_STATE), version: 0 })),
+    setState: () => true,
     agentId: AGENT_ID,
     mapActionToIntent: norm.mapActionToIntent,
     onDecision: r => { record = r; },
@@ -711,7 +711,7 @@ const CAP_CORPUS: ConceptualAction[] = [
 
 const capOpts: RunnerOptions = {
   engine: CAP_ENGINE,
-  getState: () => structuredClone(CAP_STATE),
+  getState: () => ({ state: structuredClone(CAP_STATE), version: 0 }),
 };
 
 for (const ca of CAP_CORPUS) {
@@ -826,7 +826,7 @@ test("cross-adapter replay: same nonce as pre-recorded state → REPLAY_NONCE ac
 
   const replayOpts: RunnerOptions = {
     engine: ENGINE,
-    getState: () => structuredClone(REPLAY_STATE),
+    getState: () => ({ state: structuredClone(REPLAY_STATE), version: 0 }),
     baseNormalizer: withFixedNonce(PINNED_NONCE),
   };
 
@@ -862,7 +862,7 @@ test("cross-adapter concurrent isolation: 30 parallel calls all ALLOW with isola
 
   const concOpts: RunnerOptions = {
     engine: CONCURRENCY_ENGINE,
-    getState: () => structuredClone(CONCURRENCY_STATE),
+    getState: () => ({ state: structuredClone(CONCURRENCY_STATE), version: 0 }),
   };
 
   const ca: ConceptualAction = {

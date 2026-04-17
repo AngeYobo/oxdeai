@@ -81,8 +81,8 @@ function makeGuard(overrides?: Partial<OxDeAIGuardConfig>) {
   });
   return OxDeAIGuard({
     engine: new PolicyEngine({ policy_version: "v1", engine_secret: "test-secret-must-be-at-least-32-chars!!" }),
-    getState: () => state,
-    setState: () => {},
+    getState: () => ({ state, version: 0 }),
+    setState: () => true,
     trustedKeySets: [KEYSET],
     expectedAudience: "agent-A",
     ...overrides,
@@ -147,7 +147,7 @@ test("CASE-7c: delegation path does not call setState", async () => {
   );
 
   let setStateCalled = false;
-  const guard = makeGuard({ setState: () => { setStateCalled = true; } });
+  const guard = makeGuard({ setState: () => { setStateCalled = true; return true; } });
 
   await guard(action, async () => {}, { delegation: { delegation, parentAuth: parent } });
 
@@ -317,7 +317,7 @@ test("CASE-8f: setState is NOT called when delegation verification fails", async
   );
 
   let setStateCalled = false;
-  const guard = makeGuard({ setState: () => { setStateCalled = true; } });
+  const guard = makeGuard({ setState: () => { setStateCalled = true; return true; } });
 
   await assert.rejects(() => guard(action, async () => {}, { delegation: { delegation, parentAuth: parent } }));
 

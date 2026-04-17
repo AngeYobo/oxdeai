@@ -88,8 +88,8 @@ function makeGuardConfig(overrides?: Partial<OxDeAIGuardConfig>): OxDeAIGuardCon
       authorization_ttl_seconds: 600,
       authorization_private_key_pem: TEST_KEYPAIR.privateKey.toString(),
     }),
-    getState: () => state,
-    setState: () => {},
+    getState: () => ({ state, version: 0 }),
+    setState: () => true,
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "agent-A",
     ...overrides,
@@ -131,7 +131,7 @@ test("delegation: does not call setState", async () => {
   const delegation = makeDelegation(parentAuth);
   let setStateCalled = false;
 
-  const config = makeGuardConfig({ setState: () => { setStateCalled = true; } });
+  const config = makeGuardConfig({ setState: () => { setStateCalled = true; return true; } });
   const guard = OxDeAIGuard(config);
 
   await guard(baseAction, async () => {}, { delegation: { delegation, parentAuth } });

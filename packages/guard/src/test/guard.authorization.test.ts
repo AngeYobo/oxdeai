@@ -64,10 +64,11 @@ function makeFakeEngine(auth: AuthorizationV1) {
 
 function makeGuardConfig(auth: AuthorizationV1, overrides?: Partial<OxDeAIGuardConfig>): OxDeAIGuardConfig {
   let storedState = makeBaseState();
+  let storedVersion = 0;
   return {
     engine: makeFakeEngine(auth) as any,
-    getState: async () => storedState,
-    setState: async (s) => { storedState = s; },
+    getState: async () => ({ state: storedState, version: storedVersion }),
+    setState: async (s, v) => { if (v !== storedVersion) return false; storedState = s; storedVersion++; return true; },
     trustedKeySets: [TEST_KEYSET],
     expectedAudience: "aud-test",
     ...overrides,
@@ -202,8 +203,8 @@ test("A-5 missing trustedKeySets: OxDeAIGuardConfigurationError thrown at constr
     () => {
       OxDeAIGuard({
         engine: makeFakeEngine(auth) as any,
-        getState: async () => makeBaseState(),
-        setState: async () => {},
+        getState: async () => ({ state: makeBaseState(), version: 0 }),
+        setState: async () => true,
         expectedAudience: "aud-test",
         // trustedKeySets intentionally omitted
       } as any);

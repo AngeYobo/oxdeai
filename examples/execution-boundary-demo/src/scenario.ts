@@ -87,8 +87,8 @@ export async function runScenario(): Promise<ScenarioStep[]> {
 
   const guard1 = OxDeAIGuard({
     engine,
-    getState: () => state,
-    setState: (s: State) => { state = s; },
+    getState: () => ({ state, version: 0 }),
+    setState: (s) => { state = s; return true; },
     expectedAudience: AGENT_ID,
     // chargeIntent is identical for both calls — only state differs
     mapActionToIntent: () => chargeIntent,
@@ -168,8 +168,8 @@ export async function runScenario(): Promise<ScenarioStep[]> {
 
   const guard2 = OxDeAIGuard({
     engine,
-    getState: () => state,
-    setState: (s: State) => { state = s; },
+    getState: () => ({ state, version: 0 }),
+    setState: (s) => { state = s; return true; },
     expectedAudience: AGENT_ID,
     mapActionToIntent: () => chargeIntent,
     beforeExecute() {

@@ -8,6 +8,7 @@ import type { ReplayStore } from "./replayStore.js";
 import {
   OxDeAIDenyError,
   OxDeAIAuthorizationError,
+  OxDeAIConflictError,
   OxDeAIDelegationError,
   OxDeAIGuardConfigurationError,
   OxDeAINormalizationError,
@@ -57,16 +58,17 @@ async function fireDecision(
  *
  * Returns a reusable async guard function. Call it with a ProposedAction and
  * an execute callback. The guard will:
- *   1. Load current state.
+ *   1. Load current state + version.
  *   2. Normalize the action to an Intent.
  *   3. Evaluate policy via engine.evaluatePure().
  *   4. On DENY → throw OxDeAIDenyError (execute is never called).
  *   5. On ALLOW → verify the authorization artifact.
- *   6. Call optional beforeExecute hook.
- *   7. Invoke execute().
- *   8. Persist nextState.
- *   9. Fire onDecision audit hook.
- *  10. Return the execute() result.
+ *   6. Verify state_hash binding.
+ *   7. CAS setState(nextState, version) — throws OxDeAIConflictError on mismatch.
+ *   8. Call optional beforeExecute hook.
+ *   9. Invoke execute().
+ *  10. Fire onDecision audit hook.
+ *  11. Return the execute() result.
  *
  * Delegation path (when opts.delegation is provided):
  *   1. Normalize the action to an Intent (scope amount check).
@@ -81,6 +83,9 @@ async function fireDecision(
  *   - ALLOW without authorization → OxDeAIAuthorizationError (no execution).
  *   - ALLOW without nextState     → OxDeAIAuthorizationError (no execution).
  *   - verifyAuthorization failure → OxDeAIAuthorizationError (no execution).
+ *   - state_hash mismatch         → OxDeAIAuthorizationError (no execution, no setState).
+ *   - CAS setState returns false  → OxDeAIConflictError (no execution side effects).
+ *   - Missing version from store  → OxDeAIAuthorizationError (no execution).
  *   - Delegation chain failure    → OxDeAIDelegationError (no execution).
  *   - Scope violation             → OxDeAIDelegationError (no execution).
  *   - Normalization failure       → OxDeAINormalizationError (no execution).
@@ -112,8 +117,17 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
     execute: () => Promise<unknown>,
     opts?: GuardCallOptions
   ): Promise<unknown> {
-    // ── 1. Load state ──────────────────────────────────────────────────────
-    const state = await config.getState();
+    // ── 1. Load state + version ────────────────────────────────────────────
+    const versioned = await config.getState();
+    const state = versioned.state;
+    const version = versioned.version;
+
+    // Fail closed if the store did not return a version.
+    if (version === undefined || version === null) {
+      throw new OxDeAIAuthorizationError(
+        "State store returned no version. Cannot enforce CAS invariant. Execution blocked."
+      );
+    }
 
     // ── 2. Normalize action → intent ───────────────────────────────────────
     let intent: Intent;
@@ -363,16 +377,24 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
       );
     }
 
-    // ── 7. beforeExecute hook ──────────────────────────────────────────────
+    // ── 7. CAS state commit (before execution side effects) ──────────────
+    // Commit the new state atomically. This must happen before execute() so
+    // that a version mismatch (concurrent modification) blocks execution
+    // without committing any side effects.
+    const casOk = await config.setState(nextState, version);
+    if (!casOk) {
+      throw new OxDeAIConflictError(
+        "State version mismatch: concurrent modification detected. Execution blocked."
+      );
+    }
+
+    // ── 8. beforeExecute hook ──────────────────────────────────────────────
     if (config.beforeExecute) {
       await config.beforeExecute(action, authorization);
     }
 
-    // ── 8. Execute the side effect ─────────────────────────────────────────
+    // ── 9. Execute the side effect ─────────────────────────────────────────
     const result = await execute();
-
-    // ── 9. Persist nextState ───────────────────────────────────────────────
-    await config.setState(nextState);
 
     // ── 10. Fire audit hook ────────────────────────────────────────────────
     await fireDecision(config.onDecision, {

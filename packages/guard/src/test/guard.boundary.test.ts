@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { generateKeyPairSync } from "node:crypto";
 
 import { OxDeAIGuard } from "../index.js";
-import type { ProposedAction } from "../types.js";
+import type { ProposedAction, StateVersion } from "../types.js";
 import type { State, Intent, Authorization, AuthorizationV1, KeySet } from "@oxdeai/core";
 import {
   PolicyEngine,
@@ -74,18 +74,30 @@ function makeEngine(policyVersion = "policy-test") {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+
+function makeVersionedStore(initial: State): {
+  getState: () => { state: State; version: StateVersion };
+  setState: (s: State, v: StateVersion) => boolean;
+} {
+  let stored = initial;
+  let version: StateVersion = 0;
+  return {
+    getState: () => ({ state: stored, version }),
+    setState: (s, v) => { if (v !== version) return false; stored = s; version = (version as number) + 1; return true; },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 
 test("expired authorization is denied (execute not called)", async () => {
   const engine = makeEngine();
   const state = makeState();
-  let storedState = state;
+  const store = makeVersionedStore(state);
   const guard = OxDeAIGuard({
     engine,
-    getState: async () => storedState,
-    setState: async (s) => {
-      storedState = s;
-    },
+    ...store,
     trustedKeySets: [TRUSTED_KEYSET],
     expectedAudience: "aud-test",
   });
@@ -106,7 +118,7 @@ test("expired authorization is denied (execute not called)", async () => {
 test("audience tampering is denied by strict verifier", async () => {
   const engine = makeEngine();
   const state = makeState();
-  let storedState = state;
+  const store = makeVersionedStore(state);
 
   const originalEval = engine.evaluatePure.bind(engine);
   engine.evaluatePure = ((intent: Intent, st: State) => {
@@ -120,10 +132,7 @@ test("audience tampering is denied by strict verifier", async () => {
 
   const guard = OxDeAIGuard({
     engine,
-    getState: async () => storedState,
-    setState: async (s) => {
-      storedState = s;
-    },
+    ...store,
     trustedKeySets: [TRUSTED_KEYSET],
     expectedAudience: "aud-test",
   });
@@ -172,13 +181,10 @@ test("auth_id replay is denied on second use", async () => {
     }
   }
 
-  let storedState = replayState;
+  const store = makeVersionedStore(replayState);
   const guard = OxDeAIGuard({
     engine: new FakeEngine() as any,
-    getState: async () => storedState,
-    setState: async (s) => {
-      storedState = s;
-    },
+    ...store,
     trustedKeySets: [TRUSTED_KEYSET],
     expectedAudience: "aud-test",
   });
@@ -231,13 +237,10 @@ test("delegation tool widening is denied", async () => {
   );
 
   const state = makeState();
-  let storedState = state;
+  const store = makeVersionedStore(state);
   const guard = OxDeAIGuard({
     engine: makeEngine(),
-    getState: async () => storedState,
-    setState: async (s) => {
-      storedState = s;
-    },
+    ...store,
     trustedKeySets: [TRUSTED_KEYSET],
     expectedAudience: "child",
   });
@@ -287,13 +290,10 @@ test("delegation amount widening is denied", async () => {
   );
 
   const state = makeState();
-  let storedState = state;
+  const store = makeVersionedStore(state);
   const guard = OxDeAIGuard({
     engine: makeEngine(),
-    getState: async () => storedState,
-    setState: async (s) => {
-      storedState = s;
-    },
+    ...store,
     trustedKeySets: [TRUSTED_KEYSET],
     expectedAudience: "child",
   });
@@ -343,13 +343,10 @@ test("delegation narrowing is allowed", async () => {
   );
 
   const state = makeState();
-  let storedState = state;
+  const store = makeVersionedStore(state);
   const guard = OxDeAIGuard({
     engine: makeEngine(),
-    getState: async () => storedState,
-    setState: async (s) => {
-      storedState = s;
-    },
+    ...store,
     trustedKeySets: [TRUSTED_KEYSET],
     expectedAudience: "child",
   });
@@ -398,13 +395,10 @@ test("delegation replay is denied", async () => {
   );
 
   const state = makeState();
-  let storedState = state;
+  const store = makeVersionedStore(state);
   const guard = OxDeAIGuard({
     engine: makeEngine(),
-    getState: async () => storedState,
-    setState: async (s) => {
-      storedState = s;
-    },
+    ...store,
     trustedKeySets: [TRUSTED_KEYSET],
     expectedAudience: "child",
   });
@@ -462,13 +456,10 @@ test("unsigned delegation is denied", async () => {
   (unsignedDelegation as any).signature = "";
 
   const state = makeState();
-  let storedState = state;
+  const store = makeVersionedStore(state);
   const guard = OxDeAIGuard({
     engine: makeEngine(),
-    getState: async () => storedState,
-    setState: async (s) => {
-      storedState = s;
-    },
+    ...store,
     trustedKeySets: [TRUSTED_KEYSET],
     expectedAudience: "child",
   });
@@ -518,13 +509,10 @@ test("tampered delegation signature is denied", async () => {
   (delegation as any).signature = "invalid-signature";
 
   const state = makeState();
-  let storedState = state;
+  const store = makeVersionedStore(state);
   const guard = OxDeAIGuard({
     engine: makeEngine(),
-    getState: async () => storedState,
-    setState: async (s) => {
-      storedState = s;
-    },
+    ...store,
     trustedKeySets: [TRUSTED_KEYSET],
     expectedAudience: "child",
   });
@@ -555,13 +543,10 @@ test("verifier failure (throws) blocks execution", async () => {
 
   const engine = makeEngine();
   const state = makeState();
-  let storedState = state;
+  const store = makeVersionedStore(state);
   const guard = OxDeAIGuard({
     engine,
-    getState: async () => storedState,
-    setState: async (s) => {
-      storedState = s;
-    },
+    ...store,
     trustedKeySets: [evilKeyset],
     expectedAudience: "aud-test",
   });
@@ -603,13 +588,10 @@ test("missing required auth fields is denied before execution", async () => {
   }
 
   const state = makeState();
-  let storedState = state;
+  const store = makeVersionedStore(state);
   const guard = OxDeAIGuard({
     engine: new FakeEngineBadAuth() as any,
-    getState: async () => storedState,
-    setState: async (s) => {
-      storedState = s;
-    },
+    ...store,
     trustedKeySets: [TRUSTED_KEYSET],
     expectedAudience: "aud-test",
   });

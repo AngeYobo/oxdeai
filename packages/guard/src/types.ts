@@ -57,14 +57,41 @@ export type GuardDecisionRecord = {
   reasons?: string[];
 };
 
+/**
+ * Opaque version token associated with a state snapshot.
+ * Returned by getState() and passed back to setState() to enforce CAS semantics.
+ * Use a monotonically-increasing integer, ETag, or any comparable value.
+ */
+export type StateVersion = string | number;
+
+/**
+ * A state snapshot paired with its version token.
+ * Returned by getState() so the guard can detect concurrent modifications.
+ */
+export type VersionedState = {
+  state: State;
+  version: StateVersion;
+};
+
 /** Configuration for OxDeAIGuard. */
 export type OxDeAIGuardConfig = {
   /** The PolicyEngine instance that evaluates intent policy. */
   engine: PolicyEngine;
-  /** Load the current policy state. May be async. */
-  getState: () => State | Promise<State>;
-  /** Persist the next state after a successful execution. May be async. */
-  setState: (state: State) => void | Promise<void>;
+  /**
+   * Load the current policy state together with its version token.
+   * The version is passed back to setState() to enforce CAS semantics.
+   * May be async.
+   */
+  getState: () => VersionedState | Promise<VersionedState>;
+  /**
+   * Persist the next state using compare-and-set semantics.
+   * Must atomically verify that the persisted version still equals
+   * `expectedVersion` before committing `state`. Return `true` on
+   * success, `false` on version mismatch (concurrent modification).
+   * The guard throws OxDeAIConflictError and blocks execution on `false`.
+   * May be async.
+   */
+  setState: (state: State, expectedVersion: StateVersion) => boolean | Promise<boolean>;
 
   /**
    * Optional custom mapping from a ProposedAction to an OxDeAI Intent.

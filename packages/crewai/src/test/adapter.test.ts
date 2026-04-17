@@ -64,8 +64,8 @@ function makeGuardConfig(overrides: Partial<CrewAIGuardConfig> = {}): CrewAIGuar
   return {
     engine: makeEngine(),
     agentId: AGENT_ID,
-    getState: () => currentState,
-    setState: (s) => { currentState = s; },
+    getState: () => ({ state: currentState, version: 0 }),
+    setState: (s) => { currentState = s; return true; },
     trustedKeySets: [TEST_KEYSET],
     ...overrides,
   };
@@ -109,8 +109,8 @@ test("adapter: DENY throws OxDeAIDenyError and does not call execute", async () 
   const guard = createCrewAIGuard({
     engine: makeEngine(),
     agentId: AGENT_ID,
-    getState: () => currentState,
-    setState: (s) => { currentState = s; },
+    getState: () => ({ state: currentState, version: 0 }),
+    setState: (s) => { currentState = s; return true; },
     trustedKeySets: [TEST_KEYSET],
   });
 
@@ -275,8 +275,8 @@ test("adapter: ALLOW without authorization artifact throws OxDeAIAuthorizationEr
   const guard = createCrewAIGuard({
     engine: makeNoAuthEngine(state),
     agentId: AGENT_ID,
-    getState: () => state,
-    setState: () => {},
+    getState: () => ({ state, version: 0 }),
+    setState: () => true,
     trustedKeySets: [TEST_KEYSET],
   });
 
@@ -299,8 +299,8 @@ test("adapter: setState is called after successful execution", async () => {
   const guard = createCrewAIGuard({
     engine: makeEngine(),
     agentId: AGENT_ID,
-    getState: () => makeState(),
-    setState: (s) => { storedState = s; },
+    getState: () => ({ state: makeState(), version: 0 }),
+    setState: (s) => { storedState = s; return true; },
     trustedKeySets: [TEST_KEYSET],
   });
 
@@ -317,8 +317,8 @@ test("adapter: setState is NOT called on DENY", async () => {
   const guard = createCrewAIGuard({
     engine: makeDenyEngine(),
     agentId: AGENT_ID,
-    getState: () => makeState(),
-    setState: () => { setStateCalled = true; },
+    getState: () => ({ state: makeState(), version: 0 }),
+    setState: () => { setStateCalled = true; return true; },
     trustedKeySets: [TEST_KEYSET],
   });
 
@@ -346,8 +346,8 @@ test("adapter: onDecision receives DENY when blocked", async () => {
   const guard = createCrewAIGuard({
     engine: makeEngine(),
     agentId: AGENT_ID,
-    getState: () => currentState,
-    setState: (s) => { currentState = s; },
+    getState: () => ({ state: currentState, version: 0 }),
+    setState: (s) => { currentState = s; return true; },
     onDecision({ decision: d }) { decision = d; },
     trustedKeySets: [TEST_KEYSET],
   });
@@ -363,8 +363,8 @@ test("adapter: guard is reusable — multiple sequential calls work", async () =
   const guard = createCrewAIGuard({
     engine: makeEngine(),
     agentId: AGENT_ID,
-    getState: () => currentState,
-    setState: (s) => { currentState = s; },
+    getState: () => ({ state: currentState, version: 0 }),
+    setState: (s) => { currentState = s; return true; },
     trustedKeySets: [TEST_KEYSET],
   });
 

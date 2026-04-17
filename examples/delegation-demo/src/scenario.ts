@@ -114,8 +114,8 @@ export async function runScenario(): Promise<ScenarioStep[]> {
 
   const guardA = OxDeAIGuard({
     engine,
-    getState: () => state,
-    setState: (s: State) => { state = s; },
+    getState: () => ({ state, version: 0 }),
+    setState: (s) => { state = s; return true; },
     expectedAudience: AGENT_A,
     mapActionToIntent: () => parentIntent,
     beforeExecute(_action, authorization) {
@@ -227,8 +227,8 @@ export async function runScenario(): Promise<ScenarioStep[]> {
 
   const guardB1 = OxDeAIGuard({
     engine,
-    getState: () => state,
-    setState: (s: State) => { state = s; },
+    getState: () => ({ state, version: 0 }),
+    setState: (s) => { state = s; return true; },
     expectedAudience: AGENT_A,
     mapActionToIntent: () => childIntent1,
     beforeExecute() {
@@ -291,8 +291,8 @@ export async function runScenario(): Promise<ScenarioStep[]> {
 
   const guardB2 = OxDeAIGuard({
     engine,
-    getState: () => state,
-    setState: (s: State) => { state = s; },
+    getState: () => ({ state, version: 0 }),
+    setState: (s) => { state = s; return true; },
     expectedAudience: AGENT_A,
     mapActionToIntent: () => childIntent2,
     beforeExecute() {

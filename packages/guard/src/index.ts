@@ -17,6 +17,7 @@ export type { RedisClient, RedisReplayStoreConfig } from "./replayStore.redis.js
 export {
   OxDeAIDenyError,
   OxDeAIAuthorizationError,
+  OxDeAIConflictError,
   OxDeAIDelegationError,
   OxDeAIGuardConfigurationError,
   OxDeAINormalizationError,
@@ -27,4 +28,6 @@ export type {
   GuardDecisionRecord,
   GuardDelegationInput,
   GuardCallOptions,
+  StateVersion,
+  VersionedState,
 } from "./types.js";
