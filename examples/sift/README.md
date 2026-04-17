@@ -228,8 +228,19 @@ Scenario 3a — LIVE REPLAY (Sift-signed REPLAY decision)
   executed: false
 ```
 
-**CI note:** The `start:staging` command is not run in CI.  It requires
-staging network access and depends on external service availability.
+### Live integration test (opt-in)
+
+```bash
+pnpm -C examples/sift test:staging
+```
+
+Runs a single high-signal assertion against the real staging endpoint:
+live ALLOW → JWKS/KRL verify → PEP allows → PEP denies replay.  Requires
+network access.  Without `SIFT_STAGING_LIVE=1` the test reports as skipped
+with exit 0 — it is never run in default CI (`pnpm -r test`).
+
+**CI note:** `start:staging` and `test:staging` are not run in CI.  They
+require staging network access and depend on external service availability.
 The offline staging vector regression suite (`pnpm test` in `packages/sift`)
 covers byte-level canonicalization and signature parity without any network
 dependency.
