@@ -28,3 +28,4 @@ audit.json
 *.pem
 *.der
 *.key
+.local/
