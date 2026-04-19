@@ -1,108 +1,74 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Live Sift production authorization helpers.
+ * Live Sift production network helpers.
  *
- * All network I/O lives here.  run-prod.ts imports these helpers and
- * handles user-facing output.
+ * Responsibility: all network I/O for the prod path, nothing else.
+ * run-prod.ts imports these and drives the adapter/PEP pipeline.
  *
- * The prod path adds two steps compared to staging:
- *   fetchProdChallenge()   — fetch a nonce from /api/v1/auth/challenge
- *   signAuthorizeRequest() — sign the request body with the agent's Ed25519 key
+ * Network path:
+ *   fetchProdChallenge()     — POST /api/v1/auth/challenge → nonce
+ *   buildProdAuthorizeRequest() — build + sign request body
+ *   callProdAuthorize()      — POST /api/v1/authorize with X-Sift-Tenant header
+ *   extractRawReceipt()      — unwrap Sift receipt from response JSON
+ *   fetchProdVerifyKey()     — GET /api/v1/receipt/verify-key → Ed25519 public key bytes
  *
- * What is LIVE (requires network):
- *   fetchProdChallenge()      → real HTTPS to Sift prod challenge endpoint
- *   callProdAuthorize()       → real HTTPS POST to Sift prod authorize
- *   verifyWithProdKeyStore()  → real JWKS/KRL fetch + Ed25519 verify
+ * Adapter and PEP enforcement live in run-prod.ts, not here.
  *
- * What remains LOCAL:
- *   pepVerify()               — OxDeAI PEP enforcement, in-memory replay
+ * ── Canonicalization note ──────────────────────────────────────────────────
  *
- * Trust model:
- *   Sift decides → OxDeAI enforces at the PEP boundary.
- *   A verified Sift artifact is NOT execution authorization.
- *   It must still pass pepVerify() before anything executes.
+ * Sift request signing:  sorted keys, no whitespace, ensure_ascii=FALSE
+ *   → siftRequestCanonicalBytes() below
  *
- * ── PLACEHOLDERS ──────────────────────────────────────────────────────────────
+ * OxDeAI artifact hashes: sorted keys, no whitespace, ensure_ascii=TRUE
+ *   → canonicalHash() / canonicalBytes() from helpers.ts (used in run-prod.ts)
  *
- * The following values must be provided by Jason before prod can run:
+ * ── Response parsing ───────────────────────────────────────────────────────
  *
- *   PROD_JWKS_URL           — prod JWKS endpoint URL (not yet confirmed)
- *   ProdConfig.tenantId     — prod tenant identifier
- *   ProdConfig.agentId      — agent identifier registered with Sift prod
- *   ProdConfig.agentRole    — agent role (confirm if required by prod policy)
- *   ProdConfig.audience     — prod PEP audience string
- *   ProdConfig.publicKeyKid — key id for the prod agent keypair
- *   Policy IDs              — smoke test policy IDs for prod
- *   Private key path        — SIFT_PROD_PRIVATE_KEY_PATH or explicit path
- *
- * Challenge request/response shape (fetchProdChallenge) is isolated in its own
- * section and must be updated if Jason provides different field names.
- *
- * Authorize request shape (buildProdAuthorizeUnsignedBody) is isolated similarly.
+ *   /api/v1/receipt/verify-key returns receipt verification keys;
+ *     verifySiftReceipt() selects keys[receipt.key_id].
+ *   /api/v1/authorize may return a wrapped receipt or the receipt at the top level;
+ *     verifySiftReceipt() performs the full shape and crypto validation.
  */
 
 import { readFileSync } from "node:fs";
-import { SiftHttpKeyStore } from "@oxdeai/sift";
-import type { AuthorizationV1Payload, OxDeAIIntent, NormalizedState } from "@oxdeai/sift";
-import { canonicalHash, signCanonical, verifyCanonical } from "./helpers.js";
+import {
+  createPublicKey,
+  sign as nodeCryptoSign,
+  verify as nodeCryptoVerify,
+  createHash,
+  randomUUID,
+} from "node:crypto";
+import type { SiftReceipt } from "@oxdeai/sift";
+import { b64uEncode, b64uDecode } from "./helpers.js";
 
 // ─── Prod endpoints ───────────────────────────────────────────────────────────
 
 export const PROD_BASE_URL       = "https://sift.walkosystems.com";
 export const PROD_CHALLENGE_URL  = `${PROD_BASE_URL}/api/v1/auth/challenge`;
 export const PROD_AUTHORIZE_URL  = `${PROD_BASE_URL}/api/v1/authorize`;
-export const PROD_KRL_URL        = `${PROD_BASE_URL}/api/v1/krl`;
-export const PROD_HEALTH_URL     = `${PROD_BASE_URL}/api/v1/health`;
 export const PROD_VERIFY_KEY_URL = `${PROD_BASE_URL}/api/v1/receipt/verify-key`;
-
-// PLACEHOLDER: Prod JWKS URL not yet confirmed by Jason.
-// Expected pattern (mirrors staging): https://sift.walkosystems.com/sift-jwks.json
-// Update PROD_CONFIG_DEFAULTS.jwksUrl when Jason provides the value.
-export const PROD_JWKS_URL_PLACEHOLDER = "PLACEHOLDER_PROD_JWKS_URL";
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
-/**
- * All prod-specific inputs in one struct.
- *
- * Fields marked PLACEHOLDER must be filled before prod can run.
- * URL overrides default to the known prod endpoints above.
- */
 export interface ProdConfig {
-  // PLACEHOLDER: provided by Jason
-  tenantId: string;
-  // PLACEHOLDER: provided by Jason
-  agentId: string;
-  // PLACEHOLDER: confirm with Jason whether prod policy requires this field
-  agentRole?: string;
-  // PLACEHOLDER: prod PEP audience string (e.g. "oxdeai-pep-prod"); confirm with Jason
-  audience: string;
-  // PLACEHOLDER: prod JWKS endpoint URL; confirm with Jason
-  jwksUrl: string;
-  // Agent Ed25519 private key (PEM, PKCS8).  Load via loadProdPrivateKey().
+  // Resolved by Sift contract
+  tenantId:  string;  // "oxdeai_designpartner"
+  agentId:   string;  // "oxdeai-boundary-demo-01"
+  agentRole: string;  // "validation_agent"
+  // Agent Ed25519 private key (PKCS8 PEM) — signs requests to Sift.
+  // Also used as OxDeAI issuer key in the smoke test (dual use for simplicity).
+  // Load via loadProdPrivateKey().
   privateKeyPem: string;
   // URL overrides (optional; default to PROD_* constants above)
   challengeUrl?: string;
   authorizeUrl?: string;
-  krlUrl?: string;
-  // Logging metadata only — not used in any cryptographic operation
-  // PLACEHOLDER: confirm kid value with Jason
-  publicKeyKid?: string;
-  // base64url-no-padding 32-byte Ed25519 public key x; for log confirmation only
+  verifyKeyUrl?: string;
+  // Logging only
   publicKeyX?: string;
 }
 
 // ─── Private key loader ───────────────────────────────────────────────────────
 
-/**
- * Reads the agent's Ed25519 private key (PKCS8 PEM) from disk.
- *
- * Fails closed: throws if the file is missing or does not begin with a PEM header.
- *
- * Suggested default: resolve(".local/keys/oxdeai-prod-agent-ed25519-private.pem")
- * from the project root.  Set SIFT_PROD_PRIVATE_KEY_PATH to override.
- * The private key file must never be committed.
- */
 export function loadProdPrivateKey(filePath: string): string {
   let pem: string;
   try {
@@ -114,204 +80,217 @@ export function loadProdPrivateKey(filePath: string): string {
     );
   }
   if (!pem.includes("-----BEGIN")) {
-    throw new Error(
-      `prod private key at "${filePath}" does not look like a PEM file`,
-    );
+    throw new Error(`prod private key at "${filePath}" does not look like a PEM file`);
   }
   return pem;
 }
 
-// ─── Result types ─────────────────────────────────────────────────────────────
+// ─── Sift request canonicalization ───────────────────────────────────────────
+//
+// Contract: sorted keys, no whitespace, ensure_ascii=FALSE.
+// Used only for computing params_hash and signing the authorize preimage.
+// Do NOT use for OxDeAI artifact hashes (use canonicalHash from helpers.ts).
 
-export type ProdAuthorizeResult =
-  | {
-      ok: true;
-      decision: string;
-      auth_id: string;
-      policy_id: string;
-      issuer: string;
-      signingKeyRaw: Uint8Array;
-      /**
-       * Populated only when decision === "ALLOW".
-       * Typed as AuthorizationV1Payload for direct use with pepVerify().
-       * null for DENY / REPLAY responses.
-       */
-      allowArtifact: AuthorizationV1Payload | null;
-    }
-  | { ok: false; error: string };
+function deepSortKeys(value: unknown): unknown {
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return (value as unknown[]).map(deepSortKeys);
+  const obj = value as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+  for (const k of Object.keys(obj).sort()) result[k] = deepSortKeys(obj[k]);
+  return result;
+}
+
+function siftRequestCanonicalBytes(value: unknown): Buffer {
+  return Buffer.from(JSON.stringify(deepSortKeys(value)), "utf8");
+}
+
+function siftRequestCanonicalHash(value: unknown): string {
+  return createHash("sha256").update(siftRequestCanonicalBytes(value)).digest("hex");
+}
 
 // ─── Challenge endpoint ───────────────────────────────────────────────────────
 //
-// PLACEHOLDER: Shape is isolated below.  Update if Jason provides different
-// field names for the challenge request or response.
+// Confirmed contract:
+//   Request  POST { tenant_id, agent_id }
+//   Response { tenant_id, agent_id, nonce, expires_at, proof_message_format,
+//              signed_fields, signature_algorithm }
+//   Nonce field name: exactly "nonce"
 
-interface ProdChallengeRequest {
-  tenant_id: string;
-  agent_id: string;
-}
-
-interface ProdChallengeResponse {
-  nonce: string;
-}
-
-/**
- * Fetches a one-time nonce from the Sift prod challenge endpoint.
- *
- * PLACEHOLDER: Challenge request and response shapes are assumptions based on
- * the endpoint contract.  Confirm with Jason before running prod.
- *
- * Fails closed on any network error, non-2xx response, or malformed body.
- */
 export async function fetchProdChallenge(
   config: ProdConfig,
-): Promise<{ ok: true; nonce: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; nonce: string; rawShape?: Record<string, unknown> } | { ok: false; error: string }> {
   const url = config.challengeUrl ?? PROD_CHALLENGE_URL;
-
-  const body: ProdChallengeRequest = {
-    tenant_id: config.tenantId,
-    agent_id: config.agentId,
-  };
 
   let response: Response;
   try {
     response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+        "X-Sift-Tenant": config.tenantId,
+      },
+      body: JSON.stringify({ tenant_id: config.tenantId, agent_id: config.agentId }),
     });
   } catch (e) {
-    return {
-      ok: false,
-      error: `challenge network error: ${e instanceof Error ? e.message : String(e)}`,
-    };
+    return { ok: false, error: `challenge: network error: ${e instanceof Error ? e.message : String(e)}` };
   }
 
   if (!response.ok) {
     let detail = "";
     try {
-      const rb = (await response.json()) as Record<string, unknown>;
-      detail = typeof rb["message"] === "string" ? `: ${rb["message"]}` : "";
+      const b = (await response.json()) as Record<string, unknown>;
+      if (typeof b["message"] === "string") detail = `: ${b["message"]}`;
     } catch { /* ignore */ }
-    return { ok: false, error: `HTTP ${response.status} from challenge endpoint${detail}` };
+    return { ok: false, error: `challenge: HTTP ${response.status}${detail}` };
   }
 
   let raw: unknown;
-  try {
-    raw = (await response.json()) as unknown;
-  } catch {
-    return { ok: false, error: "could not parse challenge response as JSON" };
-  }
+  try { raw = await response.json() as unknown; }
+  catch { return { ok: false, error: "challenge: response is not valid JSON" }; }
 
-  // PLACEHOLDER: Response shape assumed to be { nonce: string }.
-  // Update the field path below if Jason provides a different shape
-  // (e.g. { data: { nonce: string } } or { challenge: string }).
-  const parsed = parseChallengeResponse(raw);
-  if ("error" in parsed) {
-    return { ok: false, error: `malformed challenge response: ${parsed.error}` };
-  }
-  return { ok: true, nonce: parsed.nonce };
-}
-
-function parseChallengeResponse(
-  raw: unknown,
-): ProdChallengeResponse | { error: string } {
   if (typeof raw !== "object" || raw === null) {
-    return { error: "challenge response is not a JSON object" };
+    return { ok: false, error: "challenge: response is not a JSON object" };
   }
   const r = raw as Record<string, unknown>;
   if (typeof r["nonce"] !== "string" || r["nonce"].length === 0) {
-    return { error: "missing or empty field: nonce" };
+    return { ok: false, error: "challenge: response missing field: nonce" };
   }
-  return { nonce: r["nonce"] as string };
+  return { ok: true, nonce: r["nonce"] as string, rawShape: r };
 }
 
-// ─── Authorize request shape ──────────────────────────────────────────────────
+// ─── Authorize request ────────────────────────────────────────────────────────
 //
-// PLACEHOLDER: Field names and required set for the prod authorize request are
-// assumptions.  Confirm with Jason before running prod.  Only buildProdAuthorizeUnsignedBody
-// and signAuthorizeRequest need to change if the shape differs.
+// Confirmed body schema (Sift contract):
+//   request_id, tenant_id, agent_id, agent_role, action, tool,
+//   risk_tier, params, timestamp, nonce, signature
+//
+// Required header: X-Sift-Tenant: <tenant_id>
+//
+// Signing preimage (sift canonical JSON, ensure_ascii=false):
+//   { request_id, tenant_id, agent_id, agent_role, action, tool,
+//     risk_tier, nonce, timestamp, params_hash }
+//   params_hash = sha256_hex(sift_canonical(params))
+//   params itself is NOT in the preimage.
 
-interface ProdAuthorizeUnsignedBody {
-  // Staging-identical fields
-  audience: string;
-  decision: string;
-  policy_id: string;
-  intent: OxDeAIIntent;
-  intent_hash: string;
-  state: NormalizedState;
-  state_hash: string;
-  // PLACEHOLDER: Prod-specific fields (assumed; confirm with Jason)
-  tenant_id: string;
-  agent_id: string;
-  nonce: string;
-  agent_role?: string;
+export interface ProdSigningPreimage {
+  request_id:  string;
+  tenant_id:   string;
+  agent_id:    string;
+  agent_role:  string;
+  action:      string;
+  tool:        string;
+  risk_tier:   number;
+  nonce:       string;
+  timestamp:   number;
+  params_hash: string;
 }
 
-export interface ProdAuthorizeSignedBody extends ProdAuthorizeUnsignedBody {
-  // Ed25519 over Sift-canonical(body-minus-request_sig), base64url-no-padding
-  request_sig: string;
-}
-
-/**
- * Constructs the authorize request body WITHOUT the agent signature.
- *
- * PLACEHOLDER: Prod-specific fields (tenant_id, agent_id, nonce, agent_role)
- * are present based on expected contract.  Confirm shape with Jason.
- */
-export function buildProdAuthorizeUnsignedBody(
-  intent: OxDeAIIntent,
-  state: NormalizedState,
-  decision: string,
-  policyId: string,
-  nonce: string,
-  config: ProdConfig,
-): ProdAuthorizeUnsignedBody {
-  const body: ProdAuthorizeUnsignedBody = {
-    audience: config.audience,
-    decision,
-    policy_id: policyId,
-    intent,
-    intent_hash: canonicalHash(intent),
-    state,
-    state_hash: canonicalHash(state),
-    tenant_id: config.tenantId,
-    agent_id: config.agentId,
-    nonce,
-  };
-  if (config.agentRole !== undefined) {
-    body.agent_role = config.agentRole;
-  }
-  return body;
+export interface ProdAuthorizeRequest {
+  request_id: string;
+  tenant_id:  string;
+  agent_id:   string;
+  agent_role: string;
+  action:     string;
+  tool:       string;
+  risk_tier:  number;
+  params:     Record<string, unknown>;
+  timestamp:  number;
+  nonce:      string;
+  signature:  string;
 }
 
 /**
- * Signs the authorize request body with the agent's Ed25519 private key.
- *
- * Preimage: Sift-canonical JSON of the unsigned body (all fields except
- * request_sig).  The signature covers the nonce so each signed request is
- * unique.
- *
- * Returns a new object that includes all original fields plus request_sig.
- *
- * PLACEHOLDER: Confirm the preimage convention with Jason.  If the expected
- * preimage differs (e.g. a subset of fields), update this function only.
+ * Signs the preimage using the agent's Ed25519 private key.
+ * Canonicalization: sorted keys, no whitespace, ensure_ascii=FALSE.
+ * Returns base64url-no-padding signature.
  */
 export function signAuthorizeRequest(
-  unsignedBody: ProdAuthorizeUnsignedBody,
+  preimage: ProdSigningPreimage,
   privateKeyPem: string,
-): ProdAuthorizeSignedBody {
-  const request_sig = signCanonical(unsignedBody, privateKeyPem);
-  return { ...unsignedBody, request_sig };
+): string {
+  const bytes = siftRequestCanonicalBytes(preimage);
+  const sig = nodeCryptoSign(null, bytes, privateKeyPem);
+  return b64uEncode(sig);
 }
 
-// ─── Network call ─────────────────────────────────────────────────────────────
+/**
+ * Builds the full signed authorize request body.
+ * Generates a fresh UUID request_id and current unix timestamp.
+ */
+export function buildProdAuthorizeRequest(
+  action: string,
+  tool: string,
+  riskTier: number,
+  params: Record<string, unknown>,
+  nonce: string,
+  config: ProdConfig,
+): ProdAuthorizeRequest {
+  const request_id  = randomUUID();
+  const timestamp   = Math.floor(Date.now() / 1000);
+  const params_hash = siftRequestCanonicalHash(params);
+
+  const preimage: ProdSigningPreimage = {
+    request_id, tenant_id: config.tenantId, agent_id: config.agentId,
+    agent_role: config.agentRole, action, tool, risk_tier: riskTier,
+    nonce, timestamp, params_hash,
+  };
+
+  const signature = signAuthorizeRequest(preimage, config.privateKeyPem);
+
+  return {
+    request_id, tenant_id: config.tenantId, agent_id: config.agentId,
+    agent_role: config.agentRole, action, tool, risk_tier: riskTier,
+    params, timestamp, nonce, signature,
+  };
+}
 
 /**
- * POSTs the signed authorize request to the Sift prod endpoint.
- * Returns the raw parsed JSON on success; does not validate shape.
+ * Same as buildProdAuthorizeRequest but also returns the intermediate values
+ * needed to diagnose signing mismatches.  Used only when SIFT_PROD_DEBUG=1.
+ * Never exposes the private key.
  */
+export interface ProdAuthorizeRequestDebug {
+  request:      ProdAuthorizeRequest;
+  preimage:     ProdSigningPreimage;
+  paramsHash:   string;
+  canonicalJson: string;
+  signature:    string;
+}
+
+export function buildProdAuthorizeRequestDebug(
+  action: string,
+  tool: string,
+  riskTier: number,
+  params: Record<string, unknown>,
+  nonce: string,
+  config: ProdConfig,
+): ProdAuthorizeRequestDebug {
+  const request_id  = randomUUID();
+  const timestamp   = Math.floor(Date.now() / 1000);
+  const paramsHash  = siftRequestCanonicalHash(params);
+
+  const preimage: ProdSigningPreimage = {
+    request_id, tenant_id: config.tenantId, agent_id: config.agentId,
+    agent_role: config.agentRole, action, tool, risk_tier: riskTier,
+    nonce, timestamp, params_hash: paramsHash,
+  };
+
+  const canonicalJson = JSON.stringify(deepSortKeys(preimage));
+  const signature     = signAuthorizeRequest(preimage, config.privateKeyPem);
+
+  const request: ProdAuthorizeRequest = {
+    request_id, tenant_id: config.tenantId, agent_id: config.agentId,
+    agent_role: config.agentRole, action, tool, risk_tier: riskTier,
+    params, timestamp, nonce, signature,
+  };
+
+  return { request, preimage, paramsHash, canonicalJson, signature };
+}
+
+// ─── Network call to /api/v1/authorize ────────────────────────────────────────
+
 export async function callProdAuthorize(
-  signedBody: ProdAuthorizeSignedBody,
+  request: ProdAuthorizeRequest,
   config: ProdConfig,
 ): Promise<{ ok: true; raw: unknown } | { ok: false; error: string }> {
   const url = config.authorizeUrl ?? PROD_AUTHORIZE_URL;
@@ -320,268 +299,291 @@ export async function callProdAuthorize(
   try {
     response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(signedBody),
+      headers: {
+        "Content-Type": "application/json",
+        "X-Sift-Tenant": config.tenantId,
+      },
+      body: JSON.stringify(request),
     });
   } catch (e) {
-    return {
-      ok: false,
-      error: `authorize network error: ${e instanceof Error ? e.message : String(e)}`,
-    };
+    return { ok: false, error: `authorize: network error: ${e instanceof Error ? e.message : String(e)}` };
   }
 
   if (!response.ok) {
     let detail = "";
     try {
-      const rb = (await response.json()) as Record<string, unknown>;
-      detail = typeof rb["message"] === "string" ? `: ${rb["message"]}` : "";
+      const b = (await response.json()) as Record<string, unknown>;
+      if (typeof b["message"] === "string") detail = `: ${b["message"]}`;
     } catch { /* ignore */ }
-    return { ok: false, error: `HTTP ${response.status} from prod authorize${detail}` };
+    return { ok: false, error: `authorize: HTTP ${response.status}${detail}` };
   }
 
   let raw: unknown;
-  try {
-    raw = (await response.json()) as unknown;
-  } catch {
-    return { ok: false, error: "could not parse authorize response as JSON" };
-  }
+  try { raw = await response.json() as unknown; }
+  catch { return { ok: false, error: "authorize: response is not valid JSON" }; }
 
   return { ok: true, raw };
 }
 
-// ─── Response shape validation ────────────────────────────────────────────────
+// ─── Receipt extraction ───────────────────────────────────────────────────────
+//
+// Accepts wrapped { "receipt": {...} } first, then top-level object.
+// verifySiftReceipt() (called by run-prod.ts) does full shape + crypto validation.
 
-interface ParsedArtifact {
-  version: string;
-  auth_id: string;
-  issuer: string;
-  audience: string;
-  decision: string;
-  intent_hash: string;
-  state_hash: string;
-  policy_id: string;
-  issued_at: number;
-  expires_at: number;
-  signature: { alg: string; kid: string; sig: string };
+export function extractRawReceipt(raw: unknown): unknown | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  if (typeof r["receipt"] === "object" && r["receipt"] !== null) return r["receipt"];
+  return raw;
 }
 
-function nonEmpty(v: unknown): v is string {
-  return typeof v === "string" && v.length > 0;
+// ─── Sift-native receipt verification ─────────────────────────────────────────
+
+export type SiftReceiptVerificationCode =
+  | "MALFORMED_RECEIPT"
+  | "MISSING_KEY_ID"
+  | "KEY_NOT_FOUND"
+  | "INVALID_PUBLIC_KEY"
+  | "TAMPERED_RECEIPT"
+  | "INVALID_SIGNATURE"
+  | "INVALID_SIGNATURE_ALG"
+  | "EXPIRED_RECEIPT"
+  | "TENANT_MISMATCH"
+  | "INVALID_POLICY_ID"
+  | "INVALID_DECISION"
+  | "DENY_DECISION"
+  | "VERIFICATION_ERROR";
+
+export type SiftReceiptVerificationResult =
+  | { ok: true; receipt: SiftReceipt }
+  | { ok: false; code: SiftReceiptVerificationCode; message: string };
+
+const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
+
+function failSiftReceipt(
+  code: SiftReceiptVerificationCode,
+  message: string,
+): SiftReceiptVerificationResult {
+  return { ok: false, code, message };
 }
 
-/**
- * Validates and extracts the prod authorize response artifact.
- *
- * Accepts the same wire shape as staging: the artifact may be wrapped in an
- * "authorization" envelope or present at the top level.  Fails closed on any
- * missing or malformed field.
- */
-export function parseProdAuthorizeResponse(
-  raw: unknown,
-): ParsedArtifact | { error: string } {
-  const wrapper =
-    typeof raw === "object" && raw !== null
-      ? (raw as Record<string, unknown>)
-      : null;
-
-  const r =
-    wrapper?.["authorization"] !== undefined
-      ? wrapper["authorization"]
-      : raw;
-
-  if (typeof r !== "object" || r === null) {
-    return { error: "authorization field is not a JSON object" };
-  }
-  const a = r as Record<string, unknown>;
-
-  for (const k of [
-    "version", "auth_id", "issuer", "audience", "decision",
-    "intent_hash", "state_hash", "policy_id",
-  ] as const) {
-    if (!nonEmpty(a[k])) return { error: `missing or empty field: ${k}` };
-  }
-  if (typeof a["issued_at"]  !== "number") return { error: "missing issued_at" };
-  if (typeof a["expires_at"] !== "number") return { error: "missing expires_at" };
-
-  const sig = a["signature"];
-  if (typeof sig !== "object" || sig === null) return { error: "missing signature object" };
-  const s = sig as Record<string, unknown>;
-  for (const k of ["alg", "kid", "sig"] as const) {
-    if (!nonEmpty(s[k])) return { error: `missing signature.${k}` };
-  }
-
-  return {
-    version:     a["version"]     as string,
-    auth_id:     a["auth_id"]     as string,
-    issuer:      a["issuer"]      as string,
-    audience:    a["audience"]    as string,
-    decision:    a["decision"]    as string,
-    intent_hash: a["intent_hash"] as string,
-    state_hash:  a["state_hash"]  as string,
-    policy_id:   a["policy_id"]   as string,
-    issued_at:   a["issued_at"]   as number,
-    expires_at:  a["expires_at"]  as number,
-    signature: {
-      alg: s["alg"] as string,
-      kid: s["kid"] as string,
-      sig: s["sig"] as string,
-    },
-  };
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
 }
 
-// ─── JWKS/KRL verification ────────────────────────────────────────────────────
+function canonicalJson(value: unknown): string {
+  return JSON.stringify(deepSortKeys(value));
+}
 
-async function verifyWithProdKeyStore(
-  artifact: ParsedArtifact,
-  config: ProdConfig,
-): Promise<{ ok: true; keyRaw: Uint8Array } | { ok: false; error: string }> {
-  const keyStore = new SiftHttpKeyStore({
-    jwksUrl: config.jwksUrl,
-    krlUrl: config.krlUrl ?? PROD_KRL_URL,
+function publicKeyObjectFromRaw(raw: Buffer): ReturnType<typeof createPublicKey> {
+  if (raw.length !== 32) {
+    throw new TypeError(`Ed25519 public key must be 32 bytes, got ${raw.length}`);
+  }
+  return createPublicKey({
+    key: Buffer.concat([ED25519_SPKI_PREFIX, raw]),
+    format: "der",
+    type: "spki",
   });
-
-  try {
-    await keyStore.refresh();
-  } catch (e) {
-    return {
-      ok: false,
-      error: `prod key store refresh failed: ${e instanceof Error ? e.message : String(e)}`,
-    };
-  }
-
-  const { kid, sig } = artifact.signature;
-
-  if (await keyStore.isKidRevoked(kid)) {
-    return { ok: false, error: `signing key revoked: kid=${kid}` };
-  }
-
-  const keyRaw = await keyStore.getPublicKeyByKid(kid);
-  if (!keyRaw) {
-    return { ok: false, error: `unknown prod signing key: kid=${kid}` };
-  }
-
-  // Preimage: artifact with signature.sig absent.
-  // signature.alg and signature.kid must remain — AuthorizationV1 contract.
-  const preimage = {
-    version:     artifact.version,
-    auth_id:     artifact.auth_id,
-    issuer:      artifact.issuer,
-    audience:    artifact.audience,
-    decision:    artifact.decision,
-    intent_hash: artifact.intent_hash,
-    state_hash:  artifact.state_hash,
-    policy_id:   artifact.policy_id,
-    issued_at:   artifact.issued_at,
-    expires_at:  artifact.expires_at,
-    signature:   { alg: artifact.signature.alg, kid: artifact.signature.kid },
-  };
-
-  if (!verifyCanonical(preimage, sig, Buffer.from(keyRaw))) {
-    return { ok: false, error: "Ed25519 signature verification failed (prod key)" };
-  }
-
-  return { ok: true, keyRaw };
 }
 
-// ─── Main prod authorize ──────────────────────────────────────────────────────
-
-/**
- * Full production authorization path:
- *   1. Fetch nonce from /api/v1/auth/challenge
- *   2. Build authorize request body with intent_hash + state_hash + nonce
- *   3. Sign request body with agent Ed25519 private key
- *   4. POST signed body to /api/v1/authorize
- *   5. Parse response shape (unwrap "authorization" envelope)
- *   6. Verify Ed25519 signature via prod JWKS/KRL
- *   7. Verify hash binding (response hashes match local computation)
- *   8. Return verified result; populate allowArtifact only if decision=ALLOW
- *
- * Fails closed: any step failure returns { ok: false }.
- * allowArtifact (when present) is NOT execution authorization — it must
- * still pass pepVerify() before anything executes.
- */
-export async function prodAuthorize(
-  intent: OxDeAIIntent,
-  state: NormalizedState,
-  decision: string,
-  policyId: string,
-  config: ProdConfig,
-): Promise<ProdAuthorizeResult> {
-  // 1. Fetch challenge nonce
-  const challengeResult = await fetchProdChallenge(config);
-  if (!challengeResult.ok) {
-    return { ok: false, error: challengeResult.error };
+function requireString(
+  obj: Record<string, unknown>,
+  field: string,
+): string | { error: SiftReceiptVerificationResult } {
+  const value = obj[field];
+  if (typeof value !== "string" || value.length === 0) {
+    return { error: failSiftReceipt("MALFORMED_RECEIPT", `receipt missing field: ${field}`) };
   }
-  const { nonce } = challengeResult;
+  return value;
+}
 
-  // 2. Build unsigned request body (includes intent_hash + state_hash)
-  const unsignedBody = buildProdAuthorizeUnsignedBody(
-    intent, state, decision, policyId, nonce, config,
-  );
-
-  // 3. Sign with agent's Ed25519 private key
-  const signedBody = signAuthorizeRequest(unsignedBody, config.privateKeyPem);
-
-  // 4. POST to prod authorize
-  const callResult = await callProdAuthorize(signedBody, config);
-  if (!callResult.ok) return { ok: false, error: callResult.error };
-
-  // 5. Shape validation
-  const parsed = parseProdAuthorizeResponse(callResult.raw);
-  if ("error" in parsed) {
-    return { ok: false, error: `malformed prod response: ${parsed.error}` };
+function requireNumber(
+  obj: Record<string, unknown>,
+  field: string,
+): number | { error: SiftReceiptVerificationResult } {
+  const value = obj[field];
+  if (typeof value !== "number" || !Number.isSafeInteger(value)) {
+    return { error: failSiftReceipt("MALFORMED_RECEIPT", `receipt field ${field} must be a safe integer`) };
   }
+  return value;
+}
 
-  // 6. JWKS/KRL + Ed25519 signature verification
-  const verifyResult = await verifyWithProdKeyStore(parsed, config);
-  if (!verifyResult.ok) return { ok: false, error: verifyResult.error };
+function receiptString(
+  obj: Record<string, unknown>,
+  field: string,
+  fallback = "",
+): string {
+  const value = obj[field];
+  return typeof value === "string" && value.length > 0 ? value : fallback;
+}
 
-  // 7. Hash binding — proves Sift signed over the exact intent/state we sent
-  const localIntentHash = canonicalHash(intent);
-  const localStateHash  = canonicalHash(state);
+function receiptNumber(
+  obj: Record<string, unknown>,
+  field: string,
+  fallback = 0,
+): number {
+  const value = obj[field];
+  return typeof value === "number" && Number.isSafeInteger(value) ? value : fallback;
+}
 
-  if (parsed.intent_hash !== localIntentHash) {
-    return {
-      ok: false,
-      error: `intent_hash mismatch: local=${localIntentHash} remote=${parsed.intent_hash}`,
-    };
-  }
-  if (parsed.state_hash !== localStateHash) {
-    return {
-      ok: false,
-      error: `state_hash mismatch: local=${localStateHash} remote=${parsed.state_hash}`,
-    };
-  }
-
-  // 8. Return verified result; allowArtifact only when ALLOW
-  const allowArtifact: AuthorizationV1Payload | null =
-    parsed.decision === "ALLOW"
-      ? {
-          version:     "AuthorizationV1",
-          auth_id:     parsed.auth_id,
-          issuer:      parsed.issuer,
-          audience:    parsed.audience,
-          decision:    "ALLOW",
-          intent_hash: parsed.intent_hash,
-          state_hash:  parsed.state_hash,
-          policy_id:   parsed.policy_id,
-          issued_at:   parsed.issued_at,
-          expires_at:  parsed.expires_at,
-          signature: {
-            alg: "ed25519",
-            kid: parsed.signature.kid,
-            sig: parsed.signature.sig,
-          },
-        }
-      : null;
-
+function toOxDeAIReceipt(receipt: Record<string, unknown>): SiftReceipt {
   return {
-    ok: true,
-    decision:     parsed.decision,
-    auth_id:      parsed.auth_id,
-    policy_id:    parsed.policy_id,
-    issuer:       parsed.issuer,
-    signingKeyRaw: verifyResult.keyRaw,
-    allowArtifact,
+    receipt_version: receiptString(receipt, "receipt_version", "1.0"),
+    tenant_id: receiptString(receipt, "tenant_id"),
+    agent_id: receiptString(receipt, "agent_id"),
+    action: receiptString(receipt, "action"),
+    tool: receiptString(receipt, "tool"),
+    decision: receipt["decision"] === "ALLOW" ? "ALLOW" : "DENY",
+    risk_tier: receiptNumber(receipt, "risk_tier"),
+    timestamp: receiptString(receipt, "timestamp", new Date(receiptNumber(receipt, "issued_at") * 1000).toISOString()),
+    nonce: receiptString(receipt, "nonce", receiptString(receipt, "request_id")),
+    policy_matched: receiptString(receipt, "policy_hash"),
+    receipt_hash: receiptString(receipt, "receipt_hash", createHash("sha256").update(receiptString(receipt, "canonical_payload")).digest("hex")),
+    signature: receiptString(receipt, "signature"),
   };
+}
+
+function selectVerifyKey(
+  verifyKeyResponse: unknown,
+  keyId: string,
+): { ok: true; publicKeyRaw: Buffer } | { ok: false; result: SiftReceiptVerificationResult } {
+  const raw = asRecord(verifyKeyResponse);
+  if (raw === null) {
+    return { ok: false, result: failSiftReceipt("KEY_NOT_FOUND", "verify-key response is not a JSON object") };
+  }
+
+  const keys = asRecord(raw["keys"]);
+  if (keys === null) {
+    return { ok: false, result: failSiftReceipt("KEY_NOT_FOUND", "verify-key response missing field: keys") };
+  }
+
+  const encoded = keys[keyId];
+  if (typeof encoded !== "string" || encoded.length === 0) {
+    return { ok: false, result: failSiftReceipt("KEY_NOT_FOUND", `verify-key response missing key_id: ${keyId}`) };
+  }
+
+  const publicKeyRaw = b64uDecode(encoded);
+  if (publicKeyRaw.length !== 32) {
+    return {
+      ok: false,
+      result: failSiftReceipt("INVALID_PUBLIC_KEY", `verify-key public key for key_id "${keyId}" must decode to 32 bytes, got ${publicKeyRaw.length}`),
+    };
+  }
+
+  return { ok: true, publicKeyRaw };
+}
+
+export function verifySiftReceipt(
+  receipt: unknown,
+  verifyKeyResponse: unknown,
+  expectedTenant: string,
+): SiftReceiptVerificationResult {
+  try {
+    const r = asRecord(receipt);
+    if (r === null) {
+      return failSiftReceipt("MALFORMED_RECEIPT", "receipt must be a JSON object");
+    }
+
+    const keyIdValue = requireString(r, "key_id");
+    if (typeof keyIdValue !== "string") return keyIdValue.error;
+    const keyId = keyIdValue;
+
+    const canonicalPayloadValue = requireString(r, "canonical_payload");
+    if (typeof canonicalPayloadValue !== "string") return canonicalPayloadValue.error;
+    const canonicalPayload = canonicalPayloadValue;
+
+    const signatureValue = requireString(r, "signature");
+    if (typeof signatureValue !== "string") return signatureValue.error;
+    const signature = signatureValue;
+
+    const expiryValue = requireNumber(r, "expiry");
+    if (typeof expiryValue !== "number") return expiryValue.error;
+    const expiry = expiryValue;
+
+    const tenantIdValue = requireString(r, "tenant_id");
+    if (typeof tenantIdValue !== "string") return tenantIdValue.error;
+    const tenantId = tenantIdValue;
+
+    const decisionValue = requireString(r, "decision");
+    if (typeof decisionValue !== "string") return decisionValue.error;
+    const decision = decisionValue;
+
+    const policyHashValue = requireString(r, "policy_hash");
+    if (typeof policyHashValue !== "string") {
+      return failSiftReceipt("INVALID_POLICY_ID", "receipt missing field: policy_hash");
+    }
+
+    const signatureAlg = r["signature_alg"];
+    if (signatureAlg !== "ed25519") {
+      return failSiftReceipt("INVALID_SIGNATURE_ALG", `signature_alg must be "ed25519", got: ${String(signatureAlg)}`);
+    }
+
+    const { signature: _sig, canonical_payload: _payload, ...base } = r;
+    if (canonicalJson(base) !== canonicalPayload) {
+      return failSiftReceipt("TAMPERED_RECEIPT", "canonical_payload does not match receipt body");
+    }
+
+    const key = selectVerifyKey(verifyKeyResponse, keyId);
+    if (!key.ok) return key.result;
+
+    const signatureBytes = b64uDecode(signature);
+    const publicKey = publicKeyObjectFromRaw(key.publicKeyRaw);
+    const signatureOk = nodeCryptoVerify(
+      null,
+      Buffer.from(canonicalPayload, "utf8"),
+      publicKey,
+      signatureBytes,
+    );
+    if (!signatureOk) {
+      return failSiftReceipt("INVALID_SIGNATURE", "receipt signature verification failed");
+    }
+
+    if (Math.floor(Date.now() / 1000) > expiry) {
+      return failSiftReceipt("EXPIRED_RECEIPT", "receipt has expired");
+    }
+
+    if (tenantId !== expectedTenant) {
+      return failSiftReceipt("TENANT_MISMATCH", `receipt tenant_id "${tenantId}" does not match expected tenant`);
+    }
+
+    if (decision !== "ALLOW" && decision !== "DENY") {
+      return failSiftReceipt("INVALID_DECISION", `receipt decision must be ALLOW or DENY, got: ${decision}`);
+    }
+
+    if (decision !== "ALLOW") {
+      return failSiftReceipt("DENY_DECISION", "receipt decision is not ALLOW");
+    }
+
+    return { ok: true, receipt: toOxDeAIReceipt(r) };
+  } catch (e) {
+    return failSiftReceipt("VERIFICATION_ERROR", e instanceof Error ? e.message : String(e));
+  }
+}
+
+export async function fetchProdVerifyKey(
+  config: ProdConfig,
+): Promise<{ ok: true; raw: unknown } | { ok: false; error: string }> {
+  const url = config.verifyKeyUrl ?? PROD_VERIFY_KEY_URL;
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "GET",
+      headers: { "X-Sift-Tenant": config.tenantId },
+    });
+  } catch (e) {
+    return { ok: false, error: `verify-key: network error: ${e instanceof Error ? e.message : String(e)}` };
+  }
+
+  if (!response.ok) {
+    return { ok: false, error: `verify-key: HTTP ${response.status}` };
+  }
+
+  let raw: unknown;
+  try { raw = await response.json() as unknown; }
+  catch { return { ok: false, error: "verify-key: response is not valid JSON" }; }
+
+  return { ok: true, raw };
 }
