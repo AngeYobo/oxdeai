@@ -9,6 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "pnpm build && node dist/run.js",
     "start:staging": "pnpm build && node dist/run-staging.js",
+    "start:prod": "pnpm build && node dist/run-prod.js",
     "verify:staging": "SIFT_STAGING_LIVE=1 pnpm test"
   },
   "dependencies": {

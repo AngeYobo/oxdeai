@@ -80,6 +80,69 @@ behavior exactly.
 
 ---
 
+## Production smoke test (requires provisioning from Jason)
+
+```bash
+pnpm -C examples/sift start:prod
+```
+
+Runs three scenarios against the real Sift **production** infrastructure.
+
+The prod path adds two steps compared to staging:
+
+1. **Challenge fetch** — POST `/api/v1/auth/challenge` → nonce
+2. **Request signing** — agent Ed25519 private key signs the canonical authorize body (covering the nonce, so each request is unique)
+
+Live surfaces contacted:
+
+```
+POST https://sift.walkosystems.com/api/v1/auth/challenge
+POST https://sift.walkosystems.com/api/v1/authorize
+GET  <PROD_JWKS_URL>          ← required from Jason (see below)
+GET  https://sift.walkosystems.com/api/v1/krl
+```
+
+### Required before prod can run
+
+The following values in `src/run-prod.ts` and `src/liveProd.ts` are marked
+`PLACEHOLDER_` and must be replaced before `start:prod` will pass its guard:
+
+| Value | Where | Source |
+|---|---|---|
+| `PROD_JWKS_URL_PLACEHOLDER` | `liveProd.ts` | **From Jason** — prod JWKS endpoint URL |
+| `PLACEHOLDER_PROD_TENANT_ID` | `run-prod.ts` | **From Jason** |
+| `PLACEHOLDER_PROD_AGENT_ID` | `run-prod.ts` | **From Jason** |
+| `PLACEHOLDER_PROD_AUDIENCE` | `run-prod.ts` | **From Jason** (e.g. `"oxdeai-pep-prod"`) |
+| `PLACEHOLDER_PROD_AGENT_KID` | `run-prod.ts` | **From Jason** |
+| `PLACEHOLDER_PROD_POLICY_ALLOW` | `run-prod.ts` | **From Jason** — low-risk allow policy ID |
+| `PLACEHOLDER_PROD_POLICY_DENY` | `run-prod.ts` | **From Jason** — exfil block policy ID |
+| `PLACEHOLDER_PROD_POLICY_REPLAY` | `run-prod.ts` | **From Jason** — replay-window policy ID |
+| `agentRole` | `run-prod.ts` | **From Jason** — set if prod policy requires a role |
+| Private key PEM | `.local/keys/` | **From Jason** — Ed25519 PKCS8 PEM, never committed |
+
+The challenge request/response shape and the authorize request shape (extra
+fields `tenant_id`, `agent_id`, `nonce`, `request_sig`) are isolated in
+`src/liveProd.ts` under clearly marked sections.  If Jason's docs differ from
+current assumptions, only those sections need updating.
+
+### Setting the private key path
+
+Place the private key at:
+
+```
+.local/keys/oxdeai-prod-agent-ed25519-private.pem
+```
+
+or set the env var:
+
+```bash
+SIFT_PROD_PRIVATE_KEY_PATH=/path/to/key.pem pnpm -C examples/sift start:prod
+```
+
+The `.local/` directory is already in `.gitignore`.
+
+---
+
 ## Production verifier surface (not implemented in demo)
 
 In production, public keys are not bundled with the code.  The runtime follows
@@ -159,6 +222,15 @@ Scenario 3 — REPLAY
   pep decision: DENY
   reason: REPLAY
   executed: false
+```
+
+### Live production mode (provisioning required)
+
+See **Production smoke test** section below for prerequisites and placeholder
+values that must be filled before this command will run.
+
+```bash
+pnpm -C examples/sift start:prod
 ```
 
 ### Live staging mode (network required)
@@ -241,8 +313,12 @@ dependency.
 ```
 examples/sift/
   src/
-    helpers.ts   — canonical JSON, Ed25519 helpers, mock receipt builder, PEP
-    run.ts       — three scenarios and output
+    helpers.ts        — canonical JSON, Ed25519 helpers, mock receipt builder, PEP
+    run.ts            — three local scenarios (no network)
+    liveStaging.ts    — staging network I/O helpers
+    run-staging.ts    — three live staging scenarios
+    liveProd.ts       — prod network I/O helpers (challenge + request signing)
+    run-prod.ts       — prod smoke test (three scenarios; requires Jason's values)
   package.json
   tsconfig.json
   README.md
