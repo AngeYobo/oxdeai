@@ -9,6 +9,15 @@
  */
 
 export { OxDeAIGuard } from "./guard.js";
+export {
+  INTERNAL_EXECUTOR_TOKEN_HEADER,
+  createPepGatewayExecutor,
+  createPepGatewayHttpServer,
+  createHttpUpstreamExecutor,
+  createProtectedUpstreamHttpServer,
+  hasValidInternalExecutorToken,
+  protectUpstreamExecution,
+} from "./gateway.js";
 export { defaultNormalizeAction } from "./normalizeAction.js";
 export { createInMemoryReplayStore } from "./replayStore.js";
 export type { ReplayStore } from "./replayStore.js";
@@ -31,3 +40,11 @@ export type {
   StateVersion,
   VersionedState,
 } from "./types.js";
+export type {
+  PepGatewayExecuteRequest,
+  PepGatewayOptions,
+  PepGatewayResponseBody,
+  PepGatewayResult,
+  ProtectedUpstreamOptions,
+  UpstreamExecutor,
+} from "./gateway.js";
