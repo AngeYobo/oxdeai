@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
+import { verify as nodeVerify } from "node:crypto";
 import type { AuthorizationV1 } from "../types/authorization.js";
 import type { KeySet } from "../types/keyset.js";
 import type { VerificationResult, VerificationViolation } from "./types.js";
+import { canonicalJson } from "../crypto/hashes.js";
 import {
   SIGNING_DOMAINS,
   findKeyInKeySets,
@@ -36,14 +38,61 @@ function hasText(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
 
+function signatureParts(auth: AuthorizationV1): { alg?: string; kid?: string; sig?: string; nested: boolean } {
+  const raw = auth.signature;
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    return {
+      alg: raw.alg,
+      kid: raw.kid,
+      sig: raw.sig,
+      nested: true
+    };
+  }
+  return {
+    alg: auth.alg,
+    kid: auth.kid,
+    sig: typeof raw === "string" ? raw : undefined,
+    nested: false
+  };
+}
+
+function verifyEd25519Raw(payload: unknown, signatureBase64: string, publicKeyPem: string): boolean {
+  try {
+    return nodeVerify(
+      null,
+      Buffer.from(canonicalJson(payload), "utf8"),
+      publicKeyPem,
+      Buffer.from(signatureBase64, "base64")
+    );
+  } catch {
+    return false;
+  }
+}
+
 function nowOrThrow(now: number | undefined): number {
   if (now !== undefined) return now;
   return Math.floor(Date.now() / 1000);
 }
 
 /** @public */
-export function authorizationSigningPayload(auth: AuthorizationV1): Omit<AuthorizationV1, "signature"> {
-  return {
+export function authorizationSigningPayload(auth: AuthorizationV1): Omit<AuthorizationV1, "signature"> | Record<string, unknown> {
+  const sig = signatureParts(auth);
+  const hasFlatAlgKid = hasText(auth.alg) && hasText(auth.kid);
+
+  if (sig.nested) {
+    const payload: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(auth as Record<string, unknown>)) {
+      if (value === undefined) continue;
+      if (key === "signature") continue;
+      payload[key] = value;
+    }
+    if (!hasFlatAlgKid) {
+      payload.signature = { alg: sig.alg, kid: sig.kid };
+    }
+    return payload;
+  }
+
+  const payload: Record<string, unknown> = {
     auth_id: auth.auth_id,
     issuer: auth.issuer,
     audience: auth.audience,
@@ -54,10 +103,12 @@ export function authorizationSigningPayload(auth: AuthorizationV1): Omit<Authori
     issued_at: auth.issued_at,
     expiry: auth.expiry,
     alg: auth.alg,
-    kid: auth.kid,
-    nonce: auth.nonce,
-    capability: auth.capability
+    kid: auth.kid
   };
+  if (auth.version !== undefined) payload.version = auth.version;
+  if (auth.nonce !== undefined) payload.nonce = auth.nonce;
+  if (auth.capability !== undefined) payload.capability = auth.capability;
+  return payload;
 }
 
 /** @public */
@@ -107,13 +158,15 @@ export function verifyAuthorization(
   if (!Number.isInteger(auth.issued_at)) {
     violations.push({ code: "AUTH_MISSING_FIELD", message: "issued_at must be integer unix seconds" });
   }
-  if (!hasText(auth.alg)) {
+  const sig = signatureParts(auth);
+
+  if (!hasText(sig.alg)) {
     violations.push({ code: "AUTH_MISSING_FIELD", message: "alg is required" });
   }
-  if (!hasText(auth.kid)) {
+  if (!hasText(sig.kid)) {
     violations.push({ code: "AUTH_MISSING_FIELD", message: "kid is required" });
   }
-  if (!hasText(auth.signature)) {
+  if (!hasText(sig.sig)) {
     violations.push({ code: "AUTH_MISSING_FIELD", message: "signature is required" });
   }
 
@@ -152,27 +205,33 @@ export function verifyAuthorization(
   }
 
   const requireSig = opts?.requireSignatureVerification ?? false;
-  const hasSigMaterial = hasText(auth.alg) && hasText(auth.kid) && hasText(auth.signature);
+  const hasSigMaterial = hasText(sig.alg) && hasText(sig.kid) && hasText(sig.sig);
 
   if (hasSigMaterial) {
-    if (auth.alg === "Ed25519") {
+    const sigAlg = sig.alg as string;
+    const sigKid = sig.kid as string;
+    const sigValue = sig.sig as string;
+    if (sigAlg === "Ed25519") {
       if (trusted.length === 0) {
         if (requireSig) {
           violations.push({ code: "AUTH_TRUST_MISSING", message: "trustedKeySets required for Ed25519 verification" });
         }
       } else {
-        const key = findKeyInKeySets(trusted, auth.issuer, auth.kid, "Ed25519");
+        const key = findKeyInKeySets(trusted, auth.issuer, sigKid, "Ed25519");
         if (!key) {
           violations.push({ code: "AUTH_KID_UNKNOWN", message: "kid not found for issuer/alg" });
         } else if (!keyIsActiveAt(key, now)) {
           violations.push({ code: "AUTH_KEY_INACTIVE", message: "key is not active at verification time" });
-        } else if (!verifyEd25519(SIGNING_DOMAINS.AUTH_V1, payload, auth.signature, key.public_key)) {
+        } else if (
+          !verifyEd25519(SIGNING_DOMAINS.AUTH_V1, payload, sigValue, key.public_key) &&
+          !verifyEd25519Raw(payload, sigValue, key.public_key)
+        ) {
           violations.push({ code: "AUTH_SIGNATURE_INVALID", message: "signature verification failed" });
         }
       }
-    } else if (auth.alg === "HMAC-SHA256") {
+    } else if (sigAlg === "HMAC-SHA256") {
       if (opts?.legacyHmacSecret) {
-        if (!verifyHmacDomain(SIGNING_DOMAINS.AUTH_V1, payload, auth.signature, opts.legacyHmacSecret)) {
+        if (!verifyHmacDomain(SIGNING_DOMAINS.AUTH_V1, payload, sigValue, opts.legacyHmacSecret)) {
           violations.push({ code: "AUTH_SIGNATURE_INVALID", message: "legacy HMAC signature verification failed" });
         }
       } else if (requireSig) {

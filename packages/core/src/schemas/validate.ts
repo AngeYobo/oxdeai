@@ -117,7 +117,18 @@ export function validateAuthorizationJson(value: unknown): SchemaValidationIssue
   if ("kid" in value && (typeof value.kid !== "string" || value.kid.length === 0)) issues.push({ path: "$.kid", code: "TYPE", message: "must be non-empty string" });
   if ("expires_at" in value && !intNonNegative(value.expires_at)) issues.push({ path: "$.expires_at", code: "TYPE", message: "must be non-negative integer" });
   if ("engine_signature" in value && !hex64(value.engine_signature)) issues.push({ path: "$.engine_signature", code: "FORMAT", message: "must be 64-char lowercase hex" });
-  if ("signature" in value && value.signature !== undefined && typeof value.signature !== "string") issues.push({ path: "$.signature", code: "TYPE", message: "must be string when present" });
+  if ("signature" in value && value.signature !== undefined) {
+    if (typeof value.signature === "string") {
+      // legacy flat signature
+    } else if (isObject(value.signature)) {
+      const sig = value.signature as Record<string, unknown>;
+      if (sig.alg !== "Ed25519" && sig.alg !== "HMAC-SHA256") issues.push({ path: "$.signature.alg", code: "ENUM", message: "must be Ed25519 or HMAC-SHA256" });
+      if (typeof sig.kid !== "string" || sig.kid.length === 0) issues.push({ path: "$.signature.kid", code: "TYPE", message: "must be non-empty string" });
+      if (typeof sig.sig !== "string" || sig.sig.length === 0) issues.push({ path: "$.signature.sig", code: "TYPE", message: "must be non-empty string" });
+    } else {
+      issues.push({ path: "$.signature", code: "TYPE", message: "must be string or signature object when present" });
+    }
+  }
   return sorted(issues);
 }
 

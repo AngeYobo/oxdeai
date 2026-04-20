@@ -238,10 +238,13 @@ function normalizeToolLimits(state: State): {
   for (const agent of sortedKeys(tl.calls)) {
     const entries = tl.calls[agent] ?? [];
     calls[agent] = entries
-      .map((e) => ({
-        ts: assertInt(e.ts, "tool_limits.calls.ts"),
-        tool: e.tool
-      }))
+      .map((e) => {
+        const out: { ts: number; tool?: string } = {
+          ts: assertInt(e.ts, "tool_limits.calls.ts")
+        };
+        if (e.tool !== undefined) out.tool = e.tool;
+        return out;
+      })
       .sort((a, b) => (a.ts - b.ts) || ((a.tool ?? "") < (b.tool ?? "") ? -1 : (a.tool ?? "") > (b.tool ?? "") ? 1 : 0));
   }
 
