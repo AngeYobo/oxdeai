@@ -26,6 +26,13 @@ import { CONFORMANCE_ENGINE_SECRET } from "./fixtures/conformance-engine-secret.
 
 type JsonRecord = Record<string, unknown>;
 
+// Normative AuthorizationV1 supports both a bare signature string (legacy) and a
+// nested signature object. This union mirrors AuthorizationV1.signature exactly so
+// that Authorization (= AuthorizationLegacy & AuthorizationV1) is assignable here.
+type AuthorizationSignatureLike =
+  | string
+  | { alg: "Ed25519" | "HMAC-SHA256"; kid: string; sig: string };
+
 type AuthorizationLike = {
   auth_id: string;
   issuer: string;
@@ -38,7 +45,7 @@ type AuthorizationLike = {
   expiry: number;
   alg: "Ed25519" | "HMAC-SHA256";
   kid: string;
-  signature: string;
+  signature: AuthorizationSignatureLike;
   state_snapshot_hash: string;
   expires_at: number;
   engine_signature: string;
@@ -241,6 +248,25 @@ function b64ToBytes(value: string): Uint8Array {
 
 function hexSha256Utf8(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+// Returns the raw signature bytes string regardless of which shape is present.
+// Used wherever the conformance layer needs to inspect or compare signature material.
+function getSignatureBytes(signature: AuthorizationSignatureLike): string {
+  return typeof signature === "string" ? signature : signature.sig;
+}
+
+// Corrupts the signature bytes by replacing the last two characters with "aa".
+// Works for both the legacy bare-string shape and the normative nested-object shape.
+// All mutation-test sites must go through this helper; no direct .slice() on signature.
+function mutateSignature<T extends { signature: AuthorizationSignatureLike }>(auth: T): T {
+  if (typeof auth.signature === "string") {
+    return { ...auth, signature: auth.signature.slice(0, -2) + "aa" };
+  }
+  return {
+    ...auth,
+    signature: { ...auth.signature, sig: auth.signature.sig.slice(0, -2) + "aa" },
+  };
 }
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
@@ -703,7 +729,7 @@ function validateAuthorizationSignatureVectors(ctx: CheckCtx, adapter: Conforman
     };
 
     if (mode === "invalid-signature") {
-      auth = { ...auth, signature: `${auth.signature.slice(0, -2)}aa` };
+      auth = mutateSignature(auth);
     } else if (mode === "wrong-kid") {
       auth = { ...auth, kid: "unknown-kid" };
     } else if (mode === "wrong-issuer") {
