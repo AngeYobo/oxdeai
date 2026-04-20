@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /** @public */
 export type AuthorizationV1 = {
+  version?: "AuthorizationV1";
   auth_id: string;
   issuer: string;
   audience: string;
@@ -12,7 +13,11 @@ export type AuthorizationV1 = {
   expiry: number; // unix seconds
   alg: "Ed25519" | "HMAC-SHA256";
   kid: string;
-  signature: string;
+  signature: string | {
+    alg: "Ed25519" | "HMAC-SHA256";
+    kid: string;
+    sig: string;
+  };
   nonce?: string;
   capability?: string;
 };

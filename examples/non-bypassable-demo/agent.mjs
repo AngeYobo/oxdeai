@@ -5,46 +5,10 @@
 // 3) node examples/non-bypassable-demo/agent.mjs
 //
 // This script simulates an agent/runtime issuing actions through the gateway.
-// It demonstrates: valid execution, hash-mismatch denial, replay denial, and direct-upstream bypass rejection.
+// It demonstrates: valid execution, replay denial, and direct-upstream bypass rejection.
 
 import { request } from "node:http";
-import { createHash } from "node:crypto";
-
-// ---- Canonicalization (must match gateway) ----
-const SAFE_MIN = -9007199254740991n;
-const SAFE_MAX = 9007199254740991n;
-
-const normalize = (s) => s.normalize("NFC");
-const isPlainObject = (v) => Object.prototype.toString.call(v) === "[object Object]";
-
-function canonicalize(value) {
-  if (value === null) return "null";
-  if (typeof value === "string") return JSON.stringify(normalize(value));
-  if (typeof value === "boolean") return value ? "true" : "false";
-  if (typeof value === "number") {
-    if (!Number.isInteger(value)) throw new Error("FLOAT_NOT_ALLOWED");
-    if (!Number.isSafeInteger(value)) throw new Error("UNSAFE_INTEGER_NUMBER");
-    return String(value);
-  }
-  if (typeof value === "bigint") return JSON.stringify(String(value));
-  if (Array.isArray(value)) return `[${value.map(canonicalize).join(",")}]`;
-  if (isPlainObject(value)) {
-    const normalized = Object.entries(value).map(([k, v]) => [normalize(k), v]);
-    const seen = new Set();
-    for (const [k] of normalized) {
-      if (seen.has(k)) throw new Error("DUPLICATE_KEY");
-      seen.add(k);
-    }
-    const sorted = normalized.sort((a, b) =>
-      Buffer.compare(Buffer.from(a[0], "utf8"), Buffer.from(b[0], "utf8"))
-    );
-    const parts = sorted.map(([k, v]) => `${JSON.stringify(k)}:${canonicalize(v)}`);
-    return `{${parts.join(",")}}`;
-  }
-  throw new Error("UNSUPPORTED_TYPE");
-}
-
-const sha256Hex = (s) => createHash("sha256").update(s, "utf8").digest("hex");
+import { hashAction, makeAuthorization } from "./auth-fixture.mjs";
 
 // ---- HTTP helper ----
 function postJson(url, body, headers = {}) {
@@ -90,19 +54,11 @@ const ACTION = {
   params: { amount: "500", currency: "USD", user_id: "user_123" },
 };
 
-const canonicalAction = canonicalize(ACTION);
-const intentHash = sha256Hex(canonicalAction);
+const intentHash = hashAction(ACTION);
 const audience = process.env.GATEWAY_AUDIENCE || "pep-gateway.local";
 
 function makeAuth({ authId, hash }) {
-  return {
-    auth_id: authId,
-    issuer: "demo-issuer",
-    audience,
-    decision: "ALLOW",
-    intent_hash: hash,
-    expiry: Math.floor(Date.now() / 1000) + 3600,
-  };
+  return makeAuthorization({ action: ACTION, authId, audience, intentHash: hash });
 }
 
 // ---- Scenarios ----
@@ -113,14 +69,6 @@ async function scenarioAllow() {
   console.log(`  status: ${res.status}`);
   console.log(`  executed: ${res.body?.executed === true}`);
   return auth;
-}
-
-async function scenarioDenyHashMismatch() {
-  const auth = makeAuth({ authId: `auth_${Date.now()}_bad`, hash: "deadbeef" });
-  const res = await postJson("http://localhost:8787/execute", { action: ACTION, authorization: auth });
-  console.log("SCENARIO: DENY_HASH_MISMATCH");
-  console.log(`  status: ${res.status}`);
-  console.log(`  blocked: ${res.status === 403}`);
 }
 
 async function scenarioReplay(reusedAuth) {
@@ -140,13 +88,11 @@ async function scenarioBypass() {
 
 async function main() {
   const auth = await scenarioAllow();
-  await scenarioDenyHashMismatch();
   await scenarioReplay(auth);
   await scenarioBypass();
 
   console.log("SUMMARY:");
   console.log("  ALLOW: executed");
-  console.log("  DENY_HASH_MISMATCH: blocked");
   console.log("  REPLAY: blocked");
   console.log("  BYPASS: rejected");
 }

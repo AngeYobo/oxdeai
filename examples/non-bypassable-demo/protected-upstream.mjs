@@ -1,69 +1,44 @@
 // examples/non-bypassable-demo/protected-upstream.mjs
-// Demonstrates a protected upstream that cannot be called directly without the gateway-only secret.
-// It trusts only the internal executor token; all other requests are rejected.
+// Demo entry point for the reusable @oxdeai/guard upstream token boundary.
 
-import { createServer } from "node:http";
+import { createProtectedUpstreamHttpServer } from "../../packages/guard/dist/index.js";
 
 const PORT = Number(process.env.PORT || 8788);
 const EXPECTED_TOKEN = process.env.UPSTREAM_EXECUTOR_TOKEN;
-const REQ_TOKEN_HEADER = "x-internal-executor-token";
+const TEST_DELAY_MS = Number(process.env.UPSTREAM_TEST_DELAY_MS || 2000);
 
 if (!EXPECTED_TOKEN) {
   console.error("[protected-upstream] missing required env UPSTREAM_EXECUTOR_TOKEN");
   process.exit(1);
 }
 
-const json = (res, status, body) => {
-  const data = JSON.stringify(body);
-  res.writeHead(status, {
-    "content-type": "application/json; charset=utf-8",
-    "content-length": Buffer.byteLength(data),
-  });
-  res.end(data);
-};
+const server = createProtectedUpstreamHttpServer({
+  path: "/charge",
+  expectedToken: EXPECTED_TOKEN,
+  execute: async (payload) => {
+    const body = payload && typeof payload === "object" ? payload : {};
 
-const server = createServer((req, res) => {
-  const token = req.headers[REQ_TOKEN_HEADER];
-  const forbid = () =>
-    json(res, 403, { ok: false, error: "direct access forbidden: missing or invalid internal executor token" });
+    if (body.__upstream_behavior === "error") {
+      throw new Error("simulated upstream error");
+    }
+    if (body.__upstream_behavior === "timeout") {
+      await new Promise((resolve) => setTimeout(resolve, TEST_DELAY_MS));
+      return { ok: true, executed: true, route: "upstream", delayed: true };
+    }
 
-  if (req.method === "GET" && req.url === "/healthz") {
-    return json(res, 200, { ok: true, route: "upstream", status: "healthy" });
-  }
-
-  if (req.method === "POST" && req.url === "/charge") {
-    if (token !== EXPECTED_TOKEN) return forbid();
-
-    let body = "";
-    req.on("data", (chunk) => (body += chunk));
-    req.on("end", () => {
-      let payload = {};
-      try {
-        if (body.trim()) payload = JSON.parse(body);
-      } catch {
-        return json(res, 400, { ok: false, error: "invalid JSON" });
-      }
-
-      const { amount, currency, user_id } = payload;
-      const chargeId = `ch_${Date.now()}`;
-
-      return json(res, 200, {
-        ok: true,
-        executed: true,
-        route: "upstream",
-        charge_id: chargeId,
-        amount,
-        currency,
-        user_id,
-      });
-    });
-    return;
-  }
-
-  json(res, 404, { ok: false, error: "not found" });
+    return {
+      ok: true,
+      executed: true,
+      route: "upstream",
+      charge_id: `ch_${Date.now()}`,
+      amount: body.amount,
+      currency: body.currency,
+      user_id: body.user_id,
+    };
+  },
 });
 
 server.listen(PORT, () => {
   console.log(`[protected-upstream] listening on :${PORT}`);
-  console.log(`[protected-upstream] requires header ${REQ_TOKEN_HEADER} to match UPSTREAM_EXECUTOR_TOKEN (not logged)`);
+  console.log("[protected-upstream] using reusable @oxdeai/guard internal-token enforcement");
 });
