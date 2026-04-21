@@ -20,7 +20,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import type { Authorization, AuthorizationV1, Intent, State } from "@oxdeai/core";
-import { stateSnapshotHash } from "@oxdeai/core";
+import { stateSnapshotHash, intentHash } from "@oxdeai/core";
+import { defaultNormalizeAction } from "../normalizeAction.js";
 
 import { OxDeAIGuard, createInMemoryReplayStore } from "../index.js";
 import type { ReplayStore, OxDeAIGuardConfig, ProposedAction } from "../index.js";
@@ -46,13 +47,17 @@ function makeBaseState(): State {
   };
 }
 
+const RS_FIXED_ACTION: ProposedAction = {
+  name: "pay",
+  args: { amount: 1 },
+  estimatedCost: 0,
+  timestampSeconds: 1_700_000_000,
+  context: { agent_id: "agent-rs", target: "vendor", intent_id: "rs-fixed-intent", nonce: 1n },
+};
+const RS_INTENT_HASH = intentHash(defaultNormalizeAction(RS_FIXED_ACTION));
+
 function makeAction(): ProposedAction {
-  return {
-    name: "pay",
-    args: { amount: 1 },
-    estimatedCost: 0,
-    context: { agent_id: "agent-rs", target: "vendor" },
-  };
+  return RS_FIXED_ACTION;
 }
 
 /** A FakeEngine that always ALLOWs with the provided authorization artifact. */
@@ -90,7 +95,7 @@ function makeGuardConfig(
 // RS-1: Default in-memory store blocks auth_id replay within one guard instance
 
 test("RS-1 default store: auth_id replay blocked on second call to same guard instance", async () => {
-  const auth = signAuth({ auth_id: "rs-auth-1", state_hash: stateSnapshotHash(makeBaseState()) });
+  const auth = signAuth({ auth_id: "rs-auth-1", state_hash: stateSnapshotHash(makeBaseState()), intent_hash: RS_INTENT_HASH });
   const guard = OxDeAIGuard(makeGuardConfig(auth));
   const action = makeAction();
 
@@ -149,7 +154,7 @@ test("RS-2 default store: delegation_id replay blocked on second call to same gu
 test("RS-3 shared store: auth_id replay blocked across two distinct guard instances", async () => {
   // A shared store simulates a durable backend (e.g. Redis) shared between processes.
   const sharedStore = createInMemoryReplayStore();
-  const auth = signAuth({ auth_id: "rs-auth-3", state_hash: stateSnapshotHash(makeBaseState()) });
+  const auth = signAuth({ auth_id: "rs-auth-3", state_hash: stateSnapshotHash(makeBaseState()), intent_hash: RS_INTENT_HASH });
 
   const guardA = OxDeAIGuard(makeGuardConfig(auth, { replayStore: sharedStore }));
   const guardB = OxDeAIGuard(makeGuardConfig(auth, { replayStore: sharedStore }));

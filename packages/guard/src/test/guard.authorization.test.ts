@@ -18,12 +18,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync } from "node:crypto";
-import { signAuthorizationEd25519, stateSnapshotHash } from "@oxdeai/core";
+import { signAuthorizationEd25519, stateSnapshotHash, intentHash } from "@oxdeai/core";
 import type { Authorization, AuthorizationV1, Intent, State } from "@oxdeai/core";
 
 import { OxDeAIGuard } from "../guard.js";
 import { OxDeAIAuthorizationError, OxDeAIGuardConfigurationError } from "../errors.js";
 import { TEST_KEYSET, signAuth } from "./helpers/fixtures.js";
+import { defaultNormalizeAction } from "../normalizeAction.js";
 import type { OxDeAIGuardConfig, ProposedAction } from "../types.js";
 
 // ---------------------------------------------------------------------------
@@ -75,13 +76,16 @@ function makeGuardConfig(auth: AuthorizationV1, overrides?: Partial<OxDeAIGuardC
   };
 }
 
+// Fixed intent_id and nonce make defaultNormalizeAction deterministic so
+// FIXED_INTENT_HASH matches what the guard computes at runtime.
 const ACTION: ProposedAction = {
   name: "provision_gpu",
   args: { asset: "a100" },
   estimatedCost: 0,
-  context: { agent_id: "agent-auth", target: "gpu-pool" },
+  context: { agent_id: "agent-auth", target: "gpu-pool", intent_id: "auth-fixed-intent-id", nonce: 1n },
   timestampSeconds: T_NOW,
 };
+const FIXED_INTENT_HASH = intentHash(defaultNormalizeAction(ACTION));
 
 // ---------------------------------------------------------------------------
 // A-1: Tampered signature → OxDeAIAuthorizationError, execute blocked
@@ -222,7 +226,7 @@ test("A-5 missing trustedKeySets: OxDeAIGuardConfigurationError thrown at constr
 // ---------------------------------------------------------------------------
 
 test("A-6 valid auth: execute runs and result is returned", async () => {
-  const auth = signAuth({ auth_id: "a6-auth", audience: "aud-test", state_hash: stateSnapshotHash(makeBaseState()) });
+  const auth = signAuth({ auth_id: "a6-auth", audience: "aud-test", state_hash: stateSnapshotHash(makeBaseState()), intent_hash: FIXED_INTENT_HASH });
   const guard = OxDeAIGuard(makeGuardConfig(auth));
 
   let executed = false;
