@@ -14,8 +14,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import type { Authorization, PolicyEngine, State } from "@oxdeai/core";
-import { stateSnapshotHash } from "@oxdeai/core";
+import type { Authorization, Intent, PolicyEngine, State } from "@oxdeai/core";
+import { stateSnapshotHash, intentHash } from "@oxdeai/core";
 import { buildState } from "@oxdeai/sdk";
 
 import { TEST_KEYSET, signAuth } from "./helpers/fixtures.js";
@@ -180,15 +180,20 @@ function makeDenyEngine(): PolicyEngine {
 }
 
 function makeAllowEngine(state: State, nextState?: State): PolicyEngine {
-  // Auth must commit to the state snapshot the engine evaluated.
-  const auth = signAuth({ auth_id: "stub-valid", state_hash: stateSnapshotHash(state) }) as unknown as Authorization;
   return {
-    evaluatePure: () => ({
-      decision: "ALLOW" as const,
-      reasons: [] as [],
-      authorization: auth,
-      nextState: nextState ?? state,
-    }),
+    evaluatePure: (intent: Intent, s: State) => {
+      const auth = signAuth({
+        auth_id: "stub-valid",
+        state_hash: stateSnapshotHash(s),
+        intent_hash: intentHash(intent),
+      }) as unknown as Authorization;
+      return {
+        decision: "ALLOW" as const,
+        reasons: [] as [],
+        authorization: auth,
+        nextState: nextState ?? state,
+      };
+    },
     computeStateHash: (s: State) => stateSnapshotHash(s),
     verifyAuthorization: () => ({ valid: true }),
   } as unknown as PolicyEngine;

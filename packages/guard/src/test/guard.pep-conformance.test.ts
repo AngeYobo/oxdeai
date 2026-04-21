@@ -27,6 +27,7 @@ import assert from "node:assert/strict";
 import {
   PolicyEngine,
   stateSnapshotHash,
+  intentHash,
 } from "@oxdeai/core";
 import type { Authorization, AuthorizationV1, Intent, State } from "@oxdeai/core";
 import { buildState } from "@oxdeai/sdk";
@@ -39,6 +40,7 @@ import {
   OxDeAIConflictError,
 } from "../errors.js";
 import { TEST_KEYPAIR, TEST_KEYSET, nowSeconds, signAuth } from "./helpers/fixtures.js";
+import { defaultNormalizeAction } from "../normalizeAction.js";
 
 // ── fixtures ──────────────────────────────────────────────────────────────────
 
@@ -69,13 +71,17 @@ function makeState(): State {
   });
 }
 
+// Fixed fields make defaultNormalizeAction deterministic so intent_hash can be
+// pre-computed and used in signAuth calls for tests that need to pass step 6d.
 const BASE_ACTION: ProposedAction = {
   name: "provision_gpu",
   args: { asset: "a100", region: "us-east-1" },
   estimatedCost: 0.5,
   resourceType: "gpu",
-  context: { agent_id: AUDIENCE, target: "gpu-pool-us-east-1" },
+  timestampSeconds: 1_700_000_000,
+  context: { agent_id: AUDIENCE, target: "gpu-pool-us-east-1", intent_id: "gpc-fixed-intent-id", nonce: 1n },
 };
+const BASE_INTENT_HASH = intentHash(defaultNormalizeAction(BASE_ACTION));
 
 function makeVersionedStore(initial: State): {
   getState: () => { state: State; version: StateVersion };
@@ -126,8 +132,15 @@ test("GPC-1 valid authorization (real engine): execute is called and result is r
   const engine = makeEngine();
 
   const guard = makeGuard({ engine, ...store });
-
-  const result = await guard(BASE_ACTION, async () => "gpc1-ok");
+  // No timestampSeconds: real engine uses current time for issued_at/expiry.
+  const freshAction: ProposedAction = {
+    name: "provision_gpu",
+    args: { asset: "a100", region: "us-east-1" },
+    estimatedCost: 0.5,
+    resourceType: "gpu",
+    context: { agent_id: AUDIENCE, target: "gpu-pool-us-east-1" },
+  };
+  const result = await guard(freshAction, async () => "gpc1-ok");
   assert.equal(result, "gpc1-ok", "GPC-1: guard must return the execute() result on ALLOW");
 });
 
@@ -254,6 +267,7 @@ test("GPC-6 state hash mismatch: OxDeAIAuthorizationError is thrown, execute blo
     auth_id: "gpc6-auth",
     audience: AUDIENCE,
     state_hash: stateSnapshotHash(staleState),
+    intent_hash: BASE_INTENT_HASH,
   });
 
   const guard = makeGuard({ engine: makeFakeEngine(auth), ...store });
@@ -285,6 +299,7 @@ test("GPC-7 auth_id replay: first call succeeds, second is blocked with OxDeAIAu
     auth_id: "gpc7-replay-auth",
     audience: AUDIENCE,
     state_hash: stateSnapshotHash(state),
+    intent_hash: BASE_INTENT_HASH,
   });
 
   const guard = makeGuard({ engine: makeFakeEngine(auth), ...store });
@@ -322,6 +337,7 @@ test("GPC-8 CAS version conflict: OxDeAIConflictError is thrown, execute blocked
     auth_id: "gpc8-cas-auth",
     audience: AUDIENCE,
     state_hash: stateHash,
+    intent_hash: BASE_INTENT_HASH,
   });
 
   const guard = makeGuard({ engine: makeFakeEngine(auth), getState, setState });

@@ -10,8 +10,10 @@ import {
   PolicyEngine,
   signAuthorizationEd25519,
   stateSnapshotHash,
+  intentHash,
   createDelegation,
 } from "@oxdeai/core";
+import { defaultNormalizeAction } from "../normalizeAction.js";
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -149,6 +151,17 @@ test("audience tampering is denied by strict verifier", async () => {
 });
 
 test("auth_id replay is denied on second use", async () => {
+  // Fixed fields make defaultNormalizeAction deterministic so intent_hash can be
+  // pre-computed and placed in the manually-crafted auth for step 6d.
+  const replayAction: ProposedAction = {
+    name: "pay",
+    args: { amount: 1 },
+    estimatedCost: 0,
+    timestampSeconds: 1_700_000_000,
+    context: { agent_id: "agent-1", target: "vendor", intent_id: "boundary-replay-intent", nonce: 1n },
+  };
+  const replayIntentHash = intentHash(defaultNormalizeAction(replayAction));
+
   const issued_at = Math.floor(Date.now() / 1000);
   const replayState = makeState();
   const auth: AuthorizationV1 = signAuthorizationEd25519(
@@ -156,7 +169,7 @@ test("auth_id replay is denied on second use", async () => {
       auth_id: "auth-replay-test",
       issuer: TRUSTED_KEYSET.issuer,
       audience: "aud-test",
-      intent_hash: "i".repeat(64),
+      intent_hash: replayIntentHash,
       state_hash: stateSnapshotHash(replayState),
       policy_id: "p".repeat(64),
       decision: "ALLOW",
@@ -189,13 +202,12 @@ test("auth_id replay is denied on second use", async () => {
     expectedAudience: "aud-test",
   });
 
-  const action = makeAction();
   let executions = 0;
-  await guard(action, async () => {
+  await guard(replayAction, async () => {
     executions += 1;
   });
   await assert.rejects(
-    guard(action, async () => {
+    guard(replayAction, async () => {
       executions += 1;
     }),
     /Authorization replay detected|AUTH_REPLAY/i
