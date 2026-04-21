@@ -78,6 +78,7 @@
     "api:fingerprint:check": "pnpm build && ../../scripts/check-api-fingerprint.sh"
   },
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.57.6"
+    "@microsoft/api-extractor": "^7.57.6",
+    "fast-check": "^4.6.0"
   }
 }

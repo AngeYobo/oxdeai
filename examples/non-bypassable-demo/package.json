@@ -3,8 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "preupstream": "pnpm -C ../../packages/core build && pnpm -C ../../packages/guard build",
     "upstream": "node protected-upstream.mjs",
+    "pregateway": "pnpm -C ../../packages/core build && pnpm -C ../../packages/guard build",
     "gateway": "node pep-gateway.mjs",
-    "agent": "node agent.mjs"
+    "preagent": "pnpm -C ../../packages/core build && pnpm -C ../../packages/guard build",
+    "agent": "node agent.mjs",
+    "pretest": "pnpm -C ../../packages/core build && pnpm -C ../../packages/guard build",
+    "test": "node test.mjs"
   }
 }

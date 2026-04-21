@@ -435,7 +435,7 @@ export class PolicyEngine {
       // the engine evaluated against via engine.computeStateHash(state).
       const state_hash = this.computeStateHashFor(state);
 
-      const authorizationCorePayload = {
+      const authorizationCorePayload: Record<string, unknown> = {
         auth_id: "",
         issuer,
         audience,
@@ -447,9 +447,9 @@ export class PolicyEngine {
         expiry: expires_at,
         alg,
         kid,
-        nonce: intent.nonce.toString(),
-        capability: intent.action_type
+        nonce: intent.nonce.toString()
       };
+      if (intent.action_type !== undefined) authorizationCorePayload.capability = intent.action_type;
 
       // Derive a stable auth_id before signature attachment.
       const authorization_id = sha256HexFromJson({ ...authorizationCorePayload, engine_signature });
@@ -480,11 +480,11 @@ export class PolicyEngine {
         alg,
         kid,
         nonce: intent.nonce.toString(),
-        capability: intent.action_type,
         signature,
         expires_at,
         engine_signature
       };
+      if (intent.action_type !== undefined) authorization.capability = intent.action_type;
 
       if (t === "EXECUTE") {
         const agent = intent.agent_id;

@@ -45,6 +45,11 @@ export function createDelegation(
   privateKeyPem: string
 ): DelegationV1 {
   const now = params.issuedAt ?? Math.floor(Date.now() / 1000);
+  const scope: DelegationScope = {};
+  if (params.scope.tools !== undefined) scope.tools = params.scope.tools;
+  if (params.scope.max_amount !== undefined) scope.max_amount = params.scope.max_amount;
+  if (params.scope.max_actions !== undefined) scope.max_actions = params.scope.max_actions;
+  if (params.scope.max_depth !== undefined) scope.max_depth = params.scope.max_depth;
   const unsigned: DelegationV1 = {
     delegation_id: params.delegationId ?? randomUUID(),
     issuer: params.issuer ?? parent.audience,
@@ -52,7 +57,7 @@ export function createDelegation(
     parent_auth_hash: delegationParentHash(parent),
     delegator: parent.audience,
     delegatee: params.delegatee,
-    scope: params.scope,
+    scope,
     policy_id: parent.policy_id,
     issued_at: now,
     expiry: params.expiry,
