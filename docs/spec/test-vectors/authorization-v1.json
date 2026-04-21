@@ -4,6 +4,11 @@
       "kid": "auth-key-1",
       "alg": "Ed25519",
       "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEASyQL4zdR435kMZBiqIKq87JvPivVmhOsAnGWZV4HJDY=\n-----END PUBLIC KEY-----\n"
+    },
+    {
+      "kid": "sb-key-1",
+      "alg": "Ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAEpLwEc8AC3nZVxl/gO8ibomzrH3FVO9dzugk/ku9ack=\n-----END PUBLIC KEY-----\n"
     }
   ],
   "vectors": [
@@ -113,6 +118,117 @@
       "expected": {
         "decision": "DENY",
         "error": "INVALID_SIGNATURE"
+      }
+    },
+    {
+      "id": "sb-auth-allow-valid",
+      "description": "valid AuthorizationV1 with correct state_hash",
+      "state_snapshot": { "agent_id": "demo-agent", "budget_remaining_usd": 1000, "period": "2024-Q1", "spent_usd": 0 },
+      "artifact": {
+        "version": "AuthorizationV1",
+        "auth_id": "sb-auth-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "8fbb30c8419a1c88a7799b39d77c77ef19dbdcdf82476bfb6c3d08b644683fa7",
+        "state_hash": "d5069a326fe394071669c5160cbd06bd52d88dd2651a5f68f38292de76f35e1c",
+        "policy_id": "policy-1",
+        "issued_at": 1712448000,
+        "expiry": 1712448600,
+        "alg": "Ed25519",
+        "kid": "sb-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "sb-key-1",
+          "sig": "hVMlD53hOVGfvPYZyyMLAMgoLetBWwy5RDu2uptXgHpc742G1niWhZl5wtR9eebf0C1lRVvumDB02Cjv7WzyDQ=="
+        }
+      },
+      "expected": {
+        "decision": "ALLOW",
+        "error": null
+      }
+    },
+    {
+      "id": "sb-auth-state-mismatch",
+      "description": "state_hash does not match state snapshot",
+      "state_snapshot": { "agent_id": "demo-agent", "budget_remaining_usd": 1000, "period": "2024-Q1", "spent_usd": 0 },
+      "artifact": {
+        "version": "AuthorizationV1",
+        "auth_id": "sb-auth-2",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "8fbb30c8419a1c88a7799b39d77c77ef19dbdcdf82476bfb6c3d08b644683fa7",
+        "state_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "policy_id": "policy-1",
+        "issued_at": 1712448000,
+        "expiry": 1712448600,
+        "alg": "Ed25519",
+        "kid": "sb-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "sb-key-1",
+          "sig": "9pCXkk3UtL3syp2hXsQpqKtHY/W0mIDcRLk23BY+NTSpG3MUEKpbnBOrvhoAqVBs9cBk53gXHL2V6WF7w450Cg=="
+        }
+      },
+      "expected": {
+        "decision": "DENY",
+        "error": "STATE_HASH_MISMATCH"
+      }
+    },
+    {
+      "id": "pep-auth-forged",
+      "description": "forged authorization: intent_hash and state_hash are correct but Ed25519 signature is invalid",
+      "state_snapshot": { "agent_id": "demo-agent", "budget_remaining_usd": 1000, "period": "2024-Q1", "spent_usd": 0 },
+      "artifact": {
+        "version": "AuthorizationV1",
+        "auth_id": "pep-auth-forged-1",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "8fbb30c8419a1c88a7799b39d77c77ef19dbdcdf82476bfb6c3d08b644683fa7",
+        "state_hash": "d5069a326fe394071669c5160cbd06bd52d88dd2651a5f68f38292de76f35e1c",
+        "policy_id": "policy-1",
+        "issued_at": 1712448000,
+        "expiry": 1712448600,
+        "alg": "Ed25519",
+        "kid": "sb-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "sb-key-1",
+          "sig": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      },
+      "expected": {
+        "decision": "DENY",
+        "error": "INVALID_SIGNATURE"
+      }
+    },
+    {
+      "id": "sb-auth-missing-state-hash",
+      "description": "authorization missing state_hash field",
+      "state_snapshot": { "agent_id": "demo-agent", "budget_remaining_usd": 1000, "period": "2024-Q1", "spent_usd": 0 },
+      "artifact": {
+        "version": "AuthorizationV1",
+        "auth_id": "sb-auth-3",
+        "issuer": "issuer-1",
+        "audience": "pep-gateway.local",
+        "decision": "ALLOW",
+        "intent_hash": "8fbb30c8419a1c88a7799b39d77c77ef19dbdcdf82476bfb6c3d08b644683fa7",
+        "policy_id": "policy-1",
+        "issued_at": 1712448000,
+        "expiry": 1712448600,
+        "alg": "Ed25519",
+        "kid": "sb-key-1",
+        "signature": {
+          "alg": "Ed25519",
+          "kid": "sb-key-1",
+          "sig": "uvdN4IS3Nt/BvbRzcCpt0wODciRPLBqOAnbuAjCBHz18LSLTV5xb89NL4jQBh1UJugQvyjy2IOqazyPjMjBQBA=="
+        }
+      },
+      "expected": {
+        "decision": "DENY",
+        "error": "STATE_HASH_MISSING"
       }
     }
   ]

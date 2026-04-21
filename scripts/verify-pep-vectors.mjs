@@ -68,6 +68,23 @@ function verifyPepVector(v, authFile) {
     return { status: 403, decision: "DENY", executed: false };
   }
 
+  // State binding check
+  if (!auth.state_hash) {
+    return { status: 403, decision: "DENY", executed: false };
+  }
+  const stateSnapshotRef = v.request.state_snapshot_ref;
+  if (!stateSnapshotRef) {
+    return { status: 403, decision: "DENY", executed: false };
+  }
+  const snapshotVector = authFile.vectors.find((x) => x.id === stateSnapshotRef);
+  if (!snapshotVector?.state_snapshot) {
+    return { status: 403, decision: "DENY", executed: false };
+  }
+  const computedStateHash = sha256Hex(canonicalize(snapshotVector.state_snapshot));
+  if (computedStateHash !== auth.state_hash) {
+    return { status: 403, decision: "DENY", executed: false };
+  }
+
   switch (v.request.upstream_behavior) {
     case "success":
       return { status: 200, decision: "ALLOW", executed: true };

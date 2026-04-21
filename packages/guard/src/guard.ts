@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Authorization, AuthorizationV1, Intent, KeySet } from "@oxdeai/core";
-import { verifyDelegationChain, verifyAuthorization as strictVerifyAuthorization } from "@oxdeai/core";
+import { verifyDelegationChain, verifyAuthorization as strictVerifyAuthorization, intentHash } from "@oxdeai/core";
 import type { OxDeAIGuardConfig, ProposedAction, GuardDecisionRecord, GuardCallOptions } from "./types.js";
 import { defaultNormalizeAction } from "./normalizeAction.js";
 import { createInMemoryReplayStore } from "./replayStore.js";
@@ -351,6 +351,25 @@ export function OxDeAIGuard(config: OxDeAIGuardConfig) {
       const reasons =
         authResult.violations?.map((v) => v.code).join(", ") || authResult.status || "unknown reason";
       throw new OxDeAIAuthorizationError(`Authorization verification failed: ${reasons}. Execution blocked.`);
+    }
+
+    // ── 6d. Enforce intent_hash binding ──────────────────────────────────────
+    // Recompute the intent hash from the normalized intent and compare with the
+    // authorization artifact's committed intent_hash. This binds execution to
+    // exactly the verified canonical intent derived from the incoming action.
+    // Fail closed on any canonicalization error — no ambiguity is permissible.
+    let computedIntentHash: string;
+    try {
+      computedIntentHash = intentHash(intent);
+    } catch (err) {
+      throw new OxDeAIAuthorizationError(
+        `Intent canonicalization failed: ${err instanceof Error ? err.message : String(err)}. Execution blocked.`
+      );
+    }
+    if (computedIntentHash !== (authorization as AuthorizationV1).intent_hash) {
+      throw new OxDeAIAuthorizationError(
+        "Intent hash mismatch: computed hash does not match authorization.intent_hash. Execution blocked."
+      );
     }
 
     // ── 6c. Enforce state hash binding ────────────────────────────────────

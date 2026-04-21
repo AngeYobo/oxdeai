@@ -21,21 +21,26 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import type { Authorization, Intent, State } from "@oxdeai/core";
-import { stateSnapshotHash } from "@oxdeai/core";
+import { stateSnapshotHash, intentHash } from "@oxdeai/core";
 
 import { OxDeAIGuard } from "../guard.js";
 import { OxDeAIAuthorizationError } from "../errors.js";
 import { TEST_KEYSET, signAuth } from "./helpers/fixtures.js";
+import { defaultNormalizeAction } from "../normalizeAction.js";
 import type { OxDeAIGuardConfig, ProposedAction } from "../types.js";
 
 // ── shared fixtures ────────────────────────────────────────────────────────────
 
+// Fixed fields ensure defaultNormalizeAction is deterministic across calls.
 const ACTION: ProposedAction = {
   name: "transfer",
   args: { amount: 100 },
   estimatedCost: 0,
-  context: { agent_id: "agent-sb" },
+  timestampSeconds: 1_700_000_000,
+  context: { agent_id: "agent-sb", intent_id: "sb-fixed-intent-id", nonce: 1n },
 };
+// Pre-compute once so all signAuth calls can embed the correct intent_hash.
+const FIXED_INTENT_HASH = intentHash(defaultNormalizeAction(ACTION));
 
 function makeBaseState(): State {
   return {
@@ -95,6 +100,7 @@ test("SB-1 matching state_hash: execute runs and result is returned", async () =
     auth_id: "sb1-auth",
     audience: "aud-test",
     state_hash: stateSnapshotHash(state),
+    intent_hash: FIXED_INTENT_HASH,
   });
 
   const guard = OxDeAIGuard(makeGuardConfig(auth, state));
@@ -115,6 +121,7 @@ test("SB-2 mismatched state_hash: execute is blocked and OxDeAIAuthorizationErro
     auth_id: "sb2-auth",
     audience: "aud-test",
     state_hash: wrongHash,
+    intent_hash: FIXED_INTENT_HASH,
   });
 
   const guard = OxDeAIGuard(makeGuardConfig(auth, state));
@@ -169,6 +176,7 @@ test("SB-4 state that cannot be canonicalized: execute is blocked and OxDeAIAuth
     auth_id: "sb4-auth",
     audience: "aud-test",
     state_hash: stateSnapshotHash(state),
+    intent_hash: FIXED_INTENT_HASH,
   });
 
   // Introduce a circular reference so JSON.stringify throws inside stateSnapshotHash.
@@ -225,7 +233,7 @@ test("SB-5 determinism: stateSnapshotHash is stable and three guard runs with th
   // state_hash commitment, all produce ALLOW.
   const sharedHash = stateSnapshotHash(state);
   for (const [idx, authId] of (["sb5-run-a", "sb5-run-b", "sb5-run-c"] as const).entries()) {
-    const auth = signAuth({ auth_id: authId, audience: "aud-test", state_hash: sharedHash });
+    const auth = signAuth({ auth_id: authId, audience: "aud-test", state_hash: sharedHash, intent_hash: FIXED_INTENT_HASH });
     const guard = OxDeAIGuard(makeGuardConfig(auth, makeBaseState()));
     let ran = false;
     const res = await guard(ACTION, async () => { ran = true; return `run-${idx}`; });
@@ -243,6 +251,7 @@ test("SB-6 TOCTOU state mutation: state modified after authorization was issued 
     auth_id: "sb6-auth",
     audience: "aud-test",
     state_hash: stateSnapshotHash(authState),
+    intent_hash: FIXED_INTENT_HASH,
   });
 
   // By execution time, state has advanced (a payment was recorded).
@@ -285,6 +294,7 @@ test("SB-7 null execution state: computeStateHash throws and execution is blocke
     auth_id: "sb7-auth",
     audience: "aud-test",
     state_hash: stateSnapshotHash(validState),
+    intent_hash: FIXED_INTENT_HASH,
   });
 
   // Custom engine whose computeStateHash explicitly throws for null/undefined state.
@@ -345,6 +355,7 @@ test("SB-8 boundary integrity: state_hash mismatch blocks beforeExecute, execute
     auth_id: "sb8-auth",
     audience: "aud-test",
     state_hash: stateSnapshotHash(authState),
+    intent_hash: FIXED_INTENT_HASH,
   });
 
   const executionState = makeBaseState();

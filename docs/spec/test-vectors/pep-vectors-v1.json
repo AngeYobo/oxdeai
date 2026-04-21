@@ -4,14 +4,15 @@
   "vectors": [
     {
       "id": "pep-allow-upstream-success",
-      "description": "valid authorization, upstream returns success",
+      "description": "valid authorization with correct state binding, upstream returns success",
       "request": {
         "action": {
           "type": "EXECUTE",
           "tool": "payments.charge",
           "params": { "amount": "500", "currency": "USD", "user_id": "user_123" }
         },
-        "authorization_ref": "auth-allow-valid",
+        "authorization_ref": "sb-auth-allow-valid",
+        "state_snapshot_ref": "sb-auth-allow-valid",
         "upstream_behavior": "success"
       },
       "expected": {
@@ -65,7 +66,8 @@
           "tool": "payments.charge",
           "params": { "amount": "500", "currency": "USD", "user_id": "user_123" }
         },
-        "authorization_ref": "auth-allow-valid",
+        "authorization_ref": "sb-auth-allow-valid",
+        "state_snapshot_ref": "sb-auth-allow-valid",
         "upstream_behavior": "error"
       },
       "expected": {
@@ -83,11 +85,87 @@
           "tool": "payments.charge",
           "params": { "amount": "500", "currency": "USD", "user_id": "user_123" }
         },
-        "authorization_ref": "auth-allow-valid",
+        "authorization_ref": "sb-auth-allow-valid",
+        "state_snapshot_ref": "sb-auth-allow-valid",
         "upstream_behavior": "timeout"
       },
       "expected": {
         "status": 504,
+        "decision": "DENY",
+        "executed": false
+      }
+    },
+    {
+      "id": "pep-sb-state-mismatch",
+      "description": "state_hash in authorization does not match provided state_snapshot",
+      "request": {
+        "action": {
+          "type": "EXECUTE",
+          "tool": "payments.charge",
+          "params": { "amount": "500", "currency": "USD", "user_id": "user_123" }
+        },
+        "authorization_ref": "sb-auth-state-mismatch",
+        "state_snapshot_ref": "sb-auth-state-mismatch",
+        "upstream_behavior": "not_called"
+      },
+      "expected": {
+        "status": 403,
+        "decision": "DENY",
+        "executed": false
+      }
+    },
+    {
+      "id": "pep-sb-missing-state-snapshot",
+      "description": "valid authorization but request omits state_snapshot",
+      "request": {
+        "action": {
+          "type": "EXECUTE",
+          "tool": "payments.charge",
+          "params": { "amount": "500", "currency": "USD", "user_id": "user_123" }
+        },
+        "authorization_ref": "sb-auth-allow-valid",
+        "upstream_behavior": "not_called"
+      },
+      "expected": {
+        "status": 403,
+        "decision": "DENY",
+        "executed": false
+      }
+    },
+    {
+      "id": "pep-auth-forged-valid-hashes",
+      "description": "forged authorization: intent_hash and state_hash match the request but signature is invalid — gateway must deny",
+      "request": {
+        "action": {
+          "type": "EXECUTE",
+          "tool": "payments.charge",
+          "params": { "amount": "500", "currency": "USD", "user_id": "user_123" }
+        },
+        "authorization_ref": "pep-auth-forged",
+        "state_snapshot_ref": "pep-auth-forged",
+        "upstream_behavior": "not_called"
+      },
+      "expected": {
+        "status": 403,
+        "decision": "DENY",
+        "executed": false
+      }
+    },
+    {
+      "id": "pep-sb-missing-auth-state-hash",
+      "description": "authorization missing state_hash field",
+      "request": {
+        "action": {
+          "type": "EXECUTE",
+          "tool": "payments.charge",
+          "params": { "amount": "500", "currency": "USD", "user_id": "user_123" }
+        },
+        "authorization_ref": "sb-auth-missing-state-hash",
+        "state_snapshot_ref": "sb-auth-missing-state-hash",
+        "upstream_behavior": "not_called"
+      },
+      "expected": {
+        "status": 403,
         "decision": "DENY",
         "executed": false
       }

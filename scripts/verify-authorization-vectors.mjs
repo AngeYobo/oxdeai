@@ -33,13 +33,19 @@ function load() {
   return JSON.parse(readFileSync(file, "utf8"));
 }
 
-function verifyAuth(auth, keys, expectedIntentHash) {
+function verifyAuth(auth, keys, expectedIntentHash, stateSnapshot) {
   if (auth.version !== "AuthorizationV1") return { decision: "DENY", error: "VERSION_MISMATCH" };
   if (auth.decision !== "ALLOW") return { decision: "DENY", error: "DECISION_DENY" };
   const now = 1712448050; // fixed for determinism
   if (auth.expiry <= now) return { decision: "DENY", error: "EXPIRED" };
   if (expectedIntentHash && auth.intent_hash !== expectedIntentHash) {
     return { decision: "DENY", error: "INTENT_HASH_MISMATCH" };
+  }
+
+  if (stateSnapshot !== undefined) {
+    if (!auth.state_hash) return { decision: "DENY", error: "STATE_HASH_MISSING" };
+    const computedStateHash = sha256Hex(canonicalize(stateSnapshot));
+    if (auth.state_hash !== computedStateHash) return { decision: "DENY", error: "STATE_HASH_MISMATCH" };
   }
 
   const { signature, ...rest } = auth;
@@ -61,7 +67,7 @@ function main() {
   let failed = 0;
 
   for (const v of vectors) {
-    const result = verifyAuth(v.artifact, keys, baseIntentHash);
+    const result = verifyAuth(v.artifact, keys, baseIntentHash, v.state_snapshot);
     const pass =
       result.decision === v.expected.decision &&
       ((result.error === null && v.expected.error === null) || result.error === v.expected.error);

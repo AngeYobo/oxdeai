@@ -27,7 +27,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import type { Authorization, Intent, State } from "@oxdeai/core";
-import { stateSnapshotHash } from "@oxdeai/core";
+import { stateSnapshotHash, intentHash } from "@oxdeai/core";
 
 import { OxDeAIGuard } from "../guard.js";
 import {
@@ -35,16 +35,22 @@ import {
   OxDeAIConflictError,
 } from "../errors.js";
 import { TEST_KEYSET, signAuth } from "./helpers/fixtures.js";
+import { defaultNormalizeAction } from "../normalizeAction.js";
 import type { OxDeAIGuardConfig, ProposedAction, StateVersion } from "../types.js";
 
 // ── Fixtures ───────────────────────────────────────────────────────────────────
 
+// Fixed fields make defaultNormalizeAction deterministic so the intent_hash
+// can be pre-computed and embedded in every signAuth call that needs to reach
+// the CAS step or succeed.
 const ACTION: ProposedAction = {
   name: "transfer",
   args: { amount: 100 },
   estimatedCost: 0,
-  context: { agent_id: "agent-cas" },
+  timestampSeconds: 1_700_000_000,
+  context: { agent_id: "agent-cas", intent_id: "cas-fixed-intent-id", nonce: 1n },
 };
+const FIXED_INTENT_HASH = intentHash(defaultNormalizeAction(ACTION));
 
 function makeBaseState(): State {
   return {
@@ -117,6 +123,7 @@ test("CAS-1 matching version: execution allowed and setState is called with the 
     auth_id: "cas1-auth",
     audience: "aud-test",
     state_hash: stateSnapshotHash(state),
+    intent_hash: FIXED_INTENT_HASH,
   });
 
   const store = makeCasStore(state, 0);
@@ -157,6 +164,7 @@ test("CAS-2 concurrent write advances version before commit: OxDeAIConflictError
     auth_id: "cas2-auth",
     audience: "aud-test",
     state_hash: stateSnapshotHash(state),
+    intent_hash: FIXED_INTENT_HASH,
   });
 
   const store = makeCasStore(state, 0);
@@ -214,8 +222,8 @@ test("CAS-3 concurrent double-execution: second guard call is denied when versio
   const stateHash = stateSnapshotHash(state);
 
   // Two separate auth_ids so replay detection doesn't interfere.
-  const auth1 = signAuth({ auth_id: "cas3-auth-a", audience: "aud-test", state_hash: stateHash });
-  const auth2 = signAuth({ auth_id: "cas3-auth-b", audience: "aud-test", state_hash: stateHash });
+  const auth1 = signAuth({ auth_id: "cas3-auth-a", audience: "aud-test", state_hash: stateHash, intent_hash: FIXED_INTENT_HASH });
+  const auth2 = signAuth({ auth_id: "cas3-auth-b", audience: "aud-test", state_hash: stateHash, intent_hash: FIXED_INTENT_HASH });
 
   const store = makeCasStore(state, 0);
 
@@ -335,7 +343,7 @@ test("CAS-4 missing version from store: OxDeAIAuthorizationError thrown (fail-cl
 test("CAS-5 CAS failure: engine's nextState not committed, beforeExecute and execute never called", async () => {
   const state = makeBaseState();
   const stateHash = stateSnapshotHash(state);
-  const auth = signAuth({ auth_id: "cas5-auth", audience: "aud-test", state_hash: stateHash });
+  const auth = signAuth({ auth_id: "cas5-auth", audience: "aud-test", state_hash: stateHash, intent_hash: FIXED_INTENT_HASH });
 
   const store = makeCasStore(state, 0);
   let beforeExecuteCalled = false;
@@ -422,6 +430,7 @@ test("CAS-6 determinism: identical inputs produce identical outcomes across inde
     auth_id: "cas6-auth",
     audience: "aud-test",
     state_hash: canonicalStateHash,
+    intent_hash: FIXED_INTENT_HASH,
   });
 
   const engine = makeFakeEngine(auth);
