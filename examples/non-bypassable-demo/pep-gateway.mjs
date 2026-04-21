@@ -3,13 +3,34 @@
 // Enforces intent binding, replay protection, and upstream secret isolation.
 
 import { createServer, request } from "node:http";
-import { createHash } from "node:crypto";
+import { createHash, verify } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const PORT = Number(process.env.PORT || 8787);
 const AUDIENCE = process.env.GATEWAY_AUDIENCE || "pep-gateway.local";
 const UPSTREAM_TOKEN = process.env.UPSTREAM_EXECUTOR_TOKEN;
 const UPSTREAM_PORT = 8788;
 const REPLAY_CACHE = new Set();
+
+// --- Trusted public keys (loaded once at startup) ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const KEYS_FILE =
+  process.env.TRUSTED_KEYS_FILE ||
+  resolve(__dirname, "../../docs/spec/test-vectors/authorization-v1.json");
+
+let TRUSTED_KEYS;
+try {
+  const fixture = JSON.parse(readFileSync(KEYS_FILE, "utf8"));
+  TRUSTED_KEYS = fixture.keys;
+  if (!Array.isArray(TRUSTED_KEYS) || TRUSTED_KEYS.length === 0)
+    throw new Error("no keys array found in fixture");
+} catch (err) {
+  console.error(`[pep-gateway] failed to load trusted keys from ${KEYS_FILE}: ${err.message}`);
+  process.exit(1);
+}
 
 if (!UPSTREAM_TOKEN) {
   console.error("[pep-gateway] missing required env UPSTREAM_EXECUTOR_TOKEN");
@@ -80,6 +101,43 @@ function verifyRequest(payload) {
   if (!isFutureUnix(authorization.expiry)) return [false, "authorization expired or invalid"];
   if (authorization.audience !== AUDIENCE) return [false, "audience mismatch"];
 
+  // Signature verification — fail closed, runs before all hash checks
+  const { signature } = authorization;
+  if (
+    !signature ||
+    typeof signature.kid !== "string" ||
+    typeof signature.alg !== "string" ||
+    typeof signature.sig !== "string"
+  ) {
+    return [false, "authorization signature missing or malformed"];
+  }
+  const trustedKey = TRUSTED_KEYS.find(
+    (k) => k.kid === signature.kid && k.alg === signature.alg
+  );
+  if (!trustedKey) return [false, `unknown kid: ${signature.kid}`];
+  // Preimage: canonical form of the authorization artifact with the signature block removed.
+  // Top-level alg and kid fields remain — only the nested signature object is excluded,
+  // matching the convention used when the authorization was issued.
+  const { signature: _sig, ...authPayload } = authorization;
+  let authCanonical;
+  try {
+    authCanonical = canonicalize(authPayload);
+  } catch (err) {
+    return [false, `authorization canonicalization failed: ${err.message}`];
+  }
+  let sigValid;
+  try {
+    sigValid = verify(
+      null,
+      Buffer.from(authCanonical, "utf8"),
+      trustedKey.public_key_pem,
+      Buffer.from(signature.sig, "base64")
+    );
+  } catch (err) {
+    return [false, `signature verification error: ${err.message}`];
+  }
+  if (!sigValid) return [false, "invalid authorization signature"];
+
   let canonical;
   try {
     canonical = canonicalize(action);
@@ -88,6 +146,19 @@ function verifyRequest(payload) {
   }
   const intentHash = sha256Hex(canonical);
   if (authorization.intent_hash !== intentHash) return [false, "intent hash mismatch"];
+
+  // State binding (fail-closed: missing state_hash or snapshot → DENY, hash mismatch → DENY)
+  if (!authorization.state_hash) return [false, "authorization missing state_hash"];
+  const { state_snapshot } = payload || {};
+  if (!state_snapshot) return [false, "missing state_snapshot: state cannot be verified"];
+  let computedStateHash;
+  try {
+    computedStateHash = sha256Hex(canonicalize(state_snapshot));
+  } catch (err) {
+    return [false, `state canonicalization failed: ${err.message}`];
+  }
+  if (computedStateHash !== authorization.state_hash) return [false, "state hash mismatch"];
+
   return [true, null, { canonical, intentHash, authId: authorization.auth_id }];
 }
 
