@@ -5,5 +5,14 @@
     "moderate": "require_exception",
     "low": "warn"
   },
-  "exceptions": []
+  "exceptions": [
+    {
+      "id": 1116970,
+      "package": "uuid",
+      "severity": "moderate",
+      "scope": "examples/langgraph",
+      "reason": "Transitive via langsmith/langgraph; no effective upstream fix available in current dependency graph",
+      "expires_on": "2026-06-01"
+    }
+  ]
 }
