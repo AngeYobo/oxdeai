@@ -1,10 +1,9 @@
 # @oxdeai/core
-Execution-time authorization protocol (ETA) — non-bypassable execution boundary.
+Execution-time authorization protocol (ETA) - non-bypassable execution boundary.
 Deterministic decision: (intent, state, policy) → ALLOW | DENY, emits AuthorizationV1 artifacts.
 Fail-closed verification at the PEP; no valid authorization → no execution path.
 
 [![npm version](https://img.shields.io/npm/v/@oxdeai/core.svg)](https://www.npmjs.com/package/@oxdeai/core)
-[![Snyk](https://snyk.io/test/github/AngeYobo/oxdeai-core/badge.svg)](https://snyk.io/test/github/AngeYobo/oxdeai-core)
 [![license](https://img.shields.io/npm/l/@oxdeai/core.svg)](https://github.com/AngeYobo/oxdeai-core/blob/main/packages/core/LICENSE)
 [![build](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml/badge.svg)](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml)
 
@@ -85,7 +84,9 @@ if (decision.decision === "ALLOW") {
 
 `@oxdeai/core` is a stable protocol library.
 
-Current protocol stack line: **v1.7.x**.
+Release policy note: OxDeAI uses package-scoped versions and package-scoped tags. `@oxdeai/core` has its own package version line; coordinated release commits do not imply shared package versions across `core`, `sdk`, or `conformance`. See [`docs/release/RELEASE.md`](../../docs/release/RELEASE.md).
+
+Current `@oxdeai/core` package line: **1.7.x**.
 
 v1.7.x adds on top of the preserved v1.6.x verification surface:
 

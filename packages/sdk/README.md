@@ -4,7 +4,9 @@ Builds intents/states and guard boundaries that remain non-bypassable and fail-c
 
 ## Status
 
-Current protocol stack line: `@oxdeai/core@1.6.1`, `@oxdeai/sdk@1.3.2`, `@oxdeai/conformance@1.4.0`.
+Release policy note: OxDeAI uses package-scoped versions and package-scoped tags. `@oxdeai/sdk` has its own package version line; coordinated release commits do not imply shared package versions across `core`, `sdk`, or `conformance`. See [`docs/release/RELEASE.md`](../../docs/release/RELEASE.md).
+
+Current `@oxdeai/sdk` package line: `1.3.x`.
 
 The SDK is an integration surface and does not redefine protocol semantics.
 

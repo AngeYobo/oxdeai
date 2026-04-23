@@ -1,5 +1,9 @@
 # OxDeAI v1.3 — Stable Execution Authorization Protocol
 
+## Status
+
+Historical announcement draft. This file is not release policy and must not be used as a release runbook.
+
 OxDeAI is now Stable: deterministic execution authorization with cross-language verification. Canonicalization, authorization, PEP, and delegation vectors are published and verified.
 
 ## The Gap

@@ -4,6 +4,8 @@
 
 Non-normative (developer documentation)
 
+Historical release note. This file is not current release policy and must not be used as a release runbook. Current release policy is package-scoped and lives in [`docs/release/RELEASE.md`](../release/RELEASE.md).
+
 
 
 
