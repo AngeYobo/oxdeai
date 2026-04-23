@@ -25,6 +25,7 @@
     "tags:audit": "node scripts/audit-tags.mjs",
     "tags:cleanup:dry": "node scripts/cleanup-legacy-tags.mjs",
     "tags:cleanup:local": "node scripts/cleanup-legacy-tags.mjs --apply-local --confirm=DELETE_LEGACY_TAGS",
+    "release:preflight": "node scripts/release-preflight.mjs",
     "regen:vectors": "tsx scripts/generate-canonicalization-vectors.ts",
     "test:vectors": "pnpm test:vectors:ts",
     "test:vectors:ts": "tsx scripts/verify-canonicalization-vectors.ts",
@@ -36,11 +37,11 @@
     "test:vectors:all": "pnpm test:vectors:ts && pnpm test:vectors:auth && pnpm test:vectors:pep && pnpm test:vectors:delegation && pnpm test:vectors:go && pnpm test:vectors:py"
   },
   "devDependencies": {
+    "@oxdeai/core": "workspace:*",
     "@types/node": "^22.19.11",
     "puppeteer": "^24.40.0",
-    "typescript": "^5.6.0",
-    "@oxdeai/core": "workspace:*",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "typescript": "^5.6.0"
   },
   "pnpm": {
     "overrides": {
@@ -51,5 +52,6 @@
       "basic-ftp": ">=5.3.0"
     }
   },
-  "type": "module"
+  "type": "module",
+  "uuid": "14.0.0"
 }

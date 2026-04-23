@@ -1,138 +1,243 @@
-# OxDeAI v1.0.2 Release Checklist
+# OxDeAI Package Release Checklist
 
 ## Status
 
-Non-normative (developer documentation)
+Normative release checklist.
 
+Use this checklist with `docs/release/RELEASE.md` and `docs/release/RELEASING.md`.
 
+OxDeAI uses package-scoped versions and package-scoped tags. Do not create global `vX.Y.Z` tags for normal package releases.
 
+## 1. Identify Release Scope
 
+List every package being released:
 
+```text
+package name:
+package path:
+current package.json version:
+new package.json version:
+release tag:
+changelog path:
+npm package:
+```
 
-Use this checklist for protocol-grade releases in the `1.0.x` line.
+The release tag must be package-scoped:
 
-## 1) API Extractor Baseline Update
+```text
+core-vX.Y.Z
+sdk-vX.Y.Z
+conformance-vX.Y.Z
+guard-vX.Y.Z
+cli-vX.Y.Z
+```
 
-Run:
+For coordinated releases, repeat the mapping for every package. Multiple tags may point to the same commit, but package versions remain independent.
+
+## 2. Preflight
+
+```bash
+git fetch origin --tags --prune
+git status -sb
+pnpm tags:audit
+pnpm release:preflight --package <package-short-name>
+npm whoami
+gh auth status
+```
+
+The working tree must be clean before tagging or publishing.
+
+Run the npm-aware preflight immediately before publication:
+
+```bash
+pnpm release:preflight --package <package-short-name> --check-npm
+```
+
+The preflight fails closed on ambiguous package names, tag mismatches, existing tags, missing changelog entries, dirty worktrees, and npm version conflicts.
+
+Check current npm versions:
+
+```bash
+npm view @oxdeai/core version --registry=https://registry.npmjs.org
+npm view @oxdeai/sdk version --registry=https://registry.npmjs.org
+npm view @oxdeai/conformance version --registry=https://registry.npmjs.org
+npm view @oxdeai/guard version --registry=https://registry.npmjs.org
+npm view @oxdeai/cli version --registry=https://registry.npmjs.org
+```
+
+## 3. Version and Changelog
+
+For each released package:
+
+1. Bump only that package's `package.json` version.
+2. Refresh `pnpm-lock.yaml` if the version bump changes the lockfile.
+3. Update that package's changelog.
+4. Include security, breaking-change, migration, and compatibility notes where applicable.
+
+Do not infer a shared version line from a coordinated release commit.
+
+## 4. Baselines and Vectors
+
+For `@oxdeai/core` API changes:
 
 ```bash
 pnpm -C packages/core api:report
+pnpm -C packages/core api:fingerprint
 pnpm -C packages/core api:check
+pnpm -C packages/core api:fingerprint:check
 ```
 
-If `api:check` reports signature drift and the change is intentional:
+If API drift is intentional, review and update the committed baseline files. Do not commit generated temp output unless the package's API process explicitly requires it.
 
-```bash
-cp packages/core/temp/core.api.md packages/core/etc/core.api.md
-pnpm -C packages/core api:check
-```
-
-Then commit baseline updates with rationale in PR notes.
-
-## 2) Conformance Vector Update Rules
-
-Rules:
-
-- Vectors are frozen per protocol version.
-- Do not regenerate vectors for the same version unless fixing an incorrect vector.
-- Behavior-changing outputs require a new version baseline.
-
-Commands:
+For conformance vector changes:
 
 ```bash
 pnpm -C packages/conformance extract
 pnpm -C packages/conformance validate
 ```
 
-Expected success line:
+Vector changes must be intentional and documented in the relevant changelog or release notes.
 
-```text
-Conformance passed: <N> assertions
-```
+## 5. Required Gates
 
-## 3) Version Bump (Workspace)
-
-For a coordinated patch bump:
-
-1. Update versions in:
-   - `packages/core/package.json`
-   - `packages/sdk/package.json`
-   - `packages/conformance/package.json`
-2. Keep workspace pins for local monorepo development where intended.
-3. Refresh lockfile:
-
-```bash
-pnpm install --no-frozen-lockfile
-```
-
-4. Update changelog entries before tagging.
-
-## 4) Determinism + Invariant Test Gates
-
-Run full quality gates:
+Repository-wide gates:
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm build
 pnpm test
+```
+
+Package-specific gates:
+
+```bash
 pnpm -C packages/core api:check
 pnpm -C packages/core api:fingerprint:check
 pnpm -C packages/conformance validate
+pnpm -C packages/guard test
 ```
 
-All commands MUST pass before release tag/publish.
+Run only the package-specific gates that apply to the packages being released, plus any affected smoke tests.
 
-## 5) End-to-End Envelope Generation + Verification
+All required gates must pass before tag creation and npm publication.
 
-Example using CLI (from repo root):
+## 6. Optional CLI Smoke
+
+Run this when releasing `@oxdeai/cli` or when changes affect envelope generation/verification:
 
 ```bash
-# create a valid initial state file first (example path shown)
 pnpm -C packages/cli start -- init --file /tmp/oxdeai-policy.json --json
 pnpm -C packages/cli start -- launch PROVISION 320 us-east-1 --agent agent-1 --nonce 1 --json
-
-# build artifacts
 pnpm -C packages/cli start -- build --state .oxdeai/state.json --out .oxdeai/snapshot.bin --json
 pnpm -C packages/cli start -- make-envelope --out .oxdeai/envelope.bin --json
-
-# verify snapshot/audit/envelope
 pnpm -C packages/cli start -- verify --kind snapshot --file .oxdeai/snapshot.bin --json
 pnpm -C packages/cli start -- verify --kind audit --file .oxdeai/audit.ndjson --mode strict --json
 pnpm -C packages/cli start -- verify --kind envelope --file .oxdeai/envelope.bin --mode strict --json
 ```
 
-Notes:
+Strict mode may return `inconclusive` without `STATE_CHECKPOINT`; record that result if it occurs.
 
-- Strict mode may return `inconclusive` without `STATE_CHECKPOINT`.
-- Best-effort mode can be used for diagnostics.
+## 7. Commit and Tag
 
-## 6) Security Notes
-
-- v1.0.2 authorization verification in the reference profile uses shared-secret/HMAC.
-- Signing secrets MUST be managed in secure storage (KMS/HSM preferred).
-- Do not commit secrets, OTPs, or private key material.
-- Use environment-specific key isolation and rotation procedures.
-- Follow coordinated disclosure guidance in `SECURITY.md`.
-
-## 7) Tag + Publish Order
-
-After all gates pass:
+Commit release changes first:
 
 ```bash
-git tag vX.Y.Z
-git push origin main --tags
+git diff --stat
+git add <changed package.json files> <changed changelog files> pnpm-lock.yaml
+git commit -m "chore(release): <package> vX.Y.Z"
 ```
 
-Publish in dependency order:
-
-1. `@oxdeai/core`
-2. `@oxdeai/sdk`
-3. `@oxdeai/conformance`
-
-Verify on npm:
+Create package-scoped tags only:
 
 ```bash
-npm view @oxdeai/core version --registry=https://registry.npmjs.org
-npm view @oxdeai/sdk version --registry=https://registry.npmjs.org
-npm view @oxdeai/conformance version --registry=https://registry.npmjs.org
+git tag -a core-vX.Y.Z -m "core vX.Y.Z"
 ```
+
+For coordinated releases:
+
+```bash
+git tag -a core-vX.Y.Z -m "core vX.Y.Z"
+git tag -a sdk-vA.B.C -m "sdk vA.B.C"
+git tag -a conformance-vD.E.F -m "conformance vD.E.F"
+```
+
+Push:
+
+```bash
+git push origin main
+git push origin core-vX.Y.Z
+```
+
+For coordinated releases, push all package tags explicitly.
+
+## 8. Pack and Publish
+
+For each released package:
+
+```bash
+git show --no-patch --decorate <package-tag>
+pnpm -C <package-path> pack --pack-destination /tmp
+pnpm -C <package-path> publish --access public --registry=https://registry.npmjs.org
+```
+
+The npm package version must match the package's `package.json` version and package-scoped Git tag.
+
+## 9. Post-Publish Verification
+
+For each released package:
+
+```bash
+npm view <package-name> version --registry=https://registry.npmjs.org
+npm view <package-name>@<version> dist.tarball --registry=https://registry.npmjs.org
+git show --no-patch --decorate <package-tag>
+```
+
+Create or verify the GitHub release:
+
+```bash
+gh release view <package-tag>
+```
+
+If it does not exist:
+
+```bash
+gh release create <package-tag> --title "<package> vX.Y.Z" --notes-file <notes-file>
+```
+
+## 10. Release Artifact Mapping
+
+Record this mapping in the release notes or release issue:
+
+| Field | Value |
+|---|---|
+| package | |
+| package path | |
+| package.json version | |
+| Git tag | |
+| Git commit | |
+| changelog entry | |
+| npm package/version | |
+| npm tarball URL | |
+| GitHub release URL | |
+| validation commands | |
+
+For coordinated releases, include one row per package.
+
+## 11. Failure Recovery
+
+If tag creation fails, fix locally before pushing.
+
+If a tag was pushed but npm publish failed, do not move the tag. Publish from the tagged commit if package contents are unchanged. If contents must change, create a new package version and tag.
+
+If npm publish succeeded but GitHub release creation failed, create the GitHub release for the already published package tag.
+
+If a bad npm package was published, ship a new corrective version. Do not reuse the original version or move the original tag.
+
+## 12. Security Check
+
+Before publishing, confirm:
+
+- no secrets, OTPs, private keys, or production signing material are committed
+- test keys are clearly test-only
+- security-relevant changes are called out in changelog and GitHub release notes
+- disclosure-sensitive details follow `docs/security/SECURITY.md`

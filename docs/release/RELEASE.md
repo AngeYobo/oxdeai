@@ -2,170 +2,314 @@
 
 ## Status
 
-Non-normative (developer documentation)
+Normative maintainer policy.
 
+Last updated: 2026-04-22
 
+This document is the source of truth for OxDeAI release governance. `docs/release/RELEASING.md` is the executable runbook for this policy. Announcement files under `docs/release/` are communication drafts only and do not define release policy.
 
+## 1. Release Model
 
+OxDeAI uses package-scoped versions and package-scoped release tags.
 
+Each published package owns its own version line. A release of one package does not imply that any other package has the same version or must be published.
 
-Last updated: 2026-03-19
+Multiple package releases may be coordinated on the same Git commit. In that case, each released package still gets its own version, tag, changelog entry, npm publication, and GitHub release record.
 
-This document is the single source of truth for OxDeAI release governance and release execution.
+A coordinated release commit does not create a shared package version line.
 
-## 1. Scope
+## 2. Released Packages
 
-This policy covers:
+Currently released package tag prefixes:
 
-- protocol specifications and artifacts
-- release governance for published packages
-- versioning rules and breaking-change boundaries
-- release workflow, tagging, and provenance
-- validation and publication checks
+| npm package | package path | tag prefix |
+|---|---|---|
+| `@oxdeai/core` | `packages/core` | `core-vX.Y.Z` |
+| `@oxdeai/sdk` | `packages/sdk` | `sdk-vX.Y.Z` |
+| `@oxdeai/conformance` | `packages/conformance` | `conformance-vX.Y.Z` |
+| `@oxdeai/guard` | `packages/guard` | `guard-vX.Y.Z` |
+| `@oxdeai/cli` | `packages/cli` | `cli-vX.Y.Z` |
 
-Audience: maintainers, contributors, and auditors.
+Other packages in `packages/` must not be released publicly unless their package-scoped tag prefix, changelog requirement, validation gates, and npm publish target are added to this policy first.
 
-## 2. Package Groups
+Examples, demos, benchmarks, and internal tests do not define release status.
 
-Protocol stack packages (coordinated releases):
+## 3. Tag Policy
 
-- `@oxdeai/core`
-- `@oxdeai/sdk`
-- `@oxdeai/conformance`
+All new package releases must use package-scoped tags:
 
-Adapter packages (coordinated, independent version line from protocol stack):
+```text
+<package-prefix>-v<package.json version>
+```
 
-- `@oxdeai/guard`
-- `@oxdeai/langgraph`
-- `@oxdeai/openai-agents`
-- `@oxdeai/crewai`
-- `@oxdeai/autogen`
-- `@oxdeai/openclaw`
+Allowed active prefixes:
 
-Tooling package (independent release line):
+```text
+core-vX.Y.Z
+sdk-vX.Y.Z
+conformance-vX.Y.Z
+guard-vX.Y.Z
+cli-vX.Y.Z
+```
 
-- `@oxdeai/cli`
+Rules:
 
-Non-release packages for protocol versioning:
+- The tag version must exactly match the released package's `package.json` version.
+- The tag must point to the exact commit used for npm publication.
+- Prefer annotated tags. Sign tags with `-s` when maintainer signing is available.
+- Multiple package-scoped tags may point to the same commit.
+- A package-scoped tag must not be reused or moved after publication.
 
-- examples (for example `examples/openai-tools`, `examples/langgraph`)
-- internal tests (for example `@oxdeai/tests`)
+Global `vX.Y.Z` tags are legacy. Do not create new global `vX.Y.Z` tags for package releases.
 
-Examples and internal tests do not define protocol release status.
+Global tags may only be introduced for a separately documented compatibility bundle or top-level announcement. Such a bundle tag must not replace package-scoped release tags and must include an explicit manifest mapping package names, package versions, package tags, npm versions, and the Git commit.
 
-## 3. Versioning Policy
+Historical or suspicious prefixes such as `adapters-vX.Y.Z` must not be reused unless this policy is updated first.
 
-- The protocol stack (`core`, `sdk`, `conformance`) MUST move on a shared version line.
-- Protocol milestones and compatibility claims MUST map to the shared protocol stack version.
-- `@oxdeai/cli` MAY release independently until declared stable under the protocol-stack line.
-- Examples/tests MUST NOT be used as authoritative protocol version indicators.
+Historical documentation and changelog entries may mention coordinated global `vX.Y.Z` releases or shared protocol-stack version lines. Those entries explain past releases only. They are not current release policy.
 
-## 4. SemVer Rules (Protocol Stack)
+## 4. Versioning Rules
 
-### Patch (`1.0.x`)
+Each released package follows SemVer on its own version line.
 
-- MUST be backward compatible with prior `1.0.y`.
-- MUST NOT change protocol semantics:
-  - canonicalization
-  - hashing/signature binding
-  - envelope `formatVersion` behavior
-  - verification result semantics
-- MAY include:
-  - documentation clarifications
-  - schema validation tightening aligned to existing behavior
-  - CI/tooling hardening
-  - non-breaking fixes
+Patch releases should be backward compatible for that package.
 
-### Minor (`1.x.0`, `x > 0`)
+Minor releases may add backward-compatible features for that package.
 
-- Adds backward-compatible capabilities.
-- MUST preserve stable protocol artifacts from `1.0.0`.
+Major releases are required for breaking changes in that package's public API, protocol-facing behavior, or documented runtime semantics.
 
-### Major (`2.0.0+`)
+For protocol-facing packages, breaking changes include changes to:
 
-- Required for breaking protocol/API changes.
+- canonicalization behavior
+- hashing or signature binding
+- `AuthorizationV1` semantics
+- verification result semantics
+- PEP enforcement semantics
+- stable test-vector meaning
+- documented public API symbols
 
-## 5. What Is Breaking
+The current package-scoped model does not require `core`, `sdk`, and `conformance` to share one version number.
 
-The following require a major release:
+## 5. Coordinated Release Commits
 
-- Changing `VerificationResult` in a non-backward-compatible way
-- Changing `VerificationEnvelopeV1` wire semantics
-- Changing violation-code semantics used by stateless verifiers
-- Changing canonical hashing behavior for stable artifacts
-- Removing/renaming documented public API symbols
+Maintainers may release multiple packages from one commit when changes are intentionally coordinated.
 
-## 6. Tagging Policy
+For each package in a coordinated release:
 
-- Coordinated protocol stack releases MUST use repo tags `vX.Y.Z`.
-- Tags MUST point to the exact commit used for publication.
-- Package-specific tags are discouraged for coordinated protocol releases.
-- Tooling-only releases SHOULD use package-scoped tags to avoid protocol-tag ambiguity (for example `cli-v0.2.0`).
-- If package-specific tags are introduced, mapping rules to protocol tags MUST be documented first.
+- bump that package's `package.json` version
+- update that package's changelog
+- create that package's tag
+- publish that package to npm
+- create that package's GitHub release
+- verify that package's npm version
 
-## 7. Changelog Requirements
+Example: one commit may carry all of these tags:
 
-Every protocol stack release MUST be documented in:
+```text
+core-v1.7.0
+sdk-v1.3.2
+conformance-v1.5.0
+guard-v1.0.2
+```
+
+Those tags on one commit mean the releases were coordinated. They do not mean the packages share a version line.
+
+## 6. Changelog Requirements
+
+Every released package must have a changelog entry before tagging.
+
+Existing changelog paths:
 
 - `packages/core/CHANGELOG.md`
 - `packages/sdk/CHANGELOG.md`
 - `packages/conformance/CHANGELOG.md`
+- `packages/guard/CHANGELOG.md`
+- `packages/cli/CHANGELOG.md`
 
-Release notes MUST map npm versions to Git history (commit/tag references).
+The changelog entry must include:
 
-## 8. Required Validation Gates
+- package name
+- package version
+- release date
+- user-visible changes
+- security-relevant changes, if any
+- breaking changes, if any
+- migration notes, if needed
 
-All required gates MUST pass before protocol tagging/publication:
+If a package does not have a changelog, add one before its first public release and update this policy.
 
-1. `pnpm install --frozen-lockfile`
-2. `pnpm build`
-3. `pnpm test`
-4. `pnpm -C packages/core api:check`
-5. `pnpm -C packages/core api:fingerprint:check`
-6. `pnpm -C packages/conformance validate`
-7. Demo smoke checks when affected
+## 7. Required Validation Gates
 
-## 9. API Report / Fingerprint Baseline
+Run the release preflight before every public package release:
 
-Update API baselines only when API change is intentional and reviewed.
+```bash
+pnpm release:preflight --package <package-short-name>
+```
 
-1. Run:
-   - `pnpm -C packages/core api:report`
-   - `pnpm -C packages/core api:fingerprint`
-2. Review diffs:
-   - `packages/core/temp/core.api.md`
-   - `packages/core/etc/core.api.md`
-   - `packages/core/API_FINGERPRINT`
-3. If approved, update baselines in the same PR with rationale.
-4. Re-run `api:check` and `api:fingerprint:check`.
+Use `--check-npm` before publishing when network access is available:
 
-## 10. Release Workflow (Protocol Stack)
+```bash
+pnpm release:preflight --package <package-short-name> --check-npm
+```
 
-1. Ensure clean working tree.
-2. Bump `core`, `sdk`, and `conformance` to one target version.
-3. Update changelogs and release notes.
-4. Run required validation gates.
-5. Commit release changes.
-6. Create/push coordinated tag (`vX.Y.Z`).
-7. Publish packages in order:
-   - `@oxdeai/core`
-   - `@oxdeai/sdk`
-   - `@oxdeai/conformance`
-8. Verify published npm versions.
+Run the repository-wide gates before every public package release:
 
-If publication fails, resolve and retry from the same committed state, or cut a new patch release with explicit notes.
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm test
+```
 
-## 11. Security and Provenance
+Run package-specific gates for every package being released:
 
-- npm publication is immutable; Git tags/commits provide provenance context.
-- Published versions MUST correspond to committed and tagged repository state.
-- Post-release fixes MUST ship as new versions; published versions MUST NOT be rewritten.
-- Follow coordinated disclosure process in [SECURITY.md](../security/SECURITY.md).
-- Release notes MUST mention security-relevant changes.
-- Test signing material MUST be explicitly test-only and non-production.
+| Package | Required gates |
+|---|---|
+| `@oxdeai/core` | `pnpm -C packages/core api:check`; `pnpm -C packages/core api:fingerprint:check` |
+| `@oxdeai/sdk` | covered by repository-wide build/test unless package-specific gates are added |
+| `@oxdeai/conformance` | `pnpm -C packages/conformance validate` |
+| `@oxdeai/guard` | `pnpm -C packages/guard test` |
+| `@oxdeai/cli` | package build/test plus CLI smoke checks when CLI behavior changes |
 
-## 12. Future Evolution
+Run demos or smoke checks when the release changes demoed behavior, CLI flows, PEP enforcement, adapters, or public examples.
 
-Shared protocol-stack versioning is the current model.
+All required gates must pass before tags are created and before npm publication.
 
-If protocol package cadence diverges significantly, maintainers MAY adopt a new model. Any change MUST be documented here before use.
+## 8. API and Conformance Baselines
+
+Update baselines only when the underlying change is intentional and reviewed.
+
+For `@oxdeai/core` API changes:
+
+```bash
+pnpm -C packages/core api:report
+pnpm -C packages/core api:fingerprint
+pnpm -C packages/core api:check
+pnpm -C packages/core api:fingerprint:check
+```
+
+Review these files before committing baseline changes:
+
+- `packages/core/temp/core.api.md`
+- `packages/core/etc/core.api.md`
+- `packages/core/API_FINGERPRINT`
+
+Generated files under `temp/` are inspection outputs. Commit only the intended baseline files required by the package's API process.
+
+For conformance changes:
+
+```bash
+pnpm -C packages/conformance extract
+pnpm -C packages/conformance validate
+```
+
+Conformance vectors are protocol artifacts. Do not regenerate or edit vectors for a release unless the vector change is intentional, reviewed, and described in the changelog or release notes for the affected package.
+
+## 9. npm Publication Requirements
+
+Publish only from the committed and tagged state.
+
+Before publishing each package:
+
+```bash
+npm view <package-name> version --registry=https://registry.npmjs.org
+pnpm -C <package-path> pack --pack-destination /tmp
+```
+
+Inspect the package tarball when package contents changed.
+
+Publish with npm public registry targeting:
+
+```bash
+pnpm -C <package-path> publish --access public --registry=https://registry.npmjs.org
+```
+
+If npm provenance is required by the maintainer's environment, use the registry-supported provenance flag and document that in the release notes or release issue. Do not publish from an uncommitted or untagged state.
+
+After publishing:
+
+```bash
+npm view <package-name> version --registry=https://registry.npmjs.org
+npm view <package-name>@<version> dist.tarball --registry=https://registry.npmjs.org
+```
+
+The npm version must match the package's `package.json` and package-scoped Git tag.
+
+## 10. GitHub Release Requirements
+
+GitHub releases are required for public npm package releases.
+
+Create one GitHub release per package-scoped tag.
+
+The GitHub release must include:
+
+- package name
+- package version
+- Git tag
+- npm package/version
+- changelog summary or link
+- validation commands run
+- security notes, if any
+- compatibility notes, if any
+
+For coordinated releases, it is acceptable to create multiple GitHub releases pointing to tags on the same commit. A single top-level announcement may be added, but it does not replace the package-scoped GitHub releases.
+
+## 11. Failed Release and Partial Publish Recovery
+
+Git tags and npm publications are immutable release evidence.
+
+If a tag was created but npm publish did not occur:
+
+1. Do not move the tag if it was pushed.
+2. Fix only release-process issues that do not change package contents, then publish from the tagged commit.
+3. If package contents must change, create a new version and a new tag.
+
+If one package in a coordinated release publishes successfully and another fails:
+
+1. Do not unpublish or rewrite the successful package except under npm's emergency rules.
+2. Fix the failed package with a new version if package contents must change.
+3. Document the partial release and recovery in the failed package's changelog/GitHub release.
+4. Verify the final npm/GitHub/tag mapping after recovery.
+
+If a bad package was published:
+
+1. Publish a new corrective version.
+2. Mark the bad GitHub release with a warning.
+3. Do not move or reuse the original tag.
+
+## 12. Security and Provenance
+
+- Published versions must correspond to committed and tagged repository state.
+- Do not commit secrets, OTPs, private keys, or production signing material.
+- Test signing material must be clearly test-only.
+- Security-relevant changes must be mentioned in the package changelog and GitHub release.
+- Follow coordinated disclosure guidance in `docs/security/SECURITY.md`.
+
+## 13. Compatibility Bundles
+
+A compatibility bundle is optional and separate from package releases.
+
+Use a compatibility bundle only when maintainers need to announce that a set of independently versioned packages is known to work together.
+
+A compatibility bundle must include a manifest with:
+
+- bundle name
+- bundle date
+- Git commit
+- package names
+- package versions
+- package-scoped tags
+- npm package URLs or versions
+- validation commands run
+
+A compatibility bundle may use a global tag only if the manifest exists before the tag is created. The global tag must not be named in a way that implies shared package versions unless the manifest explicitly says so.
+
+## 14. Tag Hygiene
+
+Use:
+
+```bash
+pnpm tags:audit
+pnpm tags:cleanup:dry
+```
+
+Do not delete or rewrite remote release tags without maintainer approval and a written recovery note.
