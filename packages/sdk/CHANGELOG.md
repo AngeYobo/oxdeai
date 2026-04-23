@@ -7,6 +7,10 @@ This project follows Semantic Versioning.
 
 ---
 
+## 1.3.3
+
+- Fix package publish contents: exclude src and test artifacts from the published tarball.
+
 ## [1.3.2] - 2026-03-30
 
 ### Security
