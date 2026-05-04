@@ -131,10 +131,10 @@ All of that lives in `@oxdeai/guard`.
 
 ## See also
 
-- [OpenClaw demo README](https://github.com/AngeYobo/oxdeai/blob/main/examples/openclaw/README.md)
-- [Adapter reference architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapters/adapter-reference-architecture.md)
-- [Adapter stack release notes](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapters/adapter-stack-release-notes.md)
-- [Root README](https://github.com/AngeYobo/oxdeai/blob/main/README.md)
+- [OpenClaw demo README](https://github.com/oxdeai/oxdeai/blob/main/examples/openclaw/README.md)
+- [Adapter reference architecture](https://github.com/oxdeai/oxdeai/blob/main/docs/adapters/adapter-reference-architecture.md)
+- [Adapter stack release notes](https://github.com/oxdeai/oxdeai/blob/main/docs/adapters/adapter-stack-release-notes.md)
+- [Root README](https://github.com/oxdeai/oxdeai/blob/main/README.md)
 
 ---
 

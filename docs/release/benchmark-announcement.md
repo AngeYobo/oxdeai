@@ -150,7 +150,7 @@ Reproducible locally:
 pnpm -C bench run run -- --scenario=all --runs=5 --iterations=100000 --warmup=10000 --concurrency=1,4 --envelopeMode=both
 ```
 
-Repo: `github.com/AngeYobo/oxdeai-core`
+Repo: `github.com/oxdeai/oxdeai-core`
 
 ### Hacker News
 

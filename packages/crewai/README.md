@@ -144,7 +144,7 @@ and [`docs/testing/delegation-pbt.md`](../../docs/testing/delegation-pbt.md).
 
 ## See also
 
-- [CrewAI integration guide](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/crewai.md)
-- [Adapter stack architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/adapter-stack.md)
-- [Adapter reference architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapter-reference-architecture.md)
-- [Root README](https://github.com/AngeYobo/oxdeai/blob/main/README.md)
+- [CrewAI integration guide](https://github.com/oxdeai/oxdeai/blob/main/docs/integrations/crewai.md)
+- [Adapter stack architecture](https://github.com/oxdeai/oxdeai/blob/main/docs/integrations/adapter-stack.md)
+- [Adapter reference architecture](https://github.com/oxdeai/oxdeai/blob/main/docs/adapter-reference-architecture.md)
+- [Root README](https://github.com/oxdeai/oxdeai/blob/main/README.md)

@@ -4,8 +4,8 @@ Deterministic decision: (intent, state, policy) → ALLOW | DENY, emits Authoriz
 Fail-closed verification at the PEP; no valid authorization → no execution path.
 
 [![npm version](https://img.shields.io/npm/v/@oxdeai/core.svg)](https://www.npmjs.com/package/@oxdeai/core)
-[![license](https://img.shields.io/npm/l/@oxdeai/core.svg)](https://github.com/AngeYobo/oxdeai-core/blob/main/packages/core/LICENSE)
-[![build](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml/badge.svg)](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/@oxdeai/core.svg)](https://github.com/oxdeai/oxdeai-core/blob/main/packages/core/LICENSE)
+[![build](https://github.com/oxdeai/oxdeai-core/actions/workflows/ci.yml/badge.svg)](https://github.com/oxdeai/oxdeai-core/actions/workflows/ci.yml)
 
 **Package:** deterministic, fail-closed execution authorization layer that decides whether an agent action may execute *before* any side effect, emitting verifiable artifacts for allowed actions. Not an agent framework.
 
@@ -110,7 +110,7 @@ Preserved stateless verification surface (v1.2+):
 
 Validation status:
 
-- conformance suite: **continuously validated via CI** [![CI](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml/badge.svg)](https://github.com/AngeYobo/oxdeai-core/actions/workflows/ci.yml)
+- conformance suite: **continuously validated via CI** [![CI](https://github.com/oxdeai/oxdeai-core/actions/workflows/ci.yml/badge.svg)](https://github.com/oxdeai/oxdeai-core/actions/workflows/ci.yml)
 - working demos (all produce `ALLOW`, `ALLOW`, `DENY`, `verifyEnvelope() => ok`):
   - `examples/openai-tools` (protocol reference)
   - `examples/langgraph`
@@ -358,16 +358,16 @@ npm install @oxdeai/core
 
 ## Core Model
 
-![OxDeAI Core - Protocol Responsibilities](https://raw.githubusercontent.com/AngeYobo/oxdeai/main/docs/diagrams/core-model.svg)
+![OxDeAI Core - Protocol Responsibilities](https://raw.githubusercontent.com/oxdeai/oxdeai/main/docs/diagrams/core-model.svg)
 
 Diagram source/editing policy:
-- [`docs/diagrams/README.md`](https://github.com/AngeYobo/oxdeai/blob/main/docs/diagrams/README.md)
+- [`docs/diagrams/README.md`](https://github.com/oxdeai/oxdeai/blob/main/docs/diagrams/README.md)
 
 ---
 
 ## Trust Boundary
 
-![OxDeAI Trust Boundary](https://raw.githubusercontent.com/AngeYobo/oxdeai/main/docs/diagrams/trust-boundary.svg)
+![OxDeAI Trust Boundary](https://raw.githubusercontent.com/oxdeai/oxdeai/main/docs/diagrams/trust-boundary.svg)
 
 The core model shows **what the protocol decides** (deterministic authorization logic).
 This diagram shows **who is trusted to make that decision** (issuer model + verifier configuration).
@@ -738,12 +738,12 @@ Stateless verification layer for protocol artifacts.
 
 ## See also
 
-- [Root README](https://github.com/AngeYobo/oxdeai/blob/main/README.md)
-- [Architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/architecture.md)
-- [Why OxDeAI](https://github.com/AngeYobo/oxdeai/blob/main/docs/architecture/why-oxdeai.md)
-- [Adapter stack](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/adapter-stack.md)
-- [Integrations index](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/README.md)
-- [Conformance vectors](https://github.com/AngeYobo/oxdeai/blob/main/docs/conformance-vectors.md)
+- [Root README](https://github.com/oxdeai/oxdeai/blob/main/README.md)
+- [Architecture](https://github.com/oxdeai/oxdeai/blob/main/docs/architecture.md)
+- [Why OxDeAI](https://github.com/oxdeai/oxdeai/blob/main/docs/architecture/why-oxdeai.md)
+- [Adapter stack](https://github.com/oxdeai/oxdeai/blob/main/docs/integrations/adapter-stack.md)
+- [Integrations index](https://github.com/oxdeai/oxdeai/blob/main/docs/integrations/README.md)
+- [Conformance vectors](https://github.com/oxdeai/oxdeai/blob/main/docs/conformance-vectors.md)
 
 ## License
 

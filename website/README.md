@@ -1,6 +1,6 @@
 # OxDeAI Website
 
-Static, single-page technical site for [OxDeAI](https://github.com/AngeYobo/oxdeai).
+Static, single-page technical site for [OxDeAI](https://github.com/oxdeai/oxdeai).
 
 Plain HTML + CSS. No build step. No dependencies.
 

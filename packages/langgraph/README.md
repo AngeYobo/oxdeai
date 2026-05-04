@@ -166,7 +166,7 @@ and [`docs/testing/delegation-pbt.md`](../../docs/testing/delegation-pbt.md).
 
 ## See also
 
-- [LangGraph integration guide](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/langgraph.md)
-- [Adapter stack architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/integrations/adapter-stack.md)
-- [Adapter reference architecture](https://github.com/AngeYobo/oxdeai/blob/main/docs/adapter-reference-architecture.md)
-- [Root README](https://github.com/AngeYobo/oxdeai/blob/main/README.md)
+- [LangGraph integration guide](https://github.com/oxdeai/oxdeai/blob/main/docs/integrations/langgraph.md)
+- [Adapter stack architecture](https://github.com/oxdeai/oxdeai/blob/main/docs/integrations/adapter-stack.md)
+- [Adapter reference architecture](https://github.com/oxdeai/oxdeai/blob/main/docs/adapter-reference-architecture.md)
+- [Root README](https://github.com/oxdeai/oxdeai/blob/main/README.md)

@@ -1,6 +1,6 @@
 # OxDeAI
 
-[![CI](https://github.com/AngeYobo/oxdeai/actions/workflows/ci.yml/badge.svg)](https://github.com/AngeYobo/oxdeai/actions/workflows/ci.yml)
+[![CI](https://github.com/oxdeai/oxdeai/actions/workflows/ci.yml/badge.svg)](https://github.com/oxdeai/oxdeai/actions/workflows/ci.yml)
 
 Non-bypassable execution authorization for AI agents.
 
@@ -239,7 +239,7 @@ The gate can emit a **verifiable decision artifact** (integrity proof).
 **Prereqs:** Node.js 20+, pnpm 9+
 
 ```bash
-git clone https://github.com/AngeYobo/oxdeai.git
+git clone https://github.com/oxdeai/oxdeai.git
 cd oxdeai
 pnpm install
 pnpm build
