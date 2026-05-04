@@ -177,6 +177,10 @@ export function receiptToAuthorization(
     // ── 7. Intent hash ───────────────────────────────────────────────────────
     // Computed with Sift-canonical JSON (ensure_ascii=True) so that the PEP
     // can independently recompute the hash from the same intent object.
+    //
+    // PARAMETER BINDING: intent_hash commits to the adapter-supplied params
+    // (carried in `intent`), NOT to the params that Sift evaluated.  Sift
+    // receipts do not include parameter values.  See normalizeIntent JSDoc.
     let intentHash: string;
     try {
       intentHash = siftCanonicalJsonHash(intent);

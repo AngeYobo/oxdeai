@@ -38,10 +38,28 @@ const RFC8037_D    = "nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A";
 const RFC8037_X    = "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo";
 const RFC8037_KID  = "key-rfc8037";
 
+// ─── alg literal disambiguation ───────────────────────────────────────────────
+//
+// TWO DISTINCT SURFACES — MUST NOT BE CONFLATED:
+//
+//   "EdDSA"   — JWKS metadata label (RFC 8037 §2, OKP key-discovery tooling).
+//               Appears in the JWKS entry: { "kty": "OKP", "alg": "EdDSA", ... }
+//               It is NEVER included in an AuthorizationV1 signed payload.
+//
+//   "ed25519" — Runtime literal included in the AuthorizationV1 signing payload.
+//               Defined in AuthorizationV1Payload.signature.alg as the literal
+//               type "ed25519" (lowercase). MUST appear verbatim in the preimage.
+//
+// Consequence: changing "ed25519" to "EdDSA" in the signing payload produces
+// different canonical bytes → a different signature → PEP verification fails.
+// There is no normalization or case-folding of the alg field.
+// See regression tests C-A and C-B at the bottom of this file.
+
 // ─── Worked example: AuthorizationV1 signing payload ─────────────────────────
 //
 // This is the exact object that would be handed to the signer.
 // signature.sig is absent — that absence is the signing preimage contract.
+// signature.alg MUST be "ed25519" (the runtime literal, lowercase).
 // All string values are ASCII so the ensure_ascii pass is a no-op here;
 // the ensure_ascii tests below use separate non-ASCII payloads.
 
@@ -57,7 +75,7 @@ const EXAMPLE_SIGNING_PAYLOAD = {
   issued_at:   1700000000,
   expires_at:  1700000030,
   signature: {
-    alg: "EdDSA",
+    alg: "ed25519",   // runtime literal (lowercase) — NOT the JWKS "EdDSA" label
     kid: RFC8037_KID,
   },
 } as const;
@@ -85,7 +103,7 @@ const EXPECTED_CANONICAL_JSON =
   '"issued_at":1700000000,' +
   '"issuer":"sift.example.local",' +
   '"policy_id":"policy-v1",' +
-  '"signature":{"alg":"EdDSA","kid":"key-rfc8037"},' +
+  '"signature":{"alg":"ed25519","kid":"key-rfc8037"},' +
   '"state_hash":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",' +
   '"version":"1"}';
 
@@ -302,5 +320,85 @@ test("contract-vector: correct preimage fails with wrong public key", () => {
     nodeVerify(null, preimage, wrongPub, sig),
     false,
     "Verification should fail with an unrelated public key"
+  );
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// C-A / C-B  alg-literal regression — ed25519 vs EdDSA
+//
+// These tests lock in the invariant that the alg field is included verbatim in
+// the canonical bytes and that its exact casing determines the signature.
+//
+// C-A (must pass): alg="ed25519" (production literal) → sign → verify → OK
+// C-B (must fail): sign over alg="EdDSA" bytes, verify against alg="ed25519"
+//                  bytes → FAIL because the preimages are different byte strings
+//
+// "EdDSA" is the JWKS metadata label (RFC 8037 OKP key-discovery).
+// "ed25519" is the runtime literal in AuthorizationV1.signature.alg.
+// They MUST NOT be conflated. There is no normalization or case-folding.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+test("C-A [regression]: alg=\"ed25519\" in signing payload produces a verifiable signature", () => {
+  // EXAMPLE_SIGNING_PAYLOAD.signature.alg === "ed25519" (the production runtime literal).
+  // This is the correct canonical preimage for AuthorizationV1.
+  const privKey  = privateKeyFromB64U(RFC8037_D);
+  const pubKey   = publicKeyFromB64U(RFC8037_X);
+  const preimage = toUtf8(canonicalJsonEnsureAscii(EXAMPLE_SIGNING_PAYLOAD));
+  const sig      = nodeSign(null, preimage, privKey);
+
+  assert.ok(
+    nodeVerify(null, preimage, pubKey, sig),
+    'alg="ed25519" (runtime literal) MUST produce a verifiable signature'
+  );
+
+  // Confirm the alg field appears verbatim as "ed25519" in the canonical bytes.
+  const canonicalStr = canonicalJsonEnsureAscii(EXAMPLE_SIGNING_PAYLOAD);
+  assert.ok(
+    canonicalStr.includes('"alg":"ed25519"'),
+    `Canonical preimage MUST contain "alg":"ed25519" verbatim. Got: ${canonicalStr}`
+  );
+  assert.ok(
+    !canonicalStr.includes('"alg":"EdDSA"'),
+    `Canonical preimage MUST NOT contain "alg":"EdDSA" in any form`
+  );
+});
+
+test("C-B [regression]: signature over alg=\"EdDSA\" preimage MUST NOT verify against alg=\"ed25519\" preimage", () => {
+  // Construct the WRONG payload that a misimplemented language adapter would produce:
+  // using the JWKS metadata label "EdDSA" instead of the runtime literal "ed25519".
+  // Spreading EXAMPLE_SIGNING_PAYLOAD and overriding signature.alg is the safest
+  // way to produce the wrong variant without modifying the shared constant.
+  const wrongPayload = {
+    ...EXAMPLE_SIGNING_PAYLOAD,
+    signature: {
+      alg: "EdDSA",       // WRONG — JWKS label, not the runtime literal
+      kid: RFC8037_KID,
+    },
+  };
+
+  const privKey         = privateKeyFromB64U(RFC8037_D);
+  const pubKey          = publicKeyFromB64U(RFC8037_X);
+
+  // Sign over the WRONG preimage (EdDSA bytes).
+  const wrongPreimage   = toUtf8(canonicalJsonEnsureAscii(wrongPayload));
+  const sigOverWrong    = nodeSign(null, wrongPreimage, privKey);
+
+  // The CORRECT production preimage uses the "ed25519" literal.
+  const correctPreimage = toUtf8(canonicalJsonEnsureAscii(EXAMPLE_SIGNING_PAYLOAD));
+
+  // The two preimages MUST be byte-distinct — "EdDSA" ≠ "ed25519".
+  assert.notDeepStrictEqual(
+    wrongPreimage,
+    correctPreimage,
+    'Preimage with alg="EdDSA" and preimage with alg="ed25519" MUST differ'
+  );
+
+  // A signature computed over the EdDSA preimage MUST NOT verify against the
+  // ed25519 preimage.  This is the cross-language breakage that would occur if
+  // an adapter used the wrong literal.
+  assert.strictEqual(
+    nodeVerify(null, correctPreimage, pubKey, sigOverWrong),
+    false,
+    'Signature over alg="EdDSA" preimage MUST NOT verify against alg="ed25519" preimage'
   );
 });

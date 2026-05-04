@@ -147,6 +147,21 @@ function normalizeValue(value: unknown, path: string): NormalizeOk | NormalizeEr
  * explicit params — a receipt alone is never sufficient to construct an
  * executable intent.
  *
+ * PARAMETER BINDING GUARANTEE (read before use):
+ *   Sift receipts do NOT include or cryptographically bind parameter values.
+ *   The `intent_hash` computed downstream (in receiptToAuthorization) commits
+ *   to the params supplied HERE by the caller — NOT to the params that Sift
+ *   evaluated when it issued the receipt.
+ *
+ *   Therefore: Sift provides action-level authorization (tool identity +
+ *   policy match), NOT parameter-level cryptographic binding.  A mismatch
+ *   between the params Sift evaluated and the params the adapter supplies is
+ *   NOT detectable from the receipt alone.
+ *
+ *   If parameter-level guarantees are required, Sift MUST include a
+ *   params_hash (SHA-256 of canonical params) in the signed receipt payload,
+ *   and the adapter MUST verify it before calling this function.
+ *
  * Only `type`, `tool`, and normalized `params` appear in the intent.
  * All receipt governance fields (timestamp, nonce, receipt_hash, signature,
  * tenant_id, agent_id, policy_matched, risk_tier, action) are intentionally

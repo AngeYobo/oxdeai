@@ -249,6 +249,79 @@ Example canonical intent shape:
 
 ---
 
+## Parameter Binding Guarantee
+
+### What Sift signs
+
+A Sift receipt is an Ed25519-signed attestation that a specific **tool** (identified by `receipt.tool`) matched a specific **policy** (identified by `receipt.policy_matched`) for a specific **action** (identified by `receipt.action`) at a given point in time.
+
+**Sift receipts do NOT include parameter values. Sift's signature does NOT cover the specific parameters submitted for evaluation.**
+
+### What `intent_hash` commits to
+
+`AuthorizationV1.intent_hash` is the SHA-256 of the Sift-canonical JSON of the intent object supplied by the adapter. That intent object contains `type`, `tool`, and `params`.
+
+The `params` are **supplied by the adapter from the execution context** — they are NOT extracted from the Sift receipt.
+
+Therefore:
+
+```text
+intent_hash commits to:  adapter-supplied params
+                         (what the adapter says will be executed)
+
+NOT to:                  params that Sift evaluated
+                         (what Sift was actually asked about)
+```
+
+### Security boundary
+
+A mismatch between the parameters Sift evaluated and the parameters the adapter supplies is **NOT detectable from the receipt alone**. The PEP detects a mismatch only if it independently recomputes `intent_hash` from the actual execution call at the moment of execution and finds a hash collision — which it will, if params differ between authorization issuance and execution. But the PEP cannot determine what Sift originally approved.
+
+This means:
+
+- Sift provides **action-level authorization**: it approves `tool X` under `policy Y`.
+- Sift does NOT provide **parameter-level cryptographic binding**: it does not prove that specific parameter values were approved.
+
+### Invariant
+
+> **Parameter mismatch between Sift evaluation and execution is NOT detectable from the receipt alone.**
+
+The adapter is responsible for ensuring that the params it injects into the intent faithfully represent the params it intends to execute. There is no protocol-level mechanism to verify this at the Sift receipt boundary.
+
+### Security warning
+
+If parameter-level guarantees are required by the deployment's threat model, Sift MUST be extended to include a `params_hash` field (SHA-256 of Sift-canonical params) in the signed receipt payload. The adapter MUST then verify:
+
+```text
+params_hash == SHA-256(sift_canonical(adapter_params))
+```
+
+before calling `normalizeIntent`. Without this, parameter-level enforcement relies entirely on the adapter's own integrity.
+
+**Do not treat `AuthorizationV1.intent_hash` as evidence that Sift evaluated the specific parameter values bound by that hash.**
+
+### Future extension path (DO NOT IMPLEMENT until Sift protocol adds support)
+
+When Sift adds `params_hash` to the signed receipt:
+
+```json
+{
+  "params_hash": "<sha256-hex of sift_canonical(params)>",
+  ...
+}
+```
+
+The adapter MUST add a verification step between `verifyReceipt` and `normalizeIntent`:
+
+```text
+recompute = sha256(sift_canonical(adapter_params))
+assert recompute == receipt.params_hash  → DENY if mismatch
+```
+
+Until that field exists in the Sift receipt contract, this check cannot be performed and the parameter binding gap remains.
+
+---
+
 ## State Binding (Normative)
 
 - The adapter MUST produce a deterministic state snapshot for `AuthorizationV1.state_hash`.
@@ -427,13 +500,14 @@ No implicit trust is allowed.
 
 Sift receipts do not provide the following. The adapter MUST compensate for each.
 
-| Gap                       | Risk without compensation                                           | Adapter requirement                                                    |
-|---------------------------|----------------------------------------------------------------------|-------------------------------------------------------------------------|
-| No audience binding       | Receipt replayed against unintended service                         | Inject audience from trusted adapter configuration                      |
-| No state binding          | Receipt replayed after state change (budget consumed, permission revoked) | Derive, canonicalize, and hash execution-relevant state                |
-| No canonical intent form  | Intent ambiguity; `intent_hash` inconsistency across implementations | Normalize Sift fields to canonical OxDeAI intent under canonicalization-v1 |
-| No OxDeAI replay contract | Sift nonce deduplication ≠ OxDeAI `auth_id` single-use enforcement  | Explicitly map nonce to `auth_id`; enforce consumption at PEP           |
-| No bounded expiry contract | Stale receipt converted to long-lived `AuthorizationV1`             | Define and enforce adapter-side bounded freshness window                |
+| Gap                           | Risk without compensation                                                                           | Adapter requirement                                                                                      |
+|-------------------------------|------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| No audience binding           | Receipt replayed against unintended service                                                         | Inject audience from trusted adapter configuration                                                       |
+| No state binding              | Receipt replayed after state change (budget consumed, permission revoked)                           | Derive, canonicalize, and hash execution-relevant state                                                  |
+| **No parameter binding**      | **Adapter can inject params different from what Sift evaluated; `intent_hash` binds adapter params, NOT Sift-evaluated params** | **Adapter MUST ensure injected params match intended execution; see §"Parameter Binding Guarantee"** |
+| No canonical intent form      | Intent ambiguity; `intent_hash` inconsistency across implementations                               | Normalize Sift fields to canonical OxDeAI intent under canonicalization-v1                               |
+| No OxDeAI replay contract     | Sift nonce deduplication ≠ OxDeAI `auth_id` single-use enforcement                                 | Explicitly map nonce to `auth_id`; enforce consumption at PEP                                            |
+| No bounded expiry contract    | Stale receipt converted to long-lived `AuthorizationV1`                                             | Define and enforce adapter-side bounded freshness window                                                 |
 
 ---
 
