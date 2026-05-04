@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "types": ["node"]
+  },
+  "include": [
+    "shared/**/*.ts",
+    "packages/**/*.ts",
+    "apps/**/*.ts",
+    "mock-sift/**/*.ts",
+    "test/**/*.ts"
+  ]
+}
