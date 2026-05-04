@@ -16,7 +16,8 @@ It does **not** execute actions and it does **not** treat a Sift receipt as exec
 
 ## Purpose
 
-Sift is an upstream **decision / governance layer**.
+Sift is an upstream **decision / governance layer** providing signed receipt-level decisions.
+With the current receipt shape, it does not provide cryptographic proof of parameter-level approval.
 
 OxDeAI is the **execution-time authorization and enforcement layer**.
 
@@ -59,7 +60,7 @@ Responsibilities:
 * receipt version validation
 * receipt hash integrity validation (Sift-canonical JSON, ensure_ascii=True)
 * Ed25519 signature verification (raw 32-byte key; base64url-decoded signature)
-* `ALLOW` / `DENY` decision enforcement
+* `ALLOW` / `DENY` decision validation
 * bounded freshness validation (`maxAgeMs` - configurable per deployment; treat as a security parameter)
 
 Verification order (integrity before semantics):
@@ -97,6 +98,7 @@ Properties:
 * safe integers only
 * rejects non-deterministic runtime objects
 * prototype-safe object construction
+* parameters are supplied by the caller and are not cryptographically bound to the receipt
 
 ### `normalizeState`
 
@@ -169,6 +171,36 @@ A Sift receipt is a **governance decision artifact**.
 It is **not** an OxDeAI authorization artifact.
 
 Execution must remain gated by valid `AuthorizationV1` verified at the PEP boundary.
+
+### Parameter binding limitation
+
+Sift receipts do **not** cryptographically bind execution parameter values.
+
+A Sift receipt proves that a governance decision was issued for the signed fields
+(e.g. `action`, `tool`, `decision`, `nonce`, `timestamp`).
+
+It does **not** prove that the `params` later supplied to `normalizeIntent`
+are the same parameters evaluated by Sift.
+
+Therefore:
+
+- `AuthorizationV1.intent_hash` commits to **adapter-supplied params**
+- it does **not** prove parameter-level approval by Sift
+- parameter mismatch between Sift evaluation and execution is **not detectable**
+  from the receipt alone
+
+A receipt alone MUST NEVER be treated as sufficient to construct an executable intent.
+
+This limitation does **not weaken the execution boundary**:
+
+- execution remains strictly gated by `AuthorizationV1`
+- the PEP Gateway enforces exact `intent_hash` and `state_hash` matching
+- any mismatch at execution time still results in **DENY → no execution**
+
+If parameter-level guarantees are required, the Sift receipt format MUST include:
+
+- canonical `params`, or
+- `params_hash = sha256(sift_canonical(params))`
 
 ### Fail-closed behavior
 
@@ -276,6 +308,26 @@ Minimum requirements:
 All user-controlled normalized objects are created with `Object.create(null)`.
 
 This prevents `__proto__` setter side effects and silent key loss during normalization.
+
+### Responsibility split
+
+Sift provides:
+
+- signed governance decisions (`ALLOW` / `DENY`)
+- receipt integrity and authenticity
+
+OxDeAI provides:
+
+- deterministic intent binding (including params)
+- deterministic state binding
+- audience binding
+- replay protection
+- non-bypassable execution enforcement at the PEP
+
+These guarantees are intentionally separated.
+
+A Sift receipt alone cannot authorize execution.
+Only a valid `AuthorizationV1` verified at the PEP Gateway can.
 
 ## Package structure
 
