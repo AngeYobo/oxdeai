@@ -1,0 +1,19 @@
+{
+  "name": "@oxdeai/example-sift-boundary-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Terminal demo: Sift → OxDeAI execution-boundary enforcement — 4 scenarios in <2 minutes",
+  "scripts": {
+    "prebuild": "pnpm -C ../../packages/sift build",
+    "build": "tsc -p tsconfig.json",
+    "start": "pnpm build && node dist/run.js"
+  },
+  "dependencies": {
+    "@oxdeai/sift": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
